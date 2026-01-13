@@ -4,6 +4,19 @@
 #include "SphereObject.h"
 #include <numbers>
 
+#include "../externals/nlohmann/json.hpp"
+#include <fstream>
+#include <string>
+
+using json = nlohmann::json;
+
+static inline json ToJsonVec3(const Vector3& v) {
+    return json{ {"x", v.x}, {"y", v.y}, {"z", v.z} };
+}
+static inline Vector3 FromJsonVec3(const json& j) {
+    return Vector3{ j.at("x").get<float>(), j.at("y").get<float>(), j.at("z").get<float>() };
+}
+
 // ===== World -> Screen (row-vector行列想定) =====
 static Vector4 MulRowVec4Mat4(const Vector4& v, const Matrix4x4& m)
 {
@@ -435,6 +448,9 @@ void GamePlayScene::Update()
 
     AddGate();
 
+    EditWallsImGui();
+
+    StageIOImGui();
 
     // 反映
     sphere_->SetEnableLighting(sphereLighting);
@@ -703,4 +719,345 @@ void GamePlayScene::AddGate()
 
     ImGui::End();
 
+}
+
+void GamePlayScene::EditWallsImGui()
+{
+    ImGui::Begin("Wall Editor");
+
+    auto& walls = wallSys_.Walls();
+    static int editWall = 0;
+
+    const int wallCount = (int)walls.size();
+    ImGui::Text("Walls: %d", wallCount);
+
+    if (wallCount == 0) {
+        ImGui::Text("No walls. Add one!");
+        if (ImGui::Button("Add AABB Wall")) {
+            WallSystem::Wall w;
+            w.type = WallSystem::Type::AABB;
+            w.center = drone_.GetPos();
+            w.center.y = 2.0f;
+            w.center.z += 8.0f;
+            w.half = { 2.0f, 2.0f, 0.5f };
+            walls.push_back(w);
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Add OBB Wall")) {
+            WallSystem::Wall w;
+            w.type = WallSystem::Type::OBB;
+            w.center = drone_.GetPos();
+            w.center.y = 2.0f;
+            w.center.z += 8.0f;
+            w.half = { 2.0f, 2.0f, 0.5f };
+            w.rot = { 0,0,0 };
+            walls.push_back(w);
+        }
+        ImGui::End();
+        return;
+    }
+
+    editWall = std::clamp(editWall, 0, wallCount - 1);
+    ImGui::SliderInt("Edit Wall Index", &editWall, 0, wallCount - 1);
+
+    ImGui::Separator();
+
+    // -------------------------
+    // Add / Duplicate / Remove
+    // -------------------------
+    if (ImGui::Button("Add AABB (End)")) {
+        WallSystem::Wall w;
+        w.type = WallSystem::Type::AABB;
+        w.center = drone_.GetPos(); w.center.y = 2.0f; w.center.z += 8.0f;
+        w.half = { 2.0f, 2.0f, 0.5f };
+        walls.push_back(w);
+        editWall = (int)walls.size() - 1;
+
+        wallSys_.BuildDebug(Object3dManager::GetInstance(), "cube.obj");
+
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Add OBB (End)")) {
+        WallSystem::Wall w;
+        w.type = WallSystem::Type::OBB;
+        w.center = drone_.GetPos(); w.center.y = 2.0f; w.center.z += 8.0f;
+        w.half = { 2.0f, 2.0f, 0.5f };
+        w.rot = { 0,0,0 };
+        walls.push_back(w);
+        editWall = (int)walls.size() - 1;
+
+        wallSys_.BuildDebug(Object3dManager::GetInstance(), "cube.obj");
+
+    }
+
+    ImGui::SameLine();
+
+    if (ImGui::Button("Duplicate")) {
+        WallSystem::Wall copy = walls[editWall];
+        copy.center.z += 2.0f; // 少しずらす
+        walls.insert(walls.begin() + (editWall + 1), copy);
+        editWall++;
+
+        wallSys_.BuildDebug(Object3dManager::GetInstance(), "cube.obj");
+
+    }
+
+    ImGui::SameLine();
+
+    if (ImGui::Button("Remove")) {
+        walls.erase(walls.begin() + editWall);
+        if (walls.empty()) { editWall = 0; ImGui::End(); return; }
+        editWall = std::clamp(editWall, 0, (int)walls.size() - 1);
+
+        wallSys_.BuildDebug(Object3dManager::GetInstance(), "cube.obj");
+
+    }
+
+    ImGui::Separator();
+
+    // -------------------------
+    // Reorder
+    // -------------------------
+    bool canUp = (editWall > 0);
+    bool canDown = (editWall < (int)walls.size() - 1);
+
+    if (!canUp) ImGui::BeginDisabled();
+    if (ImGui::Button("Up")) { std::swap(walls[editWall], walls[editWall - 1]); editWall--; }
+    if (!canUp) ImGui::EndDisabled();
+
+    ImGui::SameLine();
+
+    if (!canDown) ImGui::BeginDisabled();
+    if (ImGui::Button("Down")) { std::swap(walls[editWall], walls[editWall + 1]); editWall++; }
+    if (!canDown) ImGui::EndDisabled();
+
+    ImGui::Separator();
+
+    // -------------------------
+    // Edit params
+    // -------------------------
+    WallSystem::Wall& w = walls[editWall];
+
+    int typeInt = (w.type == WallSystem::Type::AABB) ? 0 : 1;
+    if (ImGui::RadioButton("AABB", typeInt == 0)) typeInt = 0;
+    ImGui::SameLine();
+    if (ImGui::RadioButton("OBB", typeInt == 1)) typeInt = 1;
+    w.type = (typeInt == 0) ? WallSystem::Type::AABB : WallSystem::Type::OBB;
+
+    // マウス配置（y=0平面）
+    static bool placeMode = false;
+    ImGui::Checkbox("Mouse Place Mode (Y=0 Plane)", &placeMode);
+    ImGui::Text("LClick: place selected wall center on ground (y=0)");
+
+    static bool autoAddOnPlace = true;
+    ImGui::Checkbox("Auto Add Next On Place", &autoAddOnPlace);
+    ImGui::SameLine();
+    static float autoAddZStep = 2.0f;
+    ImGui::DragFloat("Z Step", &autoAddZStep, 0.1f, 0.0f, 50.0f);
+
+
+    if (placeMode) {
+        if (!ImGui::GetIO().WantCaptureMouse) {
+            if (Input::GetInstance()->IsMouseTrigger(0)) {
+                POINT mp = Input::GetInstance()->GetMousePos();
+                const float W = (float)WinApp::kClientWidth;
+                const float H = (float)WinApp::kClientHeight;
+                const Matrix4x4& vp = camera_->GetViewProjectionMatrix();
+
+                Vector3 hit{};
+                if (ScreenRayToPlaneY0_RowVector(mp.x, mp.y, W, H, vp, hit)) {
+
+                    // 1) 選択中を配置
+                    w.center = hit;
+
+                    // 2) 置いたら次を自動追加
+                    if (autoAddOnPlace) {
+                        WallSystem::Wall next = w;       // 型・half・rot を引き継ぐ
+                        next.center.z += autoAddZStep;   // ちょい前にずらす（重なり防止）
+
+                        walls.insert(walls.begin() + (editWall + 1), next);
+                        editWall++; // 追加した壁を次の編集対象にする
+
+                        wallSys_.BuildDebug(Object3dManager::GetInstance(), "cube.obj");
+
+                    }
+                }
+
+            }
+        }
+    }
+
+    ImGui::Separator();
+    ImGui::Text("Transform");
+    ImGui::DragFloat3("Center", &w.center.x, 0.1f);
+
+    // ★壁は half が当たり判定そのもの
+    ImGui::DragFloat3("Half Size", &w.half.x, 0.1f, 0.05f, 100.0f);
+
+    if (w.type == WallSystem::Type::OBB) {
+        ImGui::DragFloat3("Rotation (rad)", &w.rot.x, 0.02f);
+    } else {
+        // AABBにした瞬間回転を無効化したいなら
+        w.rot = { 0,0,0 };
+    }
+
+    ImGui::End();
+
+    wallSys_.SetSelectedIndex(editWall);
+
+    // 変更後はデバッグ表示更新
+    // ※あなたは Update()の最後で wallSys_.UpdateDebug() してるので、
+    //   ここで呼ばなくても良い。確実にしたいなら呼んでもOK。
+}
+
+
+bool GamePlayScene::SaveStageJson(const std::string& fileName)
+{
+    // fileName: "stage01.json" みたいに ImGui で入力したやつ
+    // 保存先：resources/stage/
+    const std::string path = "resources/stage/" + fileName;
+
+    json root;
+    root["version"] = 1;
+
+    // ---- drone spawn ----
+    root["drone"]["spawnPos"] = ToJsonVec3(drone_.GetPos());
+    root["drone"]["spawnYaw"] = drone_.GetYaw();
+
+    // ---- gates ----
+    {
+        json arr = json::array();
+        for (const auto& gv : gates_) {
+            const Gate& g = gv.gate;
+            json j;
+            j["pos"] = ToJsonVec3(g.pos);
+            j["rot"] = ToJsonVec3(g.rot);
+            j["scale"] = ToJsonVec3(g.scale);
+            j["perfectRadius"] = g.perfectRadius;
+            j["gateRadius"] = g.gateRadius;
+            j["thickness"] = g.thickness;
+            arr.push_back(j);
+        }
+        root["gates"] = arr;
+    }
+
+    // ---- walls ----
+    {
+        json arr = json::array();
+        for (const auto& w : wallSys_.Walls()) {
+            json j;
+            j["type"] = (w.type == WallSystem::Type::AABB) ? "AABB" : "OBB";
+            j["center"] = ToJsonVec3(w.center);
+            j["half"] = ToJsonVec3(w.half);
+            j["rot"] = ToJsonVec3(w.rot); // AABBでも入れてOK（0,0,0）
+            arr.push_back(j);
+        }
+        root["walls"] = arr;
+    }
+
+    std::ofstream ofs(path);
+    if (!ofs.is_open()) return false;
+
+    ofs << root.dump(2); // 2=見やすいインデント
+    return true;
+}
+
+bool GamePlayScene::LoadStageJson(const std::string& fileName)
+{
+    const std::string path = "resources/stage/" + fileName;
+
+    std::ifstream ifs(path);
+    if (!ifs.is_open()) return false;
+
+    json root;
+    ifs >> root;
+
+    // ---- drone spawn ----
+    if (root.contains("drone")) {
+        const auto& d = root["drone"];
+        if (d.contains("spawnPos")) {
+            drone_.SetPos(FromJsonVec3(d["spawnPos"]));
+        }
+        if (d.contains("spawnYaw")) {
+            // yaw_ 直接代入の setter がないなら SetYaw を用意するのがベスト
+            // とりあえず Drone に SetYaw(float) を追加してね
+            drone_.SetYaw(d["spawnYaw"].get<float>());
+        }
+        // 速度リセット（ロード直後に暴れないため）
+        drone_.SetVel({ 0,0,0 });
+    }
+
+    // ---- gates ----
+    gates_.clear();
+    if (root.contains("gates")) {
+        for (const auto& j : root["gates"]) {
+            GateVisual gv;
+            gv.gate.pos = FromJsonVec3(j.at("pos"));
+            gv.gate.rot = FromJsonVec3(j.at("rot"));
+            gv.gate.scale = FromJsonVec3(j.at("scale"));
+            gv.gate.perfectRadius = j.at("perfectRadius").get<float>();
+            gv.gate.gateRadius = j.at("gateRadius").get<float>();
+            gv.gate.thickness = j.at("thickness").get<float>();
+
+            // ★Visualはロード時に再生成
+            gv.Initialize(Object3dManager::GetInstance(), "cube.obj", camera_);
+            gates_.push_back(std::move(gv));
+        }
+    }
+
+    // ---- walls ----
+    wallSys_.Walls().clear();
+    if (root.contains("walls")) {
+        for (const auto& j : root["walls"]) {
+            WallSystem::Wall w;
+            const std::string type = j.at("type").get<std::string>();
+            w.type = (type == "OBB") ? WallSystem::Type::OBB : WallSystem::Type::AABB;
+            w.center = FromJsonVec3(j.at("center"));
+            w.half = FromJsonVec3(j.at("half"));
+            w.rot = FromJsonVec3(j.at("rot"));
+            wallSys_.Walls().push_back(w);
+        }
+    }
+
+    // 状態リセット（ゲーム進行用）
+    nextGate_ = 0;
+    perfectCount_ = 0;
+    goodCount_ = 0;
+
+    // デバッグ表示は walls_ 個数が変わるので更新が必要
+    // あなたの BuildDebug は dirtyDebug_ を立てて再生成する設計なので
+    // ここで dirtyDebug_ を立てたいが private なので、手っ取り早いのは BuildDebug 呼び直し
+    wallSys_.BuildDebug(Object3dManager::GetInstance(), "cube.obj");
+
+    return true;
+}
+
+void GamePlayScene::StageIOImGui()
+{
+    ImGui::Begin("Stage IO");
+
+    static char fileName[128] = "stage01.json";
+    ImGui::InputText("File", fileName, IM_ARRAYSIZE(fileName));
+
+    // 拡張子付け忘れ防止（任意）
+    bool hasJson = (std::string(fileName).find(".json") != std::string::npos);
+    if (!hasJson) {
+        ImGui::TextColored(ImVec4(1, 0.7f, 0.2f, 1), "Tip: add .json");
+    }
+
+    if (ImGui::Button("Save")) {
+        const bool ok = SaveStageJson(fileName);
+        ImGui::SameLine();
+        ImGui::Text(ok ? "Saved." : "Save FAILED.");
+    }
+
+    ImGui::SameLine();
+
+    if (ImGui::Button("Load")) {
+        const bool ok = LoadStageJson(fileName);
+        ImGui::SameLine();
+        ImGui::Text(ok ? "Loaded." : "Load FAILED.");
+    }
+
+    ImGui::End();
 }

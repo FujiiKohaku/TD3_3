@@ -34,6 +34,14 @@ public:
 
     void AddGate();
 
+    void EditWallsImGui();
+
+    bool LoadStageJson(const std::string& fileName);
+
+    bool SaveStageJson(const std::string& fileName);
+
+    void StageIOImGui();
+
 private:
     // ------------------------------
     // サウンド
