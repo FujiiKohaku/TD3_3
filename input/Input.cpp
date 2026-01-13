@@ -35,32 +35,93 @@ bool Input::Initialize(WinApp* winApp)
     result = keyboard_->SetCooperativeLevel(winApp_->GetHwnd(), DISCL_FOREGROUND | DISCL_NONEXCLUSIVE | DISCL_NOWINKEY);
     assert(SUCCEEDED(result));
 
+    // ================================
+// マウスデバイスの生成
+// ================================
+    result = directInput_->CreateDevice(GUID_SysMouse, mouse_.ReleaseAndGetAddressOf(), nullptr);
+    assert(SUCCEEDED(result));
+
+    result = mouse_->SetDataFormat(&c_dfDIMouse);
+    assert(SUCCEEDED(result));
+
+    result = mouse_->SetCooperativeLevel(winApp_->GetHwnd(), DISCL_FOREGROUND | DISCL_NONEXCLUSIVE);
+    assert(SUCCEEDED(result));
+
+
     return true;
 }
 
 void Input::Update()
 {
+    // ★前フレ保存
+    memcpy(prevKeys_, keys_, sizeof(keys_));
+    prevMouseState_ = mouseState_;
+
+    // ---- keyboard ----
     HRESULT result = keyboard_->Acquire();
     if (FAILED(result)) {
-        // 取得失敗（ウィンドウ非アクティブなど）なら何もしない
         return;
     }
-
     result = keyboard_->GetDeviceState(sizeof(keys_), keys_);
     if (FAILED(result)) {
-        // 失敗時は再取得を試みる（オプション）
         keyboard_->Acquire();
     }
+
+    // ---- mouse ----
+    if (mouse_) {
+        result = mouse_->Acquire();
+        if (SUCCEEDED(result)) {
+            result = mouse_->GetDeviceState(sizeof(DIMOUSESTATE), &mouseState_);
+            if (FAILED(result)) {
+                mouse_->Acquire();
+            }
+        }
+    }
+
+    // ---- mouse position (client) ----
+    POINT p{};
+    GetCursorPos(&p);
+    ScreenToClient(winApp_->GetHwnd(), &p);
+    mousePos_ = p;
 }
+
+
 bool Input::IsKeyPressed(BYTE keyCode) const
 {
     return keys_[keyCode] & 0x80;
 }
+
+bool Input::IsKeyTrigger(BYTE keyCode) const
+{
+    // 今フレーム押されていて、前フレーム押されていない
+    return (keys_[keyCode] & 0x80) && !(prevKeys_[keyCode] & 0x80);
+}
+
+bool Input::IsMousePressed(int button) const
+{
+    if (button < 0 || button > 2) return false;
+    return (mouseState_.rgbButtons[button] & 0x80) != 0;
+}
+
+bool Input::IsMouseTrigger(int button) const
+{
+    if (button < 0 || button > 2) return false;
+    return (mouseState_.rgbButtons[button] & 0x80) &&
+        !(prevMouseState_.rgbButtons[button] & 0x80);
+}
+
+POINT Input::GetMousePos() const
+{
+    return mousePos_;
+}
+
+
 void Input::Finalize()
 {
     // 明示的に解放
     keyboard_.Reset();
     directInput_.Reset();
+    mouse_.Reset();
 
     delete instance;
     instance = nullptr;

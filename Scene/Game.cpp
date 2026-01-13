@@ -18,27 +18,27 @@ void Game::Initialize()
     // TextureManager::GetInstance()->LoadTexture("resources/circle.png")
     ModelManager::GetInstance()->Initialize(DirectXCommon::GetInstance());
     Object3dManager::GetInstance()->Initialize(DirectXCommon::GetInstance());
-    // camera_ = new Camera();
-    // camera_->SetTranslate({ 0.0f, 0.0f, 2.0f });
-    // Object3dManager::GetInstance()->SetDefaultCamera(camera_);
+   // camera_ = new Camera();
+    //camera_->SetTranslate({ 0.0f, 0.0f, 2.0f });
+    //Object3dManager::GetInstance()->SetDefaultCamera(camera_);
     modelCommon_.Initialize(DirectXCommon::GetInstance());
     // 入力関連
     Input::GetInstance()->Initialize(winApp_);
     // パーティクル関連
-    // ParticleManager::GetInstance()->Initialize(DirectXCommon::GetInstance(), SrvManager::GetInstance(), camera_);
+    //ParticleManager::GetInstance()->Initialize(DirectXCommon::GetInstance(), SrvManager::GetInstance(), camera_);
     ModelManager::GetInstance()->LoadModel("plane.obj");
     ModelManager::GetInstance()->LoadModel("axis.obj");
     ModelManager::GetInstance()->LoadModel("titleTex.obj");
     ModelManager::GetInstance()->LoadModel("fence.obj");
     ModelManager::GetInstance()->LoadModel("terrain.obj");
+	ModelManager::GetInstance()->LoadModel("cube.obj");
     TextureManager::GetInstance()->LoadTexture("resources/uvChecker.png");
     TextureManager::GetInstance()->LoadTexture("resources/fence.png");
+   
 
     BaseScene* scene = new TitleScene();
     // シーンマネージャーに最初のシーンをセット
     SceneManager::GetInstance()->SetNextScene(scene);
-    // サウンド関連
-    SoundManager::GetInstance()->Initialize();
 }
 
 void Game::Update()
@@ -48,9 +48,9 @@ void Game::Update()
 
     // --- ゲーム更新 ---
     Input::GetInstance()->Update();
-    // camera_->Update();
+   // camera_->Update();
 
-    // camera_->DebugUpdate();
+   // camera_->DebugUpdate();
 
     // エスケープで離脱
     if (Input::GetInstance()->IsKeyPressed(DIK_ESCAPE)) {
@@ -58,8 +58,6 @@ void Game::Update()
     }
 
     SceneManager::GetInstance()->Update();
-
-    SceneManager::GetInstance()->DrawImGui();
 
     // ======== ImGui end ========
     ImGuiManager::GetInstance()->End();
@@ -71,8 +69,8 @@ void Game::Draw()
     SrvManager::GetInstance()->PreDraw();
     DirectXCommon::GetInstance()->PreDraw();
 
-    SceneManager::GetInstance()->Draw3D();
-    SceneManager::GetInstance()->Draw2D();
+    // === シーンに渡す ===
+    SceneManager::GetInstance()->Draw();
 
     // === フレーム終了 ===
     ImGuiManager::GetInstance()->Draw();
@@ -83,7 +81,7 @@ void Game::Finalize()
 {
     // シーンマネージャーも singleton
     SceneManager::GetInstance()->Finalize();
-    // ParticleManager::GetInstance()->Finalize();
+   // ParticleManager::GetInstance()->Finalize();
     Object3dManager::GetInstance()->Finalize();
     SpriteManager::GetInstance()->Finalize();
     ModelManager::GetInstance()->Finalize();
@@ -92,7 +90,7 @@ void Game::Finalize()
     SrvManager::GetInstance()->Finalize();
     // DirectXCommonはFinalizeしてもデバイス破棄処理だけ。deleteは不要
     DirectXCommon::GetInstance()->Finalize();
-    SoundManager::GetInstance()->Finalize();
+
     winApp_->Finalize();
     delete winApp_;
     delete camera_;
