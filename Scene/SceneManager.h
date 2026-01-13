@@ -20,9 +20,6 @@ public:
     void Update();
     void Draw();
     void Finalize();
-    void DrawImGui();
-    void Draw2D();
-    void Draw3D();
 
 private:
     // --------- Singleton基本処理 ---------

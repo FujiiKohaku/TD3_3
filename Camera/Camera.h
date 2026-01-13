@@ -3,10 +3,27 @@
 #include "MathStruct.h"
 #include "MatrixMath.h"
 #include "WinApp.h"
+#include "Input.h"
 
+class Drone;
 
 class Camera {
 public:
+
+    struct ThirdPersonCameraParam {
+        float distance = 7.5f;
+        float lookHeight = 1.8f;
+        float yawSpeed = 0.04f;
+        float pitchSpeed = 0.03f;
+        float pitchMin = -1.2f;
+        float pitchMax = 0.6f;
+    };
+
+    //ドローン用     
+    void FollowDroneRigid(const Drone& drone, float backDist, float height, float pitchRad, float yawOffset = 0.0f);
+
+
+
     // デフォルトコンストラクタ宣言
     Camera();
 
@@ -68,6 +85,9 @@ private:
     // GPU用
     Microsoft::WRL::ComPtr<ID3D12Resource> cameraResource_;
     CameraForGPU* cameraData_ = nullptr;
+
+    bool useCustomView_ = false;
+    Matrix4x4 customView_{};
 
 
 };
