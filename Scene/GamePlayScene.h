@@ -10,6 +10,15 @@
 #include "Sprite.h"
 #include "SpriteManager.h"
 #include "TextureManager.h"
+
+//ゲームプレイ用
+#include "Input.h"
+#include "Drone.h"
+#include "Gate.h"
+#include "GateVisual.h"
+#include "Walls.h"
+
+
 class SphereObject;
 class GamePlayScene : public BaseScene {
 public:
@@ -22,6 +31,8 @@ public:
     void Draw2D() override;
     void Draw3D() override;
     void DrawImGui() override;
+
+    void AddGate();
 
 private:
     // ------------------------------
@@ -47,4 +58,30 @@ private:
     Vector3 sphereScale = { 1.0f, 1.0f, 1.0f };
     float lightIntensity = 1.0f;
     Vector3 lightDir = { 0.0f, -1.0f, 0.0f };
+
+    // --- Drone ---
+    Object3d* droneObj_ = nullptr;
+    Drone drone_;
+
+    // --- 追従カメラ（後ろから見る） ---
+    float camDist_ = 8.0f;
+    float camHeight_ = 3.0f;
+    float camPitch_ = -0.20f;
+
+    int isDebug_ = false;
+
+    float droneYawOffset = 0.0f; // rad
+
+    //ゲート(リング)
+
+    std::vector<GateVisual> gates_;
+    int nextGate_ = 0;
+    int perfectCount_ = 0;
+    int goodCount_ = 0;
+
+    //壁
+    WallSystem wallSys_;
+    Vector3 droneHalf_ = { 0.1f, 0.1f, 0.1f }; // ドローン当たり判定（半サイズ）
+    bool drawWallDebug_ = true;
+
 };
