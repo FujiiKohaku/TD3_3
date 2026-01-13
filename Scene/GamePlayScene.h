@@ -17,6 +17,7 @@
 #include "Gate.h"
 #include "GateVisual.h"
 #include "Walls.h"
+#include "GoalSystem.h"
 
 
 class SphereObject;
@@ -32,7 +33,7 @@ public:
     void Draw3D() override;
     void DrawImGui() override;
 
-    void AddGate();
+  /*  void AddGate();
 
     void EditWallsImGui();
 
@@ -40,7 +41,7 @@ public:
 
     bool SaveStageJson(const std::string& fileName);
 
-    void StageIOImGui();
+    void StageIOImGui();*/
 
 private:
     // ------------------------------
@@ -91,5 +92,9 @@ private:
     WallSystem wallSys_;
     Vector3 droneHalf_ = { 0.1f, 0.1f, 0.1f }; // ドローン当たり判定（半サイズ）
     bool drawWallDebug_ = true;
+
+    //ゴール
+    GoalSystem goalSys_;
+    bool stageCleared_ = false; // クリア後の演出用（任意）
 
 };

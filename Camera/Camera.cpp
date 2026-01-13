@@ -91,3 +91,19 @@ void Camera::FollowDroneRigid(const Drone& drone, float backDist, float height, 
     const float camPitch = -std::asinf(std::clamp(dir.y, -1.0f, 1.0f));
     transform_.rotate = { camPitch, camYaw, 0.0f };
 }
+
+void Camera::SetViewLookAt(const Vector3& eye, const Vector3& target, const Vector3& up)
+{
+    useCustomView_ = true;
+    customView_ = MatrixMath::MakeLookAtMatrix(eye, target, up); // ←あなたのLookAt関数名に合わせて
+}
+void Camera::ClearCustomView()
+{
+    useCustomView_ = false;
+}
+
+void Camera::SetCustomView(const Matrix4x4& v)
+{
+    useCustomView_ = true;
+    customView_ = v;
+}

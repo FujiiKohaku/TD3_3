@@ -193,6 +193,10 @@ void GamePlayScene::Initialize()
    // OBB壁（回転あり）
    wallSys_.AddOBB({ -4.0f, 2.0f, 18.0f }, { 4.0f, 2.0f, 0.5f }, { 0.0f, 0.6f, 0.0f }); // yaw回転
 
+   // ---- Goal ----
+   goalSys_.Initialize(Object3dManager::GetInstance(), camera_);
+   goalSys_.Reset();
+   stageCleared_ = false;
 
 
 }
@@ -275,10 +279,19 @@ void GamePlayScene::Update()
                 }
             }
         } else {
-            // クリア状態
-            // perfectCount_ / goodCount_ を表示する
+            // ---- GoalSystem update ----
+            goalSys_.Update(gates_, nextGate_, drone_.GetPos());
+
+            if (goalSys_.IsCleared()) {
+                stageCleared_ = true;
+
+                // ここで「リザルトへ遷移」「SE」「フェード」等を入れる
+                // 例：次シーンへ
+                // sceneManager_->ChangeScene(new ResultScene());
+            }
         }
 
+        goalSys_.Update(gates_, nextGate_, drone_.GetPos());
 
     // ==================================
     // Lighting Panel（ライト操作パネル）
@@ -443,14 +456,71 @@ void GamePlayScene::Update()
         }
     }
 
+    // ================================
+// GOAL overlay (ImGui)
+// ================================
+    if (stageCleared_) {
+
+        // 画面中央に出す
+        ImGuiIO& io = ImGui::GetIO();
+        const float W = io.DisplaySize.x;
+        const float H = io.DisplaySize.y;
+
+        const char* msg = "GOAL!!";
+        ImVec2 textSize = ImGui::CalcTextSize(msg);
+
+        // 少し上に出す
+        ImVec2 pos((W - textSize.x) * 0.5f, (H * 0.35f) - textSize.y * 0.5f);
+
+        auto* dl = ImGui::GetForegroundDrawList();
+
+        // 影（見やすく）
+        dl->AddText(ImVec2(pos.x + 2, pos.y + 2), IM_COL32(0, 0, 0, 200), msg);
+
+        // 本体
+        dl->AddText(pos, IM_COL32(255, 255, 0, 255), msg);
+
+        // ついでに小さく案内（任意）
+        const char* sub = "Press Enter to continue";
+        ImVec2 subSize = ImGui::CalcTextSize(sub);
+        ImVec2 subPos((W - subSize.x) * 0.5f, pos.y + 40.0f);
+        dl->AddText(ImVec2(subPos.x + 1, subPos.y + 1), IM_COL32(0, 0, 0, 180), sub);
+        dl->AddText(subPos, IM_COL32(255, 255, 255, 230), sub);
+    }
+
 
     ImGui::End();
 
-    AddGate();
-
-    EditWallsImGui();
-
-    StageIOImGui();
+//    // ================================
+//// Goal Editor
+//// ================================
+//    ImGui::Begin("Goal Editor");
+//
+//    static bool preview = false;
+//    static bool prevPreview = false;
+//
+//    ImGui::Checkbox("Preview (ForceSpawn)", &preview);
+//
+//    if (preview && !prevPreview) {
+//        goalSys_.ForceSpawn(nullptr);
+//    }
+//    if (!preview && prevPreview) {
+//        goalSys_.ClearForceSpawn();
+//    }
+//    prevPreview = preview;
+//
+//
+//    Vector3 gp = goalSys_.GetGoalPos();
+//    if (ImGui::DragFloat3("Goal Pos", &gp.x, 0.1f)) {
+//        goalSys_.SetGoalPos(gp);
+//    }
+//
+//    static float a = 0.25f;
+//    if (ImGui::SliderFloat("Goal Alpha", &a, 0.0f, 1.0f)) {
+//        goalSys_.SetGoalAlpha(a);
+//    }
+//
+//    ImGui::End();
 
     // 反映
     sphere_->SetEnableLighting(sphereLighting);
@@ -475,6 +545,8 @@ void GamePlayScene::Draw3D()
     for (auto& g : gates_) {
         g.Draw();
     }
+
+    goalSys_.Draw();
 
     if (drawWallDebug_) {
         wallSys_.DrawDebug();
@@ -520,544 +592,8 @@ void GamePlayScene::Finalize()
     delete camera_;
     camera_ = nullptr;
 
+    goalSys_.Finalize();
+
     SoundManager::GetInstance()->SoundUnload(&bgm);
 }
 
-void GamePlayScene::AddGate()
-{
-
-    // ================================
-// Gate Editor (Add/Remove/Reorder)
-// ================================
-    ImGui::Begin("Gate Editor");
-
-    static int editGate = 0;
-    const int gateCount = (int)gates_.size();
-
-    if (gateCount == 0) {
-        ImGui::Text("No gates. Add one!");
-        if (ImGui::Button("Add Gate")) {
-            GateVisual gv;
-            gv.gate.pos = drone_.GetPos();          // いまのドローン付近に置く
-            gv.gate.pos.z += 10.0f;
-            gv.gate.rot = { 0,0,0 };
-            gv.gate.perfectRadius = 1.0f;
-            gv.gate.gateRadius = 2.5f;
-            gv.gate.thickness = 0.8f;
-            gv.Initialize(Object3dManager::GetInstance(), "cube.obj", camera_);
-            gates_.push_back(std::move(gv));
-            editGate = 0;
-            nextGate_ = 0;
-        }
-        ImGui::End();
-        return; // gateCount==0 の時はここで終わり（下のUIが参照できないため）
-    }
-
-    // 範囲外にならないように
-    editGate = std::clamp(editGate, 0, gateCount - 1);
-
-    ImGui::Text("Gates: %d", gateCount);
-    ImGui::SliderInt("Edit Gate Index", &editGate, 0, gateCount - 1);
-
-    ImGui::Separator();
-
-    // ---- Add / Duplicate / Remove ----
-    if (ImGui::Button("Add Gate (End)")) {
-        GateVisual gv;
-        gv.gate.pos = drone_.GetPos();
-        gv.gate.pos.z += 10.0f;
-        gv.gate.rot = { 0,0,0 };
-        gv.gate.perfectRadius = 1.0f;
-        gv.gate.gateRadius = 2.5f;
-        gv.gate.thickness = 0.8f;
-        gv.Initialize(Object3dManager::GetInstance(), "cube.obj", camera_);
-        gates_.push_back(std::move(gv));
-        editGate = (int)gates_.size() - 1;
-    }
-
-    ImGui::SameLine();
-
-    if (ImGui::Button("Duplicate")) {
-        // Gateデータだけコピーして、Visualは新規初期化
-        Gate copy = gates_[editGate].gate;
-
-        GateVisual gv;
-        gv.gate = copy;
-        gv.gate.pos.z += 3.0f; // 少しずらす（重なり防止）
-        gv.Initialize(Object3dManager::GetInstance(), "cube.obj", camera_);
-        gates_.insert(gates_.begin() + (editGate + 1), std::move(gv));
-        editGate++;
-        // nextGate_は「順番」なので、基本はそのまま（必要なら後で調整）
-    }
-
-    ImGui::SameLine();
-
-    if (ImGui::Button("Remove")) {
-        gates_.erase(gates_.begin() + editGate);
-
-        // index補正
-        if (editGate >= (int)gates_.size()) editGate = (int)gates_.size() - 1;
-        if (editGate < 0) editGate = 0;
-
-        // nextGate_補正（消した位置より後なら詰まる）
-        if (nextGate_ > editGate) nextGate_--;
-        nextGate_ = std::clamp(nextGate_, 0, (int)gates_.size());
-    }
-
-    ImGui::Separator();
-
-    // ---- Reorder ----
-    bool canUp = (editGate > 0);
-    bool canDown = (editGate < (int)gates_.size() - 1);
-
-    if (!canUp) ImGui::BeginDisabled();
-    if (ImGui::Button("Up")) {
-        std::swap(gates_[editGate], gates_[editGate - 1]);
-        // nextGate_ がこの2つを指してた場合は追従させる
-        if (nextGate_ == editGate) nextGate_ = editGate - 1;
-        else if (nextGate_ == editGate - 1) nextGate_ = editGate;
-        editGate--;
-    }
-    if (!canUp) ImGui::EndDisabled();
-
-    ImGui::SameLine();
-
-    if (!canDown) ImGui::BeginDisabled();
-    if (ImGui::Button("Down")) {
-        std::swap(gates_[editGate], gates_[editGate + 1]);
-        if (nextGate_ == editGate) nextGate_ = editGate + 1;
-        else if (nextGate_ == editGate + 1) nextGate_ = editGate;
-        editGate++;
-    }
-    if (!canDown) ImGui::EndDisabled();
-
-    ImGui::Separator();
-
-    // ---- Parameter edit ----
-    Gate& g = gates_[editGate].gate;
-
-    // ================================
-// Mouse Place (Plane Y=0)
-// ================================
-    static bool placeMode = false;
-    ImGui::Separator();
-    ImGui::Checkbox("Mouse Place Mode (Y=0 Plane)", &placeMode);
-    ImGui::Text("LClick: place selected gate on ground (y=0)");
-    ImGui::Text("Selected Gate = %d", editGate);
-
-    if (placeMode) {
-
-        // ImGuiの上をクリックしてる時は無視（UI操作と衝突しない）
-        if (!ImGui::GetIO().WantCaptureMouse) {
-
-            // 左クリックで配置
-            if (Input::GetInstance()->IsMouseTrigger(0)) {
-
-                POINT mp = Input::GetInstance()->GetMousePos();
-
-                const float W = (float)WinApp::kClientWidth;
-                const float H = (float)WinApp::kClientHeight;
-
-                const Matrix4x4& vp = camera_->GetViewProjectionMatrix();
-
-                Vector3 hit{};
-                if (ScreenRayToPlaneY0_RowVector(mp.x, mp.y, W, H, vp, hit)) {
-                    // ★ここで「選択中ゲート」を地面に置く
-                    gates_[editGate].gate.pos = hit;
-
-                    // 置いた瞬間が分かりやすいようにちょいログ（任意）
-                    // ImGui::Text("Placed at %.2f %.2f %.2f", hit.x, hit.y, hit.z);
-                }
-            }
-        }
-    }
-
-
-    ImGui::Text("Transform");
-    ImGui::DragFloat3("Position", &g.pos.x, 0.1f);
-    ImGui::DragFloat3("Rotation (rad)", &g.rot.x, 0.05f);
-
-    ImGui::Text("Gate Params");
-    ImGui::DragFloat("Perfect Radius", &g.perfectRadius, 0.05f, 0.1f, g.gateRadius);
-    ImGui::DragFloat("Gate Radius", &g.gateRadius, 0.05f, g.perfectRadius, 50.0f);
-    ImGui::DragFloat("Thickness", &g.thickness, 0.05f, 0.05f, 10.0f);
-
-    ImGui::Separator();
-    ImGui::Text("NextGate = %d", nextGate_);
-    if (ImGui::Button("Set NextGate = Edit")) {
-        nextGate_ = editGate;
-    }
-    ImGui::SameLine();
-    if (ImGui::Button("Reset NextGate")) {
-        nextGate_ = 0;
-        perfectCount_ = 0;
-        goodCount_ = 0;
-    }
-
-    if (ImGui::Button("Add Gate (After)")) {
-        GateVisual gv;
-
-        const int insertIndex = editGate + 1;
-
-        // 今のゲートをベースにする
-        gv.gate = gates_[editGate].gate;
-
-        // 少し前にずらす（重なり防止）※回転しててもとりあえずZでOK
-        gv.gate.pos.z += 3.0f;
-
-        gv.Initialize(Object3dManager::GetInstance(), "cube.obj", camera_);
-
-        gates_.insert(gates_.begin() + insertIndex, std::move(gv));
-
-        // nextGate_補正：挿入位置より後ろを指してたら1つずらす
-        if (nextGate_ >= insertIndex) {
-            nextGate_++;
-        }
-
-        editGate = insertIndex; // 追加したゲートを選択状態に
-    }
-
-    ImGui::End();
-
-}
-
-void GamePlayScene::EditWallsImGui()
-{
-    ImGui::Begin("Wall Editor");
-
-    auto& walls = wallSys_.Walls();
-    static int editWall = 0;
-
-    const int wallCount = (int)walls.size();
-    ImGui::Text("Walls: %d", wallCount);
-
-    if (wallCount == 0) {
-        ImGui::Text("No walls. Add one!");
-        if (ImGui::Button("Add AABB Wall")) {
-            WallSystem::Wall w;
-            w.type = WallSystem::Type::AABB;
-            w.center = drone_.GetPos();
-            w.center.y = 2.0f;
-            w.center.z += 8.0f;
-            w.half = { 2.0f, 2.0f, 0.5f };
-            walls.push_back(w);
-        }
-        ImGui::SameLine();
-        if (ImGui::Button("Add OBB Wall")) {
-            WallSystem::Wall w;
-            w.type = WallSystem::Type::OBB;
-            w.center = drone_.GetPos();
-            w.center.y = 2.0f;
-            w.center.z += 8.0f;
-            w.half = { 2.0f, 2.0f, 0.5f };
-            w.rot = { 0,0,0 };
-            walls.push_back(w);
-        }
-        ImGui::End();
-        return;
-    }
-
-    editWall = std::clamp(editWall, 0, wallCount - 1);
-    ImGui::SliderInt("Edit Wall Index", &editWall, 0, wallCount - 1);
-
-    ImGui::Separator();
-
-    // -------------------------
-    // Add / Duplicate / Remove
-    // -------------------------
-    if (ImGui::Button("Add AABB (End)")) {
-        WallSystem::Wall w;
-        w.type = WallSystem::Type::AABB;
-        w.center = drone_.GetPos(); w.center.y = 2.0f; w.center.z += 8.0f;
-        w.half = { 2.0f, 2.0f, 0.5f };
-        walls.push_back(w);
-        editWall = (int)walls.size() - 1;
-
-        wallSys_.BuildDebug(Object3dManager::GetInstance(), "cube.obj");
-
-    }
-    ImGui::SameLine();
-    if (ImGui::Button("Add OBB (End)")) {
-        WallSystem::Wall w;
-        w.type = WallSystem::Type::OBB;
-        w.center = drone_.GetPos(); w.center.y = 2.0f; w.center.z += 8.0f;
-        w.half = { 2.0f, 2.0f, 0.5f };
-        w.rot = { 0,0,0 };
-        walls.push_back(w);
-        editWall = (int)walls.size() - 1;
-
-        wallSys_.BuildDebug(Object3dManager::GetInstance(), "cube.obj");
-
-    }
-
-    ImGui::SameLine();
-
-    if (ImGui::Button("Duplicate")) {
-        WallSystem::Wall copy = walls[editWall];
-        copy.center.z += 2.0f; // 少しずらす
-        walls.insert(walls.begin() + (editWall + 1), copy);
-        editWall++;
-
-        wallSys_.BuildDebug(Object3dManager::GetInstance(), "cube.obj");
-
-    }
-
-    ImGui::SameLine();
-
-    if (ImGui::Button("Remove")) {
-        walls.erase(walls.begin() + editWall);
-        if (walls.empty()) { editWall = 0; ImGui::End(); return; }
-        editWall = std::clamp(editWall, 0, (int)walls.size() - 1);
-
-        wallSys_.BuildDebug(Object3dManager::GetInstance(), "cube.obj");
-
-    }
-
-    ImGui::Separator();
-
-    // -------------------------
-    // Reorder
-    // -------------------------
-    bool canUp = (editWall > 0);
-    bool canDown = (editWall < (int)walls.size() - 1);
-
-    if (!canUp) ImGui::BeginDisabled();
-    if (ImGui::Button("Up")) { std::swap(walls[editWall], walls[editWall - 1]); editWall--; }
-    if (!canUp) ImGui::EndDisabled();
-
-    ImGui::SameLine();
-
-    if (!canDown) ImGui::BeginDisabled();
-    if (ImGui::Button("Down")) { std::swap(walls[editWall], walls[editWall + 1]); editWall++; }
-    if (!canDown) ImGui::EndDisabled();
-
-    ImGui::Separator();
-
-    // -------------------------
-    // Edit params
-    // -------------------------
-    WallSystem::Wall& w = walls[editWall];
-
-    int typeInt = (w.type == WallSystem::Type::AABB) ? 0 : 1;
-    if (ImGui::RadioButton("AABB", typeInt == 0)) typeInt = 0;
-    ImGui::SameLine();
-    if (ImGui::RadioButton("OBB", typeInt == 1)) typeInt = 1;
-    w.type = (typeInt == 0) ? WallSystem::Type::AABB : WallSystem::Type::OBB;
-
-    // マウス配置（y=0平面）
-    static bool placeMode = false;
-    ImGui::Checkbox("Mouse Place Mode (Y=0 Plane)", &placeMode);
-    ImGui::Text("LClick: place selected wall center on ground (y=0)");
-
-    static bool autoAddOnPlace = true;
-    ImGui::Checkbox("Auto Add Next On Place", &autoAddOnPlace);
-    ImGui::SameLine();
-    static float autoAddZStep = 2.0f;
-    ImGui::DragFloat("Z Step", &autoAddZStep, 0.1f, 0.0f, 50.0f);
-
-
-    if (placeMode) {
-        if (!ImGui::GetIO().WantCaptureMouse) {
-            if (Input::GetInstance()->IsMouseTrigger(0)) {
-                POINT mp = Input::GetInstance()->GetMousePos();
-                const float W = (float)WinApp::kClientWidth;
-                const float H = (float)WinApp::kClientHeight;
-                const Matrix4x4& vp = camera_->GetViewProjectionMatrix();
-
-                Vector3 hit{};
-                if (ScreenRayToPlaneY0_RowVector(mp.x, mp.y, W, H, vp, hit)) {
-
-                    // 1) 選択中を配置
-                    w.center = hit;
-
-                    // 2) 置いたら次を自動追加
-                    if (autoAddOnPlace) {
-                        WallSystem::Wall next = w;       // 型・half・rot を引き継ぐ
-                        next.center.z += autoAddZStep;   // ちょい前にずらす（重なり防止）
-
-                        walls.insert(walls.begin() + (editWall + 1), next);
-                        editWall++; // 追加した壁を次の編集対象にする
-
-                        wallSys_.BuildDebug(Object3dManager::GetInstance(), "cube.obj");
-
-                    }
-                }
-
-            }
-        }
-    }
-
-    ImGui::Separator();
-    ImGui::Text("Transform");
-    ImGui::DragFloat3("Center", &w.center.x, 0.1f);
-
-    // ★壁は half が当たり判定そのもの
-    ImGui::DragFloat3("Half Size", &w.half.x, 0.1f, 0.05f, 100.0f);
-
-    if (w.type == WallSystem::Type::OBB) {
-        ImGui::DragFloat3("Rotation (rad)", &w.rot.x, 0.02f);
-    } else {
-        // AABBにした瞬間回転を無効化したいなら
-        w.rot = { 0,0,0 };
-    }
-
-    ImGui::End();
-
-    wallSys_.SetSelectedIndex(editWall);
-
-    // 変更後はデバッグ表示更新
-    // ※あなたは Update()の最後で wallSys_.UpdateDebug() してるので、
-    //   ここで呼ばなくても良い。確実にしたいなら呼んでもOK。
-}
-
-
-bool GamePlayScene::SaveStageJson(const std::string& fileName)
-{
-    // fileName: "stage01.json" みたいに ImGui で入力したやつ
-    // 保存先：resources/stage/
-    const std::string path = "resources/stage/" + fileName;
-
-    json root;
-    root["version"] = 1;
-
-    // ---- drone spawn ----
-    root["drone"]["spawnPos"] = ToJsonVec3(drone_.GetPos());
-    root["drone"]["spawnYaw"] = drone_.GetYaw();
-
-    // ---- gates ----
-    {
-        json arr = json::array();
-        for (const auto& gv : gates_) {
-            const Gate& g = gv.gate;
-            json j;
-            j["pos"] = ToJsonVec3(g.pos);
-            j["rot"] = ToJsonVec3(g.rot);
-            j["scale"] = ToJsonVec3(g.scale);
-            j["perfectRadius"] = g.perfectRadius;
-            j["gateRadius"] = g.gateRadius;
-            j["thickness"] = g.thickness;
-            arr.push_back(j);
-        }
-        root["gates"] = arr;
-    }
-
-    // ---- walls ----
-    {
-        json arr = json::array();
-        for (const auto& w : wallSys_.Walls()) {
-            json j;
-            j["type"] = (w.type == WallSystem::Type::AABB) ? "AABB" : "OBB";
-            j["center"] = ToJsonVec3(w.center);
-            j["half"] = ToJsonVec3(w.half);
-            j["rot"] = ToJsonVec3(w.rot); // AABBでも入れてOK（0,0,0）
-            arr.push_back(j);
-        }
-        root["walls"] = arr;
-    }
-
-    std::ofstream ofs(path);
-    if (!ofs.is_open()) return false;
-
-    ofs << root.dump(2); // 2=見やすいインデント
-    return true;
-}
-
-bool GamePlayScene::LoadStageJson(const std::string& fileName)
-{
-    const std::string path = "resources/stage/" + fileName;
-
-    std::ifstream ifs(path);
-    if (!ifs.is_open()) return false;
-
-    json root;
-    ifs >> root;
-
-    // ---- drone spawn ----
-    if (root.contains("drone")) {
-        const auto& d = root["drone"];
-        if (d.contains("spawnPos")) {
-            drone_.SetPos(FromJsonVec3(d["spawnPos"]));
-        }
-        if (d.contains("spawnYaw")) {
-            // yaw_ 直接代入の setter がないなら SetYaw を用意するのがベスト
-            // とりあえず Drone に SetYaw(float) を追加してね
-            drone_.SetYaw(d["spawnYaw"].get<float>());
-        }
-        // 速度リセット（ロード直後に暴れないため）
-        drone_.SetVel({ 0,0,0 });
-    }
-
-    // ---- gates ----
-    gates_.clear();
-    if (root.contains("gates")) {
-        for (const auto& j : root["gates"]) {
-            GateVisual gv;
-            gv.gate.pos = FromJsonVec3(j.at("pos"));
-            gv.gate.rot = FromJsonVec3(j.at("rot"));
-            gv.gate.scale = FromJsonVec3(j.at("scale"));
-            gv.gate.perfectRadius = j.at("perfectRadius").get<float>();
-            gv.gate.gateRadius = j.at("gateRadius").get<float>();
-            gv.gate.thickness = j.at("thickness").get<float>();
-
-            // ★Visualはロード時に再生成
-            gv.Initialize(Object3dManager::GetInstance(), "cube.obj", camera_);
-            gates_.push_back(std::move(gv));
-        }
-    }
-
-    // ---- walls ----
-    wallSys_.Walls().clear();
-    if (root.contains("walls")) {
-        for (const auto& j : root["walls"]) {
-            WallSystem::Wall w;
-            const std::string type = j.at("type").get<std::string>();
-            w.type = (type == "OBB") ? WallSystem::Type::OBB : WallSystem::Type::AABB;
-            w.center = FromJsonVec3(j.at("center"));
-            w.half = FromJsonVec3(j.at("half"));
-            w.rot = FromJsonVec3(j.at("rot"));
-            wallSys_.Walls().push_back(w);
-        }
-    }
-
-    // 状態リセット（ゲーム進行用）
-    nextGate_ = 0;
-    perfectCount_ = 0;
-    goodCount_ = 0;
-
-    // デバッグ表示は walls_ 個数が変わるので更新が必要
-    // あなたの BuildDebug は dirtyDebug_ を立てて再生成する設計なので
-    // ここで dirtyDebug_ を立てたいが private なので、手っ取り早いのは BuildDebug 呼び直し
-    wallSys_.BuildDebug(Object3dManager::GetInstance(), "cube.obj");
-
-    return true;
-}
-
-void GamePlayScene::StageIOImGui()
-{
-    ImGui::Begin("Stage IO");
-
-    static char fileName[128] = "stage01.json";
-    ImGui::InputText("File", fileName, IM_ARRAYSIZE(fileName));
-
-    // 拡張子付け忘れ防止（任意）
-    bool hasJson = (std::string(fileName).find(".json") != std::string::npos);
-    if (!hasJson) {
-        ImGui::TextColored(ImVec4(1, 0.7f, 0.2f, 1), "Tip: add .json");
-    }
-
-    if (ImGui::Button("Save")) {
-        const bool ok = SaveStageJson(fileName);
-        ImGui::SameLine();
-        ImGui::Text(ok ? "Saved." : "Save FAILED.");
-    }
-
-    ImGui::SameLine();
-
-    if (ImGui::Button("Load")) {
-        const bool ok = LoadStageJson(fileName);
-        ImGui::SameLine();
-        ImGui::Text(ok ? "Loaded." : "Load FAILED.");
-    }
-
-    ImGui::End();
-}

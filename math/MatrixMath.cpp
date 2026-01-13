@@ -222,4 +222,31 @@ Matrix4x4 MatrixMath::Transpose(const Matrix4x4& m)
     return result;
 }
 
+static float Dot3(const Vector3& a, const Vector3& b) {
+    return a.x * b.x + a.y * b.y + a.z * b.z;
+}
+static Vector3 Cross3(const Vector3& a, const Vector3& b) {
+    return { a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x };
+}
+
+Matrix4x4 MatrixMath::MakeLookAtMatrix(const Vector3& eye, const Vector3& target, const Vector3& up)
+{
+    // LH想定：前方向 = target - eye
+    Vector3 z = { target.x - eye.x, target.y - eye.y, target.z - eye.z };
+    z = Normalize(z);
+
+    Vector3 x = Cross3(up, z);
+    x = Normalize(x);
+
+    Vector3 y = Cross3(z, x);
+
+    Matrix4x4 m = MakeIdentity4x4();
+
+    // row-vector形式：平行移動は最下段
+    m.m[0][0] = x.x; m.m[1][0] = x.y; m.m[2][0] = x.z; m.m[3][0] = -Dot3(x, eye);
+    m.m[0][1] = y.x; m.m[1][1] = y.y; m.m[2][1] = y.z; m.m[3][1] = -Dot3(y, eye);
+    m.m[0][2] = z.x; m.m[1][2] = z.y; m.m[2][2] = z.z; m.m[3][2] = -Dot3(z, eye);
+
+    return m;
+}
 #pragma endregion
