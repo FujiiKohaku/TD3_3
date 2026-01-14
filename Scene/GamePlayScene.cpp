@@ -491,37 +491,6 @@ void GamePlayScene::Update()
 
     ImGui::End();
 
-//    // ================================
-//// Goal Editor
-//// ================================
-//    ImGui::Begin("Goal Editor");
-//
-//    static bool preview = false;
-//    static bool prevPreview = false;
-//
-//    ImGui::Checkbox("Preview (ForceSpawn)", &preview);
-//
-//    if (preview && !prevPreview) {
-//        goalSys_.ForceSpawn(nullptr);
-//    }
-//    if (!preview && prevPreview) {
-//        goalSys_.ClearForceSpawn();
-//    }
-//    prevPreview = preview;
-//
-//
-//    Vector3 gp = goalSys_.GetGoalPos();
-//    if (ImGui::DragFloat3("Goal Pos", &gp.x, 0.1f)) {
-//        goalSys_.SetGoalPos(gp);
-//    }
-//
-//    static float a = 0.25f;
-//    if (ImGui::SliderFloat("Goal Alpha", &a, 0.0f, 1.0f)) {
-//        goalSys_.SetGoalAlpha(a);
-//    }
-//
-//    ImGui::End();
-
     // 反映
     sphere_->SetEnableLighting(sphereLighting);
     sphere_->SetTranslate(spherePos);

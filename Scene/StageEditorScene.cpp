@@ -153,6 +153,17 @@ void StageEditorScene::Initialize()
     camera_->SetRotate({ camPitch_, camYaw_, 0.0f });
     camera_->Update();
 
+    goalAlpha_ = 0.25f;
+    goalSys_.SetGoalAlpha(goalAlpha_);
+
+    modeHud_ = new Sprite();
+    modeHud_->Initialize(SpriteManager::GetInstance(), "resources/uvChecker.png"); // 何でもOK
+    modeHud_->SetPosition({ 12.0f, 12.0f });
+    modeHud_->SetSize({ 24.0f, 24.0f });
+    modeHud_->SetColor({ 1,1,1,1 });
+    modeHud_->Update();
+
+
 }
 
 void StageEditorScene::Finalize()
@@ -166,6 +177,9 @@ void StageEditorScene::Finalize()
 
     delete camera_;
     camera_ = nullptr;
+
+    delete modeHud_;
+    modeHud_ = nullptr;
 
     goalSys_.Finalize();
 
@@ -211,16 +225,34 @@ void StageEditorScene::Update()
     for (auto& g : gates_) g.Tick(dt);
 
     // --- Editor UI ---
-    AddGate();
+  /*  AddGate();
     EditWallsImGui();
     StageIOImGui();
-    GoalEditorImGui();
+    GoalEditorImGui();*/
+
+    UpdateEditorInput(dt);
+
 
     // デバッグ更新
     if (drawWallDebug_) wallSys_.UpdateDebug();
 }
 
-void StageEditorScene::Draw2D() {}
+void StageEditorScene::Draw2D()
+{
+    SpriteManager::GetInstance()->PreDraw();
+
+    if (!modeHud_) return;
+
+    Vector4 col =
+        (editMode_ == EditMode::Gate) ? Vector4{ 1,0,0,1 } :
+        (editMode_ == EditMode::Wall) ? Vector4{ 0,1,0,1 } :
+        Vector4{ 0,0,1,1 };
+
+    modeHud_->SetColor(col);
+    modeHud_->Update();
+    modeHud_->Draw();
+}
+
 void StageEditorScene::Draw3D()
 {
     Object3dManager::GetInstance()->PreDraw();
@@ -815,4 +847,200 @@ void StageEditorScene::GoalEditorImGui()
     }
 
     ImGui::End();
+}
+
+void StageEditorScene::UpdateEditorInput(float dt)
+{
+    Input& input = *Input::GetInstance();
+
+    // モード切替（1/2/3）
+    if (input.IsKeyTrigger(DIK_1)) editMode_ = EditMode::Gate;
+    if (input.IsKeyTrigger(DIK_2)) editMode_ = EditMode::Wall;
+    if (input.IsKeyTrigger(DIK_3)) editMode_ = EditMode::Goal;
+
+    const bool fast = input.IsKeyPressed(DIK_LSHIFT);
+    const float mv = moveStep_ * (fast ? 5.0f : 1.0f);
+    const float rv = rotStep_ * (fast ? 5.0f : 1.0f);
+    const float sv = sizeStep_ * (fast ? 5.0f : 1.0f);
+
+    // クリック配置（Y=0平面）
+    auto PlaceByMouse = [&](Vector3& inoutPos)
+        {
+            if (input.IsMouseTrigger(0)) {
+                POINT mp = input.GetMousePos();
+                const float W = (float)WinApp::kClientWidth;
+                const float H = (float)WinApp::kClientHeight;
+                const Matrix4x4& vp = camera_->GetViewProjectionMatrix();
+                Vector3 hit{};
+                if (ScreenRayToPlaneY0_RowVector(mp.x, mp.y, W, H, vp, hit)) {
+                    inoutPos = hit;
+                }
+            }
+        };
+
+    // 保存/ロード（F5/F9）
+    if (input.IsKeyTrigger(DIK_F5)) SaveStageJson(stageFile_);
+    if (input.IsKeyTrigger(DIK_F9)) LoadStageJson(stageFile_);
+
+    // ========== Gate編集 ==========
+    if (editMode_ == EditMode::Gate)
+    {
+        if (!gates_.empty()) {
+            selectedGate_ = std::clamp(selectedGate_, 0, (int)gates_.size() - 1);
+
+            // 選択（[ / ]）
+            if (input.IsKeyTrigger(DIK_LBRACKET)) selectedGate_ = std::max<float>(0, selectedGate_ - 1);
+            if (input.IsKeyTrigger(DIK_RBRACKET)) selectedGate_ = std::min<float>((int)gates_.size() - 1, selectedGate_ + 1);
+
+            Gate& g = gates_[selectedGate_].gate;
+
+            // 追加（N）/複製（C）/削除（Delete）
+            if (input.IsKeyTrigger(DIK_N)) {
+                GateVisual gv;
+                gv.gate = g;                 // 現在のをベース
+                gv.gate.pos.z += 3.0f;
+                gv.Initialize(Object3dManager::GetInstance(), "cube.obj", camera_);
+                gates_.insert(gates_.begin() + (selectedGate_ + 1), std::move(gv));
+                selectedGate_++;
+            }
+            if (input.IsKeyTrigger(DIK_C)) {
+                GateVisual gv;
+                gv.gate = g;
+                gv.gate.pos.z += 3.0f;
+                gv.Initialize(Object3dManager::GetInstance(), "cube.obj", camera_);
+                gates_.insert(gates_.begin() + (selectedGate_ + 1), std::move(gv));
+                selectedGate_++;
+            }
+            if (input.IsKeyTrigger(DIK_DELETE)) {
+                gates_.erase(gates_.begin() + selectedGate_);
+                if (!gates_.empty())
+                    selectedGate_ = std::clamp(selectedGate_, 0, (int)gates_.size() - 1);
+            }
+
+            // マウス配置（Pでトグルでもいいけど、まずは常時でもOK）
+            if (input.IsKeyPressed(DIK_P)) {
+                PlaceByMouse(g.pos);
+            }
+
+            // 移動（矢印 + PageUp/PageDown）
+            if (input.IsKeyPressed(DIK_UP))    g.pos.z += mv * dt * 60.0f;
+            if (input.IsKeyPressed(DIK_DOWN))  g.pos.z -= mv * dt * 60.0f;
+            if (input.IsKeyPressed(DIK_RIGHT)) g.pos.x += mv * dt * 60.0f;
+            if (input.IsKeyPressed(DIK_LEFT))  g.pos.x -= mv * dt * 60.0f;
+            if (input.IsKeyPressed(DIK_PGUP))  g.pos.y += mv * dt * 60.0f;
+            if (input.IsKeyPressed(DIK_PGDN))  g.pos.y -= mv * dt * 60.0f;
+
+            // 回転（I/K/J/L）
+            if (input.IsKeyPressed(DIK_I)) g.rot.x -= rv * dt * 60.0f;
+            if (input.IsKeyPressed(DIK_K)) g.rot.x += rv * dt * 60.0f;
+            if (input.IsKeyPressed(DIK_J)) g.rot.y -= rv * dt * 60.0f;
+            if (input.IsKeyPressed(DIK_L)) g.rot.y += rv * dt * 60.0f;
+
+            // パラメータ（1/2: perfect, 3/4: gateRadius, 5/6: thickness）
+            if (input.IsKeyPressed(DIK_1)) g.perfectRadius = std::max<float>(0.1f, g.perfectRadius - 0.05f);
+            if (input.IsKeyPressed(DIK_2)) g.perfectRadius = std::min<float>(g.gateRadius, g.perfectRadius + 0.05f);
+
+            if (input.IsKeyPressed(DIK_3)) g.gateRadius = std::max<float>(g.perfectRadius, g.gateRadius - 0.05f);
+            if (input.IsKeyPressed(DIK_4)) g.gateRadius = g.gateRadius + 0.05f;
+
+            if (input.IsKeyPressed(DIK_5)) g.thickness = std::max<float>(0.05f, g.thickness - 0.05f);
+            if (input.IsKeyPressed(DIK_6)) g.thickness = g.thickness + 0.05f;
+        }
+    }
+
+    // ========== Wall編集 ==========
+    if (editMode_ == EditMode::Wall)
+    {
+        auto& walls = wallSys_.Walls();
+        if (!walls.empty()) {
+            selectedWall_ = std::clamp(selectedWall_, 0, (int)walls.size() - 1);
+
+            if (input.IsKeyTrigger(DIK_LBRACKET)) selectedWall_ = std::max<float>(0, selectedWall_ - 1);
+            if (input.IsKeyTrigger(DIK_RBRACKET)) selectedWall_ = std::min<float>((int)walls.size() - 1, selectedWall_ + 1);
+
+            auto& w = walls[selectedWall_];
+
+            // 追加（N）/複製（C）/削除（Delete）
+            if (input.IsKeyTrigger(DIK_N)) {
+                WallSystem::Wall nw = w;
+                nw.center.z += 2.0f;
+                walls.insert(walls.begin() + (selectedWall_ + 1), nw);
+                selectedWall_++;
+                wallSys_.BuildDebug(Object3dManager::GetInstance(), "cube.obj");
+            }
+            if (input.IsKeyTrigger(DIK_C)) {
+                WallSystem::Wall nw = w;
+                nw.center.z += 2.0f;
+                walls.insert(walls.begin() + (selectedWall_ + 1), nw);
+                selectedWall_++;
+                wallSys_.BuildDebug(Object3dManager::GetInstance(), "cube.obj");
+            }
+            if (input.IsKeyTrigger(DIK_DELETE)) {
+                walls.erase(walls.begin() + selectedWall_);
+                if (!walls.empty())
+                    selectedWall_ = std::clamp(selectedWall_, 0, (int)walls.size() - 1);
+                wallSys_.BuildDebug(Object3dManager::GetInstance(), "cube.obj");
+            }
+
+            // タイプ切替（T）
+            if (input.IsKeyTrigger(DIK_T)) {
+                w.type = (w.type == WallSystem::Type::AABB) ? WallSystem::Type::OBB : WallSystem::Type::AABB;
+                wallSys_.BuildDebug(Object3dManager::GetInstance(), "cube.obj");
+            }
+
+            // マウス配置（P押しながら）
+            if (input.IsKeyPressed(DIK_P)) {
+                PlaceByMouse(w.center);
+            }
+
+            // 移動
+            if (input.IsKeyPressed(DIK_UP))    w.center.z += mv * dt * 60.0f;
+            if (input.IsKeyPressed(DIK_DOWN))  w.center.z -= mv * dt * 60.0f;
+            if (input.IsKeyPressed(DIK_RIGHT)) w.center.x += mv * dt * 60.0f;
+            if (input.IsKeyPressed(DIK_LEFT))  w.center.x -= mv * dt * 60.0f;
+            if (input.IsKeyPressed(DIK_PGUP))  w.center.y += mv * dt * 60.0f;
+            if (input.IsKeyPressed(DIK_PGDN))  w.center.y -= mv * dt * 60.0f;
+
+            // サイズ（Z/X変更など：U/OでX、I/KでY、J/LでZ とか）
+            if (input.IsKeyPressed(DIK_U)) w.half.x = std::max<float>(0.05f, w.half.x - sv * dt * 60.0f);
+            if (input.IsKeyPressed(DIK_O)) w.half.x = w.half.x + sv * dt * 60.0f;
+            if (input.IsKeyPressed(DIK_I)) w.half.y = std::max<float>(0.05f, w.half.y - sv * dt * 60.0f);
+            if (input.IsKeyPressed(DIK_K)) w.half.y = w.half.y + sv * dt * 60.0f;
+            if (input.IsKeyPressed(DIK_J)) w.half.z = std::max<float>(0.05f, w.half.z - sv * dt * 60.0f);
+            if (input.IsKeyPressed(DIK_L)) w.half.z = w.half.z + sv * dt * 60.0f;
+
+            // OBB回転（R/F/Y/H など）
+            if (w.type == WallSystem::Type::OBB) {
+                if (input.IsKeyPressed(DIK_R)) w.rot.y -= rv * dt * 60.0f;
+                if (input.IsKeyPressed(DIK_F)) w.rot.y += rv * dt * 60.0f;
+            } else {
+                w.rot = { 0,0,0 };
+            }
+
+            wallSys_.SetSelectedIndex(selectedWall_);
+        }
+    }
+
+    // ========== Goal編集 ==========
+    if (editMode_ == EditMode::Goal)
+    {
+        Vector3 gp = goalSys_.GetGoalPos();
+
+        // 位置操作（例）
+        if (input.IsKeyPressed(DIK_UP))    gp.z += mv * dt * 60.0f;
+        if (input.IsKeyPressed(DIK_DOWN))  gp.z -= mv * dt * 60.0f;
+        if (input.IsKeyPressed(DIK_RIGHT)) gp.x += mv * dt * 60.0f;
+        if (input.IsKeyPressed(DIK_LEFT))  gp.x -= mv * dt * 60.0f;
+        if (input.IsKeyPressed(DIK_PGUP))  gp.y += mv * dt * 60.0f;
+        if (input.IsKeyPressed(DIK_PGDN))  gp.y -= mv * dt * 60.0f;
+
+        goalSys_.SetGoalPos(gp);
+
+        // アルファ操作（- / +）
+        if (input.IsKeyPressed(DIK_MINUS))  goalAlpha_ = std::max<float>(0.0f, goalAlpha_ - 0.01f);
+        if (input.IsKeyPressed(DIK_EQUALS)) goalAlpha_ = std::min<float>(1.0f, goalAlpha_ + 0.01f);
+
+        goalSys_.SetGoalAlpha(goalAlpha_);
+    }
+
 }

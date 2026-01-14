@@ -36,6 +36,8 @@ public:
     void Draw3D() override;
     void DrawImGui() override;
 
+    void UpdateEditorInput(float dt);
+
 private:
     // --- editor runtime ---
     Camera* camera_ = nullptr;
@@ -72,5 +74,25 @@ private:
     Vector3 camPosInit_{ 0.0f, 3.0f, -10.0f };
     float camYawInit_ = 0.0f;
     float camPitchInit_ = 0.0f;
+
+    enum class EditMode { Gate, Wall, Goal };
+
+    EditMode editMode_ = EditMode::Gate;
+    int selectedGate_ = 0;
+    int selectedWall_ = 0;
+
+    // 操作量
+    float moveStep_ = 0.2f;
+    float rotStep_ = 0.05f;
+    float sizeStep_ = 0.1f;
+
+    // 保存/ロード用（最初は固定でもOK）
+    std::string stageFile_ = "stage01.json";
+
+    float goalAlpha_ = 0.25f;
+
+
+    //2D
+    Sprite* modeHud_ = nullptr;
 
 };
