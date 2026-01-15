@@ -47,6 +47,12 @@ public:
     // 強制表示を解除（通常挙動に戻す）
     void ClearForceSpawn();
 
+    // ★エディタ用：常に表示（ゲート未達でも）
+    void SetEditorAlwaysVisible(bool v);
+
+    // ★エディタ用：ハイライト
+    void SetHighlighted(bool v);
+
 private:
     // --- 内部 ---
     void SpawnAt_(const Vector3& pos);
@@ -77,5 +83,11 @@ private:
     //デバッグ用
     bool forceActive_ = false; // ★追加
     float goalAlpha_ = 0.5f;  // ★薄い（デフォルト）
+
+    bool editorAlwaysVisible_ = false;
+    bool highlighted_ = false;
+
+    float normalAlpha_ = 0.25f;  // 非選択
+    float highlightAlpha_ = 0.90f; // 選択中
 
 };

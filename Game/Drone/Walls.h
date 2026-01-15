@@ -303,7 +303,7 @@ public:
 
             // ★ここ：half/scaleの扱いは “見た目” と “当たり判定” が一致するように統一してね
             // いま RebuildDebugIfNeeded_ では *2 してるので、ここも合わせるなら *2 が正しい
-            o->SetScale({ w.half.x * 2.0f, w.half.y * 2.0f, w.half.z * 2.0f });
+            o->SetScale({ w.half.x, w.half.y, w.half.z});
 
             if (w.type == Type::OBB) o->SetRotate(w.rot);
             else                    o->SetRotate({ 0,0,0 });
