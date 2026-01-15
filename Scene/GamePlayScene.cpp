@@ -488,6 +488,36 @@ void GamePlayScene::Update()
         dl->AddText(subPos, IM_COL32(255, 255, 255, 230), sub);
     }
 
+    ImGui::Begin("Gate Debug");
+
+    if (nextGate_ < (int)gates_.size()) {
+        const Gate& g = gates_[nextGate_].gate;
+
+        ImGui::Text("=== Next Gate ===");
+        ImGui::Text("Local Pos : x=%.2f y=%.2f z=%.2f",
+            g.dbgLocalPos.x, g.dbgLocalPos.y, g.dbgLocalPos.z);
+
+        ImGui::Text("PrevZ     : %.2f", g.dbgPrevZ);
+
+        ImGui::Separator();
+
+        ImGui::Text("Crossed   : %s", g.dbgCrossed ? "YES" : "NO");
+        ImGui::Text("Thickness : %s", g.dbgInThickness ? "IN" : "OUT");
+
+        ImGui::Text("Radius    : %.2f", g.dbgRadius);
+        ImGui::Text("Perfect R : %.2f", g.perfectRadius);
+        ImGui::Text("Good R    : %.2f", g.gateRadius);
+
+        if (g.dbgRadius <= g.perfectRadius)
+            ImGui::TextColored(ImVec4(0, 1, 1, 1), "=> PERFECT ZONE");
+        else if (g.dbgRadius <= g.gateRadius)
+            ImGui::TextColored(ImVec4(0, 1, 0, 1), "=> GOOD ZONE");
+        else
+            ImGui::TextColored(ImVec4(1, 0, 0, 1), "=> MISS ZONE");
+    }
+
+    ImGui::End();
+
 
     ImGui::End();
 
