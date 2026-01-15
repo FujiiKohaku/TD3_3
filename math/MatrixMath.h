@@ -19,4 +19,6 @@ public:
     static Matrix4x4 MakeViewportMatrix(float left, float top, float width, float height, float minDepth, float maxDepth);
     static Matrix4x4 Transpose(const Matrix4x4& m);
     static Vector3 Normalize(const Vector3& v);
+    static Matrix4x4 MakeLookAtMatrix(const Vector3& eye, const Vector3& target, const Vector3& up);
+
 };

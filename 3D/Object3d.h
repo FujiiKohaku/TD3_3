@@ -38,6 +38,8 @@ public:
    // DirectionalLight* GetLight() { return directionalLightData; }
     Material* GetMaterial() { return materialData_; }
 
+    void SetColor(const Vector4& c) { materialData_->color = c; }
+
 private:
     // ===============================
     // メンバ変数

@@ -47,43 +47,60 @@ bool Input::Initialize(WinApp* winApp)
     result = mouse_->SetCooperativeLevel(winApp_->GetHwnd(), DISCL_FOREGROUND | DISCL_NONEXCLUSIVE);
     assert(SUCCEEDED(result));
 
+    POINT p{};
+    GetCursorPos(&p);
+    ScreenToClient(winApp_->GetHwnd(), &p);
+    mousePos_ = p;
+    prevMousePos_ = p;
+    mouseDelta_ = { 0,0 };
 
     return true;
 }
 
 void Input::Update()
 {
-    // ★前フレ保存
     memcpy(prevKeys_, keys_, sizeof(keys_));
     prevMouseState_ = mouseState_;
 
     // ---- keyboard ----
-    HRESULT result = keyboard_->Acquire();
-    if (FAILED(result)) {
-        return;
-    }
-    result = keyboard_->GetDeviceState(sizeof(keys_), keys_);
-    if (FAILED(result)) {
-        keyboard_->Acquire();
+    HRESULT hr = keyboard_->Acquire();
+    if (SUCCEEDED(hr)) {
+        hr = keyboard_->GetDeviceState(sizeof(keys_), keys_);
+        if (FAILED(hr)) {
+            keyboard_->Acquire();
+            keyboard_->GetDeviceState(sizeof(keys_), keys_);
+        }
     }
 
     // ---- mouse ----
+    mouseDelta_.x = 0;
+    mouseDelta_.y = 0;
+
     if (mouse_) {
-        result = mouse_->Acquire();
-        if (SUCCEEDED(result)) {
-            result = mouse_->GetDeviceState(sizeof(DIMOUSESTATE), &mouseState_);
-            if (FAILED(result)) {
+        hr = mouse_->Acquire();
+
+        if (SUCCEEDED(hr)) {
+            hr = mouse_->GetDeviceState(sizeof(DIMOUSESTATE), &mouseState_);
+            if (FAILED(hr)) {
+                // ★取り直す（ここが重要）
                 mouse_->Acquire();
+                hr = mouse_->GetDeviceState(sizeof(DIMOUSESTATE), &mouseState_);
+            }
+
+            if (SUCCEEDED(hr)) {
+                mouseDelta_.x = mouseState_.lX;
+                mouseDelta_.y = mouseState_.lY;
             }
         }
     }
 
-    // ---- mouse position (client) ----
+    // 座標は必要なら更新（回転には使わない）
     POINT p{};
     GetCursorPos(&p);
     ScreenToClient(winApp_->GetHwnd(), &p);
     mousePos_ = p;
 }
+
 
 
 bool Input::IsKeyPressed(BYTE keyCode) const
@@ -125,4 +142,9 @@ void Input::Finalize()
 
     delete instance;
     instance = nullptr;
+}
+
+POINT Input::GetMouseDelta() const
+{
+    return mouseDelta_;
 }

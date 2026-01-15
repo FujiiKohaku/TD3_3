@@ -33,12 +33,12 @@ struct GateVisual {
         // Good（外側）
         objGood.SetTranslate(gate.pos);
         objGood.SetRotate(gate.rot);
-        objGood.SetScale({ gate.gateRadius * 2.0f, gate.gateRadius * 2.0f, z });
+        objGood.SetScale({ gate.gateRadius, gate.gateRadius, z });
 
         // Perfect（内側）
         objPerfect.SetTranslate(gate.pos);
         objPerfect.SetRotate(gate.rot);
-        objPerfect.SetScale({ gate.perfectRadius * 2.0f, gate.perfectRadius * 2.0f, z });
+        objPerfect.SetScale({ gate.perfectRadius, gate.perfectRadius, z });
 
         ApplyColor_();
 

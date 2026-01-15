@@ -66,6 +66,11 @@ public:
         return cameraResource_->GetGPUVirtualAddress();
     }
 
+    void SetViewLookAt(const Vector3& eye, const Vector3& target, const Vector3& up);
+    void ClearCustomView();
+    void SetCustomView(const Matrix4x4& v);
+
+
 private:
     struct CameraForGPU {
         Vector3 worldPosition;
