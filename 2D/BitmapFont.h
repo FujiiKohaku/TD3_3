@@ -1,102 +1,102 @@
-#pragma once
+ï»¿#pragma once
 #include <string>
+#include <vector>
 #include <memory>
 #include "Sprite.h"
 #include "SpriteManager.h"
 
-// 1–‡‚ÌƒtƒHƒ“ƒg‰æ‘œiƒOƒŠƒbƒhj‚©‚ç•¶š‚ğ•À‚×‚Ä•`‰æ‚·‚é
 class BitmapFont {
 public:
-    // cols, rows: ƒOƒŠƒbƒh•ªŠ„”
-    // cellW, cellH: 1•¶šƒZƒ‹‚ÌƒsƒNƒZƒ‹ƒTƒCƒY
-    // firstChar: ƒtƒHƒ“ƒg‰æ‘œ‚Ì¶ã‚ª‰½”Ô‚Ì•¶š‚©iASCII‚È‚ç32‚ª‘½‚¢j
     void Initialize(SpriteManager* sm,
-        const std::string& fontTexturePath,
-        int cols, int rows,
-        int cellW, int cellH,
+        const std::string& texPath,
+        int cols = 16, int rows = 6,
+        int cellW = 32, int cellH = 32,
         int firstChar = 32)
     {
         sm_ = sm;
-        texPath_ = fontTexturePath;
-        cols_ = cols;
-        rows_ = rows;
-        cellW_ = cellW;
-        cellH_ = cellH;
+        texPath_ = texPath;
+        cols_ = cols; rows_ = rows;
+        cellW_ = cellW; cellH_ = cellH;
         firstChar_ = firstChar;
 
-        spr_ = std::make_unique<Sprite>();
-        spr_->Initialize(sm_, texPath_);
-        spr_->SetColor({ 1,1,1,1 });
-        spr_->SetAnchorPoint({ 0,0 });  // ¶ã‹N“_‚Å’u‚«‚½‚¢‚Ì‚Å
-        spr_->SetTextureSize({ (float)cellW_, (float)cellH_ });
-        spr_->SetSize({ (float)cellW_, (float)cellH_ });
-        spr_->Update();
+        // æœ€åˆã¯å°‘ã—ç¢ºä¿ï¼ˆå¿…è¦ã«å¿œã˜ã¦å¢—ãˆã‚‹ï¼‰
+        EnsureCapacity_(64);
+        SetColor({ 1,1,1,1 });
     }
 
-    // scale: •¶š‚ÌŠg‘å—¦
-    // spacing: •¶šŠÔ‚Ì’Ç‰ÁƒsƒNƒZƒ‹
-    void DrawString(float x, float y, const std::string& text,
-        float scale = 1.0f, float spacing = 0.0f)
+    void SetColor(const Vector4& c) {
+        color_ = c;
+        for (auto& s : sprites_) {
+            if (s) s->SetColor(c);
+        }
+    }
+
+    void DrawString(float x, float y, const std::string& text, float scale = 1.0f)
     {
-        if (!spr_) return;
+        EnsureCapacity_(used_ + (int)text.size()); // ã–ã£ãã‚Šå¤šã‚ã«ç¢ºä¿
 
-        float penX = x;
-        float penY = y;
+        float penX = x, penY = y;
+        const float drawW = (float)cellW_ * scale;
+        const float drawH = (float)cellH_ * scale;
 
-        const float drawW = cellW_ * scale;
-        const float drawH = cellH_ * scale;
+        for (unsigned char uc : text)
+        {
+            if (uc == '\n') { penX = x; penY += drawH; continue; }
+            if (uc == '\t') { penX += drawW * 4.0f; continue; }
+            if (uc == ' ') { penX += drawW; continue; }
 
-        spr_->SetSize({ drawW, drawH });
-        spr_->SetTextureSize({ (float)cellW_, (float)cellH_ });
-
-        for (unsigned char uc : text) {
-
-            if (uc == '\n') {
-                penX = x;
-                penY += drawH;
-                continue;
-            }
-
-            // ”ÍˆÍŠO‚ÍƒXƒLƒbƒvi ‚É‚µ‚½‚¯‚ê‚Î•ÊƒZƒ‹‚ğŠ„‚è“–‚Ä‚Ä‚àOKj
             int index = (int)uc - firstChar_;
-            if (index < 0) {
-                penX += (drawW + spacing);
-                continue;
+            if (index < 0 || index >= cols_ * rows_) {
+                int q = (int)'?' - firstChar_;
+                if (q >= 0 && q < cols_ * rows_) index = q;
+                else { penX += drawW; continue; }
             }
 
             int gx = index % cols_;
             int gy = index / cols_;
-            if (gy >= rows_) { // ƒtƒHƒ“ƒg‰æ‘œ‚É–³‚¢
-                penX += (drawW + spacing);
-                continue;
-            }
 
-            // ƒtƒHƒ“ƒg‰æ‘œ“à‚ÌØ‚èo‚µ¶ãiƒsƒNƒZƒ‹j
-            Vector2 leftTop{
-                (float)(gx * cellW_),
-                (float)(gy * cellH_)
-            };
+            Sprite* sp = sprites_[used_].get();
+            used_++;
 
-            spr_->SetTextureLeftTop(leftTop);
-            spr_->SetPosition({ penX, penY });
-            spr_->Update();
-            spr_->Draw();
+            sp->SetColor(color_);
+            sp->SetPosition({ penX, penY });
+            sp->SetSize({ drawW, drawH });
+            sp->SetTextureLeftTop({ (float)(gx * cellW_), (float)(gy * cellH_) });
+            sp->SetTextureSize({ (float)cellW_, (float)cellH_ });
 
-            penX += (drawW + spacing);
+            sp->Update();
+            sp->Draw();
+
+            penX += drawW;
         }
     }
 
-    void SetColor(const Vector4& c) { if (spr_) spr_->SetColor(c); }
+    void BeginFrame() { used_ = 0; }
+
+private:
+    void EnsureCapacity_(int needed)
+    {
+        if ((int)sprites_.size() >= needed) return;
+
+        int old = (int)sprites_.size();
+        int newCap = std::max<float>(needed, old * 2 + 1);
+        sprites_.resize(newCap);
+
+        for (int i = old; i < newCap; ++i) {
+            sprites_[i] = std::make_unique<Sprite>();
+            sprites_[i]->Initialize(sm_, texPath_);
+        }
+    }
 
 private:
     SpriteManager* sm_ = nullptr;
     std::string texPath_;
-
-    int cols_ = 16;
-    int rows_ = 16;
-    int cellW_ = 16;
-    int cellH_ = 16;
+    int cols_ = 16, rows_ = 6;
+    int cellW_ = 32, cellH_ = 32;
     int firstChar_ = 32;
+    Vector4 color_ = { 1,1,1,1 };
 
-    std::unique_ptr<Sprite> spr_;
+    int used_ = 0;
+
+    std::vector<std::unique_ptr<Sprite>> sprites_;
 };

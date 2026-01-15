@@ -29,6 +29,13 @@ static Vector4 MulRowVec4Mat4(const Vector4& v, const Matrix4x4& m)
     return o;
 }
 
+static std::string Vec3Str(const Vector3& v)
+{
+    char buf[128];
+    std::snprintf(buf, sizeof(buf), "(%.2f, %.2f, %.2f)", v.x, v.y, v.z);
+    return std::string(buf);
+}
+
 static Vector3 TransformCoord_RowVector4(const Vector4& v, const Matrix4x4& m)
 {
     Vector4 o = MulRowVec4Mat4(v, m);
@@ -111,6 +118,36 @@ static bool ScreenRayToPlaneY0_RowVector(
     if (t <= 0.0f) return false;
 
     outHit = { pNear.x + dir.x * t, 0.0f, pNear.z + dir.z * t };
+    return true;
+}
+
+static bool WorldToScreen_RowVector(
+    const Vector3& worldPos,
+    const Matrix4x4& viewProj,
+    float screenW, float screenH,
+    Vector2& outScreen
+)
+{
+    // world -> clip
+    Vector4 clip = MulRowVec4Mat4({ worldPos.x, worldPos.y, worldPos.z, 1.0f }, viewProj);
+
+    // カメラ後ろ（w<=0）は弾く（ここ重要）
+    if (clip.w <= 1e-6f) return false;
+
+    // clip -> ndc
+    const float ndcX = clip.x / clip.w;
+    const float ndcY = clip.y / clip.w;
+    const float ndcZ = clip.z / clip.w; // D3Dなら 0..1 期待
+
+    // 画面外を弾きたいなら
+    if (ndcX < -1.0f || ndcX > 1.0f) return false;
+    if (ndcY < -1.0f || ndcY > 1.0f) return false;
+    if (ndcZ < 0.0f || ndcZ > 1.0f) return false;
+
+    // ndc -> screen
+    outScreen.x = (ndcX * 0.5f + 0.5f) * screenW;
+    outScreen.y = (1.0f - (ndcY * 0.5f + 0.5f)) * screenH; // 上が0
+
     return true;
 }
 
@@ -212,7 +249,18 @@ void StageEditorScene::Initialize()
     modeHud_->SetColor({ 1,1,1,1 });
     modeHud_->Update();
 
- 
+
+    font_.Initialize(SpriteManager::GetInstance(),
+        "resources/ui/ascii_font_16x6_cell32_first32.png",
+        16, 6, 32, 32, 32);
+
+    font_.SetColor({ 1,1,1,1 });
+
+    gateNum.Initialize(SpriteManager::GetInstance(),
+        "resources/ui/ascii_font_16x6_cell32_first32.png",
+        16, 6, 32, 32, 32);
+    
+    gateNum.SetColor({ 1,1,0,1 }); // 見やすい色（好きに）
 
 }
 
@@ -294,6 +342,12 @@ void StageEditorScene::Update()
 
     // デバッグ更新
     if (drawWallDebug_) wallSys_.UpdateDebug();
+
+    if (Input::GetInstance()->IsKeyTrigger(DIK_H)) {
+        showHelp_ = !showHelp_;
+    }
+
+
 }
 
 void StageEditorScene::Draw2D()
@@ -310,6 +364,108 @@ void StageEditorScene::Draw2D()
     modeHud_->SetColor(col);
     modeHud_->Update();
     modeHud_->Draw();
+
+    font_.BeginFrame();
+
+    gateNum.BeginFrame();
+
+    if (showHelp_) {
+
+        font_.SetColor({ 1,1,1,1 });
+
+        // =========================
+        // 左カラム（常時表示）
+        // =========================
+        std::string left =
+            "=== STAGE EDITOR HELP ===\n"
+            "[H] Toggle Help\n"
+            "\n"
+            "Mode:\n"
+            "  [1] Gate\n"
+            "  [2] Wall\n"
+            "  [3] Goal\n"
+            "\n"
+            "Camera:\n"
+            "  RMB Drag : Look\n"
+            "  WASD     : Move\n"
+            "  Q/E      : Down/Up\n"
+            "  LSHIFT   : Fast\n"
+            "  Y        : Reset Camera\n"
+            "\n"
+            "Common:\n"
+            "  LMB Click          : Select\n"
+            "  Hold P + LMB Click : Place (Y=0)\n"
+            "  F5 : Save\n"
+            "  F9 : Load\n";
+
+        font_.DrawString(
+            helpPosLeft_.x,
+            helpPosLeft_.y,
+            left,
+            helpScale_
+        );
+
+        // =========================
+        // 右カラム（モード別）
+        // =========================
+        std::string right;
+
+        if (editMode_ == EditMode::Gate) {
+            right =
+                "[Gate Mode]\n"
+                "  [ / ] : Select Gate\n"
+                "  N : Add\n"
+                "  C : Duplicate\n"
+                "  DEL : Remove\n"
+                "\n"
+                "Move:\n"
+                "  Arrow : XZ\n"
+                "  PgUp/PgDn : Y\n"
+                "\n"
+                "Rotate:\n"
+                "  I/K : RotX\n"
+                "  J/L : RotY\n";
+        } else if (editMode_ == EditMode::Wall) {
+            right =
+                "[Wall Mode]\n"
+                "  [ / ] : Select Wall\n"
+                "  N / C : Add / Duplicate\n"
+                "  DEL   : Remove\n"
+                "  T : AABB <-> OBB\n"
+                "\n"
+                "Move:\n"
+                "  Arrow : XZ\n"
+                "  PgUp/PgDn : Y\n"
+                "\n"
+                "Size:\n"
+                "  U/O : X\n"
+                "  I/K : Y\n"
+                "  J/L : Z\n"
+                "\n"
+                "Rotate (OBB):\n"
+                "  R/F : RotY\n";
+        } else if (editMode_ == EditMode::Goal) {
+            right =
+                "[Goal Mode]\n"
+                "Move:\n"
+                "  Arrow : XZ\n"
+                "  PgUp/PgDn : Y\n"
+                "\n";
+        }
+
+        font_.DrawString(
+            helpPosRight_.x,
+            helpPosRight_.y,
+            right,
+            helpScale_
+        );
+    }
+
+    // ★追加：パラメータHUD（常時でも、showHelp_中だけでもOK）
+    DrawEditorParamHud_();
+
+    DrawGateIndices_();
+
 }
 
 void StageEditorScene::Draw3D()
@@ -818,13 +974,20 @@ void StageEditorScene::UpdateFreeCamera(float dt)
     }
 
     POINT d = input.GetMouseDelta();
+    static bool showMouseDbg = false;
+    if (Input::GetInstance()->IsKeyTrigger(DIK_F1)) {
+        showMouseDbg = !showMouseDbg;
+    }
 
-    ImGui::Begin("Mouse Debug");
-    ImGui::Text("RButton=%d", input.IsMousePressed(1));
-    ImGui::Text("WantCaptureMouse=%d", ImGui::GetIO().WantCaptureMouse ? 1 : 0);
-    ImGui::Text("dx=%ld dy=%ld", d.x, d.y);
-    ImGui::Text("camYaw=%.3f camPitch=%.3f", camYaw_, camPitch_);
-    ImGui::End();
+    if (showMouseDbg) {
+        ImGui::Begin("Mouse Debug");
+        ImGui::Text("RButton=%d", input.IsMousePressed(1));
+        ImGui::Text("WantCaptureMouse=%d", ImGui::GetIO().WantCaptureMouse ? 1 : 0);
+        ImGui::Text("dx=%ld dy=%ld", d.x, d.y);
+        ImGui::Text("camYaw=%.3f camPitch=%.3f", camYaw_, camPitch_);
+        ImGui::End();
+    }
+
 
 
     // =========================
@@ -1037,14 +1200,14 @@ void StageEditorScene::UpdateEditorInput(float dt)
             if (input.IsKeyPressed(DIK_L)) g.rot.y += rv * dt * 60.0f;
 
             // パラメータ（1/2: perfect, 3/4: gateRadius, 5/6: thickness）
-            if (input.IsKeyPressed(DIK_1)) g.perfectRadius = std::max<float>(0.1f, g.perfectRadius - 0.05f);
-            if (input.IsKeyPressed(DIK_2)) g.perfectRadius = std::min<float>(g.gateRadius, g.perfectRadius + 0.05f);
+            if (input.IsKeyPressed(DIK_4)) g.perfectRadius = std::max<float>(0.1f, g.perfectRadius - 0.05f);
+            if (input.IsKeyPressed(DIK_5)) g.perfectRadius = std::min<float>(g.gateRadius, g.perfectRadius + 0.05f);
 
-            if (input.IsKeyPressed(DIK_3)) g.gateRadius = std::max<float>(g.perfectRadius, g.gateRadius - 0.05f);
-            if (input.IsKeyPressed(DIK_4)) g.gateRadius = g.gateRadius + 0.05f;
+            if (input.IsKeyPressed(DIK_6)) g.gateRadius = std::max<float>(g.perfectRadius, g.gateRadius - 0.05f);
+            if (input.IsKeyPressed(DIK_7)) g.gateRadius = g.gateRadius + 0.05f;
 
-            if (input.IsKeyPressed(DIK_5)) g.thickness = std::max<float>(0.05f, g.thickness - 0.05f);
-            if (input.IsKeyPressed(DIK_6)) g.thickness = g.thickness + 0.05f;
+            if (input.IsKeyPressed(DIK_8)) g.thickness = std::max<float>(0.05f, g.thickness - 0.05f);
+            if (input.IsKeyPressed(DIK_9)) g.thickness = g.thickness + 0.05f;
         }
     }
 
@@ -1180,4 +1343,93 @@ void StageEditorScene::UpdateEditorInput(float dt)
         goalSys_.SetGoalAlpha(goalAlpha_);
     }
 
+}
+
+void StageEditorScene::DrawEditorParamHud_()
+{
+    // HUD表示位置（右上寄せなど好きに）
+    const float x = 800.0f;
+    const float y = 360.0f;
+
+    std::string s;
+    s.reserve(1024);
+
+    // 共通情報
+    s += "=== EDITOR PARAMS ===\n";
+    s += "File : " + std::string(stageFile_) + "\n";
+
+    // Mode 表示
+    s += "Mode : ";
+    s += (editMode_ == EditMode::Gate) ? "Gate\n" :
+        (editMode_ == EditMode::Wall) ? "Wall\n" : "Goal\n";
+
+    // 選択状況
+    if (editMode_ == EditMode::Gate) {
+        s += "SelectedGate : " + std::to_string(selectedGate_) + " / " + std::to_string((int)gates_.size()) + "\n";
+        s += "NextGate     : " + std::to_string(nextGate_) + "\n";
+
+        if (!gates_.empty() && 0 <= selectedGate_ && selectedGate_ < (int)gates_.size()) {
+            const Gate& g = gates_[selectedGate_].gate;
+            s += "\n[Gate]\n";
+            s += "pos   : " + Vec3Str(g.pos) + "\n";
+            s += "rot   : " + Vec3Str(g.rot) + " (rad)\n";
+            s += "scale : " + Vec3Str(g.scale) + "\n";
+            s += "perfectRadius : " + std::to_string(g.perfectRadius) + "\n";
+            s += "gateRadius    : " + std::to_string(g.gateRadius) + "\n";
+            s += "thickness     : " + std::to_string(g.thickness) + "\n";
+        }
+    } else if (editMode_ == EditMode::Wall) {
+        auto& walls = wallSys_.Walls();
+        s += "SelectedWall : " + std::to_string(selectedWall_) + " / " + std::to_string((int)walls.size()) + "\n";
+
+        if (!walls.empty() && 0 <= selectedWall_ && selectedWall_ < (int)walls.size()) {
+            const auto& w = walls[selectedWall_];
+            s += "\n[Wall]\n";
+            s += "type  : ";
+            s += (w.type == WallSystem::Type::AABB) ? "AABB\n" : "OBB\n";
+            s += "center: " + Vec3Str(w.center) + "\n";
+            s += "half  : " + Vec3Str(w.half) + "\n";
+            if (w.type == WallSystem::Type::OBB) {
+                s += "rot   : " + Vec3Str(w.rot) + " (rad)\n";
+            }
+        }
+    } else if (editMode_ == EditMode::Goal) {
+        s += "\n[Goal]\n";
+        s += "pos   : " + Vec3Str(goalSys_.GetGoalPos()) + "\n";
+        s += "alpha : " + std::to_string(goalAlpha_) + "\n";
+        s += "cleared : ";
+        s += stageCleared_ ? "YES\n" : "NO\n";
+    }
+
+    // 文字描画
+    font_.SetColor({ 1,1,1,1 });
+    font_.DrawString(x, y, s, 0.5f);
+}
+
+void StageEditorScene::DrawGateIndices_()
+{
+    const float W = (float)WinApp::kClientWidth;
+    const float H = (float)WinApp::kClientHeight;
+    const Matrix4x4& vp = camera_->GetViewProjectionMatrix();
+
+  
+
+    for (int i = 0; i < (int)gates_.size(); ++i) {
+        const Vector3 p = gates_[i].gate.pos;
+
+        // 少し上に出す（ゲート中心に被るのが嫌なら）
+        Vector3 labelPos = p;
+        labelPos.y += 0.0f;
+
+        Vector2 screen{};
+        if (!WorldToScreen_RowVector(labelPos, vp, W, H, screen)) {
+            continue;
+        }
+
+        // 文字列は "0", "1", ...
+        const std::string txt = std::to_string(i);
+
+        // 中央寄せしたいなら少し左にずらす（1文字想定の簡易）
+        gateNum.DrawString(screen.x - 8.0f, screen.y - 8.0f, txt, 0.8f);
+    }
 }

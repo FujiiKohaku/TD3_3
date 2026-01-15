@@ -10,6 +10,7 @@
 #include "Sprite.h"
 #include "SpriteManager.h"
 #include "TextureManager.h"
+#include "BitmapFont.h"
 
 #include "Input.h"
 
@@ -71,6 +72,10 @@ private:
     void StageIOImGui();
     void GoalEditorImGui();
 
+    void DrawEditorParamHud_();
+
+    void DrawGateIndices_();
+
     Vector3 camPosInit_{ 0.0f, 3.0f, -10.0f };
     float camYawInit_ = 0.0f;
     float camPitchInit_ = 0.0f;
@@ -94,5 +99,15 @@ private:
 
     //2D
     Sprite* modeHud_ = nullptr;
+    BitmapFont font_;
+    BitmapFont gateNum;
+
+    //操作方法
+    bool showHelp_ = true;
+    Vector2 helpPosLeft_ = { 16.0f, 48.0f };
+    Vector2 helpPosRight_ = { 800.0f, 48.0f }; // 右カラム（画面幅に応じて調整）
+    float   helpScale_ = 0.5f;
+
+
 
 };
