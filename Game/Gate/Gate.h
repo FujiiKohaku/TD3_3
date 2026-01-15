@@ -45,6 +45,14 @@ struct Gate {
     Color4 colorGood{ 0.2f, 1.0f, 0.3f, 1.0f };
     Color4 colorMiss{ 1.0f, 0.2f, 0.2f, 1.0f };
 
+
+    // --- デバッグ用 ---
+    Vector3 dbgLocalPos{};
+    float   dbgPrevZ = 0.0f;
+    bool    dbgCrossed = false;
+    bool    dbgInThickness = false;
+    float   dbgRadius = 0.0f;
+
     void UpdateMatrices();
     void Tick(float dt);
 

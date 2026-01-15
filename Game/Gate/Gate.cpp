@@ -17,7 +17,7 @@ static Vector3 TransformCoord_RowVector(const Vector3& v, const Matrix4x4& m)
 
 void Gate::UpdateMatrices()
 {
-    world = MatrixMath::MakeAffineMatrix(scale, rot, pos);
+    world = MatrixMath::MakeAffineMatrix({ 1,1,1 }, rot, pos);
     invWorld = MatrixMath::Inverse(world);
 }
 
@@ -52,30 +52,47 @@ bool Gate::TryPass(const Vector3& droneWorldPos, GateResult& outResult)
     // ゲートローカルへ（回転対応のキモ）
     const Vector3 pLocal = TransformCoord_RowVector(droneWorldPos, invWorld);
 
+    // ---- デバッグ用（常に最新値を保持）----
+    dbgLocalPos = pLocal;
+    dbgPrevZ = prevLocalZ; // ★更新前の prev を入れる
+
     // 初回は前フレが無いので通過判定しない
     if (!hasPrev) {
         prevLocalZ = pLocal.z;
         hasPrev = true;
+
+        dbgCrossed = false;
+        dbgInThickness = false;
+        dbgRadius = 0.0f;
         return false;
     }
 
-    // 1) 面を横切った瞬間だけ判定（連打防止）
-    const bool crossed = (prevLocalZ > 0.0f) && (pLocal.z <= 0.0f);
+    // 1) 面を横切った瞬間だけ判定（両方向）
+    const bool crossed =
+        (prevLocalZ > 0.0f && pLocal.z <= 0.0f) ||
+        (prevLocalZ < 0.0f && pLocal.z >= 0.0f);
 
-    // 次フレ用更新
+    dbgCrossed = crossed;
+
+    // 次フレ用更新（★ここで1回だけ）
     prevLocalZ = pLocal.z;
 
-    if (!crossed) return false;
+    if (!crossed) {
+        dbgInThickness = false;
+        dbgRadius = std::sqrt(pLocal.x * pLocal.x + pLocal.y * pLocal.y); // 参考で更新してもOK
+        return false;
+    }
 
-    // 2) 厚み内か（まずは厳密判定）
+    // 2) 厚み内か
     const float halfT = thickness * 0.5f;
     const bool inThickness = (std::abs(pLocal.z) <= halfT);
+    dbgInThickness = inThickness;
 
     // 3) 半径評価（ローカルXY距離）
     const float r = std::sqrt(pLocal.x * pLocal.x + pLocal.y * pLocal.y);
+    dbgRadius = r;
 
     if (!inThickness) {
-        // 厚み外でクロス：高速時に起きるなら thickness を上げる
         outResult = GateResult::Miss;
     } else if (r <= perfectRadius) {
         outResult = GateResult::Perfect;

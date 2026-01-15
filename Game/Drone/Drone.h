@@ -40,6 +40,8 @@ public:
     void SetPos(const Vector3& p) { pos_ = p; }
     void SetVel(const Vector3& v) { vel_ = v; }
     const Vector3& GetVel() const { return vel_; }
+    void SetYaw(float y) { yaw_ = y; }
+
 
 private:
     Vector3 pos_{ 0,0,0 };

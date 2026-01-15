@@ -4,6 +4,19 @@
 #include "SphereObject.h"
 #include <numbers>
 
+#include "../externals/nlohmann/json.hpp"
+#include <fstream>
+#include <string>
+
+using json = nlohmann::json;
+
+static inline json ToJsonVec3(const Vector3& v) {
+    return json{ {"x", v.x}, {"y", v.y}, {"z", v.z} };
+}
+static inline Vector3 FromJsonVec3(const json& j) {
+    return Vector3{ j.at("x").get<float>(), j.at("y").get<float>(), j.at("z").get<float>() };
+}
+
 // ===== World -> Screen (row-vector行列想定) =====
 static Vector4 MulRowVec4Mat4(const Vector4& v, const Matrix4x4& m)
 {
@@ -180,6 +193,10 @@ void GamePlayScene::Initialize()
    // OBB壁（回転あり）
    wallSys_.AddOBB({ -4.0f, 2.0f, 18.0f }, { 4.0f, 2.0f, 0.5f }, { 0.0f, 0.6f, 0.0f }); // yaw回転
 
+   // ---- Goal ----
+   goalSys_.Initialize(Object3dManager::GetInstance(), camera_);
+   goalSys_.Reset();
+   stageCleared_ = false;
 
 
 }
@@ -262,10 +279,19 @@ void GamePlayScene::Update()
                 }
             }
         } else {
-            // クリア状態
-            // perfectCount_ / goodCount_ を表示する
+            // ---- GoalSystem update ----
+            goalSys_.Update(gates_, nextGate_, drone_.GetPos());
+
+            if (goalSys_.IsCleared()) {
+                stageCleared_ = true;
+
+                // ここで「リザルトへ遷移」「SE」「フェード」等を入れる
+                // 例：次シーンへ
+                // sceneManager_->ChangeScene(new ResultScene());
+            }
         }
 
+        goalSys_.Update(gates_, nextGate_, drone_.GetPos());
 
     // ==================================
     // Lighting Panel（ライト操作パネル）
@@ -430,11 +456,70 @@ void GamePlayScene::Update()
         }
     }
 
+    // ================================
+// GOAL overlay (ImGui)
+// ================================
+    if (stageCleared_) {
+
+        // 画面中央に出す
+        ImGuiIO& io = ImGui::GetIO();
+        const float W = io.DisplaySize.x;
+        const float H = io.DisplaySize.y;
+
+        const char* msg = "GOAL!!";
+        ImVec2 textSize = ImGui::CalcTextSize(msg);
+
+        // 少し上に出す
+        ImVec2 pos((W - textSize.x) * 0.5f, (H * 0.35f) - textSize.y * 0.5f);
+
+        auto* dl = ImGui::GetForegroundDrawList();
+
+        // 影（見やすく）
+        dl->AddText(ImVec2(pos.x + 2, pos.y + 2), IM_COL32(0, 0, 0, 200), msg);
+
+        // 本体
+        dl->AddText(pos, IM_COL32(255, 255, 0, 255), msg);
+
+        // ついでに小さく案内（任意）
+        const char* sub = "Press Enter to continue";
+        ImVec2 subSize = ImGui::CalcTextSize(sub);
+        ImVec2 subPos((W - subSize.x) * 0.5f, pos.y + 40.0f);
+        dl->AddText(ImVec2(subPos.x + 1, subPos.y + 1), IM_COL32(0, 0, 0, 180), sub);
+        dl->AddText(subPos, IM_COL32(255, 255, 255, 230), sub);
+    }
+
+    ImGui::Begin("Gate Debug");
+
+    if (nextGate_ < (int)gates_.size()) {
+        const Gate& g = gates_[nextGate_].gate;
+
+        ImGui::Text("=== Next Gate ===");
+        ImGui::Text("Local Pos : x=%.2f y=%.2f z=%.2f",
+            g.dbgLocalPos.x, g.dbgLocalPos.y, g.dbgLocalPos.z);
+
+        ImGui::Text("PrevZ     : %.2f", g.dbgPrevZ);
+
+        ImGui::Separator();
+
+        ImGui::Text("Crossed   : %s", g.dbgCrossed ? "YES" : "NO");
+        ImGui::Text("Thickness : %s", g.dbgInThickness ? "IN" : "OUT");
+
+        ImGui::Text("Radius    : %.2f", g.dbgRadius);
+        ImGui::Text("Perfect R : %.2f", g.perfectRadius);
+        ImGui::Text("Good R    : %.2f", g.gateRadius);
+
+        if (g.dbgRadius <= g.perfectRadius)
+            ImGui::TextColored(ImVec4(0, 1, 1, 1), "=> PERFECT ZONE");
+        else if (g.dbgRadius <= g.gateRadius)
+            ImGui::TextColored(ImVec4(0, 1, 0, 1), "=> GOOD ZONE");
+        else
+            ImGui::TextColored(ImVec4(1, 0, 0, 1), "=> MISS ZONE");
+    }
 
     ImGui::End();
 
-    AddGate();
 
+    ImGui::End();
 
     // 反映
     sphere_->SetEnableLighting(sphereLighting);
@@ -459,6 +544,8 @@ void GamePlayScene::Draw3D()
     for (auto& g : gates_) {
         g.Draw();
     }
+
+    goalSys_.Draw();
 
     if (drawWallDebug_) {
         wallSys_.DrawDebug();
@@ -504,203 +591,8 @@ void GamePlayScene::Finalize()
     delete camera_;
     camera_ = nullptr;
 
+    goalSys_.Finalize();
+
     SoundManager::GetInstance()->SoundUnload(&bgm);
 }
 
-void GamePlayScene::AddGate()
-{
-
-    // ================================
-// Gate Editor (Add/Remove/Reorder)
-// ================================
-    ImGui::Begin("Gate Editor");
-
-    static int editGate = 0;
-    const int gateCount = (int)gates_.size();
-
-    if (gateCount == 0) {
-        ImGui::Text("No gates. Add one!");
-        if (ImGui::Button("Add Gate")) {
-            GateVisual gv;
-            gv.gate.pos = drone_.GetPos();          // いまのドローン付近に置く
-            gv.gate.pos.z += 10.0f;
-            gv.gate.rot = { 0,0,0 };
-            gv.gate.perfectRadius = 1.0f;
-            gv.gate.gateRadius = 2.5f;
-            gv.gate.thickness = 0.8f;
-            gv.Initialize(Object3dManager::GetInstance(), "cube.obj", camera_);
-            gates_.push_back(std::move(gv));
-            editGate = 0;
-            nextGate_ = 0;
-        }
-        ImGui::End();
-        return; // gateCount==0 の時はここで終わり（下のUIが参照できないため）
-    }
-
-    // 範囲外にならないように
-    editGate = std::clamp(editGate, 0, gateCount - 1);
-
-    ImGui::Text("Gates: %d", gateCount);
-    ImGui::SliderInt("Edit Gate Index", &editGate, 0, gateCount - 1);
-
-    ImGui::Separator();
-
-    // ---- Add / Duplicate / Remove ----
-    if (ImGui::Button("Add Gate (End)")) {
-        GateVisual gv;
-        gv.gate.pos = drone_.GetPos();
-        gv.gate.pos.z += 10.0f;
-        gv.gate.rot = { 0,0,0 };
-        gv.gate.perfectRadius = 1.0f;
-        gv.gate.gateRadius = 2.5f;
-        gv.gate.thickness = 0.8f;
-        gv.Initialize(Object3dManager::GetInstance(), "cube.obj", camera_);
-        gates_.push_back(std::move(gv));
-        editGate = (int)gates_.size() - 1;
-    }
-
-    ImGui::SameLine();
-
-    if (ImGui::Button("Duplicate")) {
-        // Gateデータだけコピーして、Visualは新規初期化
-        Gate copy = gates_[editGate].gate;
-
-        GateVisual gv;
-        gv.gate = copy;
-        gv.gate.pos.z += 3.0f; // 少しずらす（重なり防止）
-        gv.Initialize(Object3dManager::GetInstance(), "cube.obj", camera_);
-        gates_.insert(gates_.begin() + (editGate + 1), std::move(gv));
-        editGate++;
-        // nextGate_は「順番」なので、基本はそのまま（必要なら後で調整）
-    }
-
-    ImGui::SameLine();
-
-    if (ImGui::Button("Remove")) {
-        gates_.erase(gates_.begin() + editGate);
-
-        // index補正
-        if (editGate >= (int)gates_.size()) editGate = (int)gates_.size() - 1;
-        if (editGate < 0) editGate = 0;
-
-        // nextGate_補正（消した位置より後なら詰まる）
-        if (nextGate_ > editGate) nextGate_--;
-        nextGate_ = std::clamp(nextGate_, 0, (int)gates_.size());
-    }
-
-    ImGui::Separator();
-
-    // ---- Reorder ----
-    bool canUp = (editGate > 0);
-    bool canDown = (editGate < (int)gates_.size() - 1);
-
-    if (!canUp) ImGui::BeginDisabled();
-    if (ImGui::Button("Up")) {
-        std::swap(gates_[editGate], gates_[editGate - 1]);
-        // nextGate_ がこの2つを指してた場合は追従させる
-        if (nextGate_ == editGate) nextGate_ = editGate - 1;
-        else if (nextGate_ == editGate - 1) nextGate_ = editGate;
-        editGate--;
-    }
-    if (!canUp) ImGui::EndDisabled();
-
-    ImGui::SameLine();
-
-    if (!canDown) ImGui::BeginDisabled();
-    if (ImGui::Button("Down")) {
-        std::swap(gates_[editGate], gates_[editGate + 1]);
-        if (nextGate_ == editGate) nextGate_ = editGate + 1;
-        else if (nextGate_ == editGate + 1) nextGate_ = editGate;
-        editGate++;
-    }
-    if (!canDown) ImGui::EndDisabled();
-
-    ImGui::Separator();
-
-    // ---- Parameter edit ----
-    Gate& g = gates_[editGate].gate;
-
-    // ================================
-// Mouse Place (Plane Y=0)
-// ================================
-    static bool placeMode = false;
-    ImGui::Separator();
-    ImGui::Checkbox("Mouse Place Mode (Y=0 Plane)", &placeMode);
-    ImGui::Text("LClick: place selected gate on ground (y=0)");
-    ImGui::Text("Selected Gate = %d", editGate);
-
-    if (placeMode) {
-
-        // ImGuiの上をクリックしてる時は無視（UI操作と衝突しない）
-        if (!ImGui::GetIO().WantCaptureMouse) {
-
-            // 左クリックで配置
-            if (Input::GetInstance()->IsMouseTrigger(0)) {
-
-                POINT mp = Input::GetInstance()->GetMousePos();
-
-                const float W = (float)WinApp::kClientWidth;
-                const float H = (float)WinApp::kClientHeight;
-
-                const Matrix4x4& vp = camera_->GetViewProjectionMatrix();
-
-                Vector3 hit{};
-                if (ScreenRayToPlaneY0_RowVector(mp.x, mp.y, W, H, vp, hit)) {
-                    // ★ここで「選択中ゲート」を地面に置く
-                    gates_[editGate].gate.pos = hit;
-
-                    // 置いた瞬間が分かりやすいようにちょいログ（任意）
-                    // ImGui::Text("Placed at %.2f %.2f %.2f", hit.x, hit.y, hit.z);
-                }
-            }
-        }
-    }
-
-
-    ImGui::Text("Transform");
-    ImGui::DragFloat3("Position", &g.pos.x, 0.1f);
-    ImGui::DragFloat3("Rotation (rad)", &g.rot.x, 0.05f);
-
-    ImGui::Text("Gate Params");
-    ImGui::DragFloat("Perfect Radius", &g.perfectRadius, 0.05f, 0.1f, g.gateRadius);
-    ImGui::DragFloat("Gate Radius", &g.gateRadius, 0.05f, g.perfectRadius, 50.0f);
-    ImGui::DragFloat("Thickness", &g.thickness, 0.05f, 0.05f, 10.0f);
-
-    ImGui::Separator();
-    ImGui::Text("NextGate = %d", nextGate_);
-    if (ImGui::Button("Set NextGate = Edit")) {
-        nextGate_ = editGate;
-    }
-    ImGui::SameLine();
-    if (ImGui::Button("Reset NextGate")) {
-        nextGate_ = 0;
-        perfectCount_ = 0;
-        goodCount_ = 0;
-    }
-
-    if (ImGui::Button("Add Gate (After)")) {
-        GateVisual gv;
-
-        const int insertIndex = editGate + 1;
-
-        // 今のゲートをベースにする
-        gv.gate = gates_[editGate].gate;
-
-        // 少し前にずらす（重なり防止）※回転しててもとりあえずZでOK
-        gv.gate.pos.z += 3.0f;
-
-        gv.Initialize(Object3dManager::GetInstance(), "cube.obj", camera_);
-
-        gates_.insert(gates_.begin() + insertIndex, std::move(gv));
-
-        // nextGate_補正：挿入位置より後ろを指してたら1つずらす
-        if (nextGate_ >= insertIndex) {
-            nextGate_++;
-        }
-
-        editGate = insertIndex; // 追加したゲートを選択状態に
-    }
-
-    ImGui::End();
-
-}

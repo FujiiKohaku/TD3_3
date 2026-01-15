@@ -294,20 +294,31 @@ public:
     void UpdateDebug()
     {
         RebuildDebugIfNeeded_();
+
         for (size_t i = 0; i < debugObjs_.size(); ++i) {
             auto* o = debugObjs_[i].get();
             const Wall& w = walls_[i];
 
             o->SetTranslate(w.center);
-            o->SetScale(w.half); // ★cube.objは半サイズ1なので half をそのまま
-            if (w.type == Type::OBB) {
-                o->SetRotate(w.rot);
+
+            // ★ここ：half/scaleの扱いは “見た目” と “当たり判定” が一致するように統一してね
+            // いま RebuildDebugIfNeeded_ では *2 してるので、ここも合わせるなら *2 が正しい
+            o->SetScale({ w.half.x * 2.0f, w.half.y * 2.0f, w.half.z * 2.0f });
+
+            if (w.type == Type::OBB) o->SetRotate(w.rot);
+            else                    o->SetRotate({ 0,0,0 });
+
+            // ★選択中だけ色変更
+            if ((int)i == selected_) {
+                o->SetColor({ 1, 1, 0, 1 });   // 黄色
             } else {
-                o->SetRotate({ 0,0,0 });
+                o->SetColor({ 1, 1, 1, 0.35f }); // 薄白（α効いてるかはPSO次第）
             }
+
             o->Update();
         }
     }
+
 
     void DrawDebug()
     {
@@ -322,6 +333,9 @@ public:
         mgr_ = nullptr;
         dirtyDebug_ = true;
     }
+
+    void SetSelectedIndex(int idx) { selected_ = idx; }
+    int  GetSelectedIndex() const { return selected_; }
 
 private:
     void RebuildDebugIfNeeded_()
@@ -354,4 +368,5 @@ private:
     std::string modelName_ = "cube.obj";
     bool dirtyDebug_ = true;
     std::vector<std::unique_ptr<Object3d>> debugObjs_;
+    int selected_ = -1;
 };

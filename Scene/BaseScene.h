@@ -16,5 +16,5 @@ public:
     virtual void DrawImGui() = 0;
 
     // 仮想デストラクタ（必須）
-    virtual ~BaseScene() = default;
+    virtual ~BaseScene() noexcept = default;
 };
