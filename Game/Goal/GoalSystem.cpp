@@ -1,5 +1,5 @@
 ﻿#include "GoalSystem.h"
-#include "GateVisual.h"
+#include "../Gate/GateVisual.h"
 #include "Object3dManager.h"
 
 static float LengthSq3(const Vector3& v) {

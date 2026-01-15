@@ -13,11 +13,11 @@
 
 //ゲームプレイ用
 #include "Input.h"
-#include "Drone.h"
-#include "Gate.h"
-#include "GateVisual.h"
-#include "Walls.h"
-#include "GoalSystem.h"
+#include "../Game/Drone/Drone.h"
+#include "../Game/Gate/Gate.h"
+#include "../Game/Gate/GateVisual.h"
+#include "../Game/Drone/Walls.h"
+#include "../Game/Goal/GoalSystem.h"
 
 
 class SphereObject;
