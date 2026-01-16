@@ -53,6 +53,10 @@ public:
     // ★エディタ用：ハイライト
     void SetHighlighted(bool v);
 
+    void SetFixedGoalPos(const Vector3& pos) { fixedGoalPos_ = pos; hasFixedGoalPos_ = true; }
+    void ClearFixedGoalPos() { hasFixedGoalPos_ = false; }
+
+
 private:
     // --- 内部 ---
     void SpawnAt_(const Vector3& pos);
@@ -89,5 +93,9 @@ private:
 
     float normalAlpha_ = 0.25f;  // 非選択
     float highlightAlpha_ = 0.90f; // 選択中
+
+    // ★固定ゴール位置（StageIOでgoalPosを読んだとき用）
+    bool hasFixedGoalPos_ = false;
+    Vector3 fixedGoalPos_{ 0,0,0 };
 
 };

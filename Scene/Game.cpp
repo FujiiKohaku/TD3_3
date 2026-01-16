@@ -61,6 +61,8 @@ void Game::Update()
 
     SceneManager::GetInstance()->Update();
 
+    SceneManager::GetInstance()->DrawImGui();
+
     // ======== ImGui end ========
     ImGuiManager::GetInstance()->End();
 }
@@ -83,7 +85,7 @@ void Game::Finalize()
 {
     // シーンマネージャーも singleton
     SceneManager::GetInstance()->Finalize();
-   // ParticleManager::GetInstance()->Finalize();
+    ParticleManager::GetInstance()->Finalize();
     Object3dManager::GetInstance()->Finalize();
     SpriteManager::GetInstance()->Finalize();
     ModelManager::GetInstance()->Finalize();

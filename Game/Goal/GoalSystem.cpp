@@ -87,15 +87,25 @@ void GoalSystem::Update(const std::vector<GateVisual>& gates, int nextGate, cons
     // 1) まだ出してない → 全ゲート通過で出す
     if (!spawned_) {
         if (!gates.empty() && nextGate >= (int)gates.size()) {
-            // 最後のゲート位置 + オフセット
-            Vector3 p = gates.back().gate.pos;
-            p.x += spawnOffset_.x;
-            p.y += spawnOffset_.y;
-            p.z += spawnOffset_.z;
+
+            Vector3 p{};
+
+            // ★固定ゴールがあるならそれを優先
+            if (hasFixedGoalPos_) {
+                p = fixedGoalPos_;
+            } else {
+                // いつもの：最後のゲート + オフセット
+                p = gates.back().gate.pos;
+                p.x += spawnOffset_.x;
+                p.y += spawnOffset_.y;
+                p.z += spawnOffset_.z;
+            }
 
             SpawnAt_(p);
+            ApplyVisual_(); // ★色/alpha反映したいならここで
         }
     }
+
 
     // 2) 出ているなら触れたか判定
     if (active_) {

@@ -151,6 +151,124 @@ static bool WorldToScreen_RowVector(
     return true;
 }
 
+static std::string WideToUtf8(const std::wstring& ws)
+{
+    if (ws.empty()) return {};
+    int size = WideCharToMultiByte(CP_UTF8, 0, ws.data(), (int)ws.size(),
+        nullptr, 0, nullptr, nullptr);
+    std::string out(size, '\0');
+    WideCharToMultiByte(CP_UTF8, 0, ws.data(), (int)ws.size(),
+        out.data(), size, nullptr, nullptr);
+    return out;
+}
+
+static std::string SanitizeFileNameUtf8(std::string s)
+{
+    const char* bad = "\\/:*?\"<>|";
+    for (char& c : s) {
+        if (std::strchr(bad, c)) c = '_';
+    }
+
+    // パスっぽいのは拒否（最低限）
+    if (s.find("..") != std::string::npos) s = "stage";
+
+    while (!s.empty() && (s.back() == ' ' || s.back() == '.')) s.pop_back();
+    if (s.empty()) s = "stage";
+    return s;
+}
+
+static std::wstring Utf8ToWide(const std::string& s)
+{
+    if (s.empty()) return {};
+    int size = MultiByteToWideChar(CP_UTF8, 0, s.data(), (int)s.size(), nullptr, 0);
+    std::wstring out(size, L'\0');
+    MultiByteToWideChar(CP_UTF8, 0, s.data(), (int)s.size(), out.data(), size);
+    return out;
+}
+
+static void RenderTextToRGBA_GDI(
+    const std::wstring& text,
+    uint32_t width,
+    uint32_t height,
+    std::vector<uint8_t>& outRgba,
+    int fontSizePx = 32
+)
+{
+    outRgba.assign((size_t)width * height * 4, 0); // 透明で初期化
+
+    // 何も無ければ透明のまま
+    if (width == 0 || height == 0) return;
+
+    // 32bit DIB（BGRA）を作る
+    BITMAPINFO bmi{};
+    bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+    bmi.bmiHeader.biWidth = (LONG)width;
+    bmi.bmiHeader.biHeight = -(LONG)height; // ★上が0になるトップダウン
+    bmi.bmiHeader.biPlanes = 1;
+    bmi.bmiHeader.biBitCount = 32;
+    bmi.bmiHeader.biCompression = BI_RGB;
+
+    void* bits = nullptr;
+    HDC hdc = GetDC(nullptr);
+    HDC memDC = CreateCompatibleDC(hdc);
+
+    HBITMAP dib = CreateDIBSection(memDC, &bmi, DIB_RGB_COLORS, &bits, nullptr, 0);
+    HGDIOBJ oldBmp = SelectObject(memDC, dib);
+
+    // 背景を透明（=黒で塗って後でα0にする）
+    PatBlt(memDC, 0, 0, (int)width, (int)height, BLACKNESS);
+
+    // フォント
+    HFONT font = CreateFontW(
+        fontSizePx, 0, 0, 0,
+        FW_NORMAL, FALSE, FALSE, FALSE,
+        DEFAULT_CHARSET,
+        OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY,
+        DEFAULT_PITCH | FF_DONTCARE,
+        L"Meiryo" // 日本語が無難（無ければMS Gothic等に）
+    );
+    HGDIOBJ oldFont = SelectObject(memDC, font);
+
+    SetBkMode(memDC, TRANSPARENT);
+    SetTextColor(memDC, RGB(255, 255, 255)); // 白文字
+
+    RECT rc{ 0, 0, (LONG)width, (LONG)height };
+
+    // 左上寄せで描画（必要ならDT_CENTER等に変更）
+    DrawTextW(memDC, text.c_str(), (int)text.size(), &rc, DT_LEFT | DT_TOP | DT_NOPREFIX);
+
+    // bits は BGRA（B,G,R,Aなし）なので RGBA に変換しつつ αを作る
+    // 今回は「黒以外の画素＝文字」とみなして α=255 にする簡易版
+    const uint8_t* src = reinterpret_cast<const uint8_t*>(bits);
+
+    for (uint32_t y = 0; y < height; ++y) {
+        for (uint32_t x = 0; x < width; ++x) {
+            const size_t i = ((size_t)y * width + x) * 4;
+
+            uint8_t B = src[i + 0];
+            uint8_t G = src[i + 1];
+            uint8_t R = src[i + 2];
+
+            // 文字色（白）以外もアンチエイリアスで灰色になるので、その明るさをαにする
+            const uint8_t a = (uint8_t)std::clamp<int>((int)std::max<int>({ R, G, B }), 0, 255);
+
+            outRgba[i + 0] = 255; // 文字色を白に固定
+            outRgba[i + 1] = 255;
+            outRgba[i + 2] = 255;
+            outRgba[i + 3] = a;   // 明るさをαに
+        }
+    }
+
+    // 後始末
+    SelectObject(memDC, oldFont);
+    DeleteObject(font);
+
+    SelectObject(memDC, oldBmp);
+    DeleteObject(dib);
+
+    DeleteDC(memDC);
+    ReleaseDC(nullptr, hdc);
+}
 
 void StageEditorScene::Initialize()
 {
@@ -262,27 +380,33 @@ void StageEditorScene::Initialize()
     
     gateNum.SetColor({ 1,1,0,1 }); // 見やすい色（好きに）
 
+    // 動的テクスチャを1回だけ作る
+    TextureManager::GetInstance()->CreateDynamicTextureRGBA8(kNameTexKey, kNameTexW, kNameTexH);
+
+    // 表示用スプライト
+    stageNameSprite_ = new Sprite();
+    stageNameSprite_->Initialize(SpriteManager::GetInstance(), kNameTexKey);
+    stageNameSprite_->SetPosition({ 16.0f, 16.0f });
+    stageNameSprite_->SetSize({1280, 720.0f }); // 必要なら調整
+
+
 }
 
 void StageEditorScene::Finalize()
 {
-    ParticleManager::GetInstance()->Finalize();
+    ParticleManager::GetInstance()->ClearAllParticles();
 
     LightManager::GetInstance()->Finalize();
 
-    delete droneObj_;
-    droneObj_ = nullptr;
-
-    delete camera_;
-    camera_ = nullptr;
-
-    delete modeHud_;
-    modeHud_ = nullptr;
+    delete droneObj_;  droneObj_ = nullptr;
+    delete camera_;    camera_ = nullptr;
+    delete modeHud_;   modeHud_ = nullptr;
 
     goalSys_.Finalize();
 
-    //SoundManager::GetInstance()->SoundUnload(&bgm);
+    delete stageNameSprite_; stageNameSprite_ = nullptr;
 }
+
 
 
 
@@ -291,12 +415,56 @@ void StageEditorScene::Update()
     float dt = 1.0f / 60.0f;
     Input& input = *Input::GetInstance();
 
-    // ドローン操作（配置用）
-   // drone_.UpdateMode1(input, dt);
+    // =========================
+    // ★命名入力は Update の最優先で処理する
+    // =========================
+    if (input.IsKeyTrigger(DIK_F2)) {
+        isNaming_ = !isNaming_;
+        if (isNaming_) {
+            TextInput::GetInstance()->Clear();
+            stageNameW_.clear();
+
+            // ついでに前回表示を消したいなら
+            nameRgba_.assign((size_t)kNameTexW * kNameTexH * 4, 0);
+            TextureManager::GetInstance()->UpdateDynamicTextureRGBA8(
+                kNameTexKey, nameRgba_.data(), kNameTexW, kNameTexH);
+        }
+    }
+
+    if (isNaming_) {
+        // 表示用（確定+変換中）
+        stageNameW_ = TextInput::GetInstance()->GetDisplayString();
+
+        // 文字更新があったフレームだけテクスチャ更新
+        if (TextInput::GetInstance()->ConsumeDirty()) {
+            RenderTextToRGBA_GDI(stageNameW_, kNameTexW, kNameTexH, nameRgba_);
+            TextureManager::GetInstance()->UpdateDynamicTextureRGBA8(
+                kNameTexKey, nameRgba_.data(), kNameTexW, kNameTexH);
+        }
+
+        // 確定（Enter）
+        if (input.IsKeyTrigger(DIK_RETURN)) {
+            stageNameUtf8_ = WideToUtf8(stageNameW_);
+            stageNameUtf8_ = SanitizeFileNameUtf8(stageNameUtf8_);
+            stageFile_ = stageNameUtf8_ + ".json";
+            isNaming_ = false;
+        }
+
+        // キャンセル（Esc）
+        if (input.IsKeyTrigger(DIK_ESCAPE)) {
+            isNaming_ = false;
+        }
+
+        // ★命名中は “ここで終了”。移動/編集/カメラ処理に行かせない
+        return;
+    }
+
+    // =========================
+    // ここから下が通常更新
+    // =========================
 
     UpdateFreeCamera(dt);
 
-    // 壁衝突（編集でも欲しければ）
     {
         Vector3 pos = drone_.GetPos();
         Vector3 vel = drone_.GetVel();
@@ -305,49 +473,27 @@ void StageEditorScene::Update()
         drone_.SetVel(vel);
     }
 
-    // 描画オブジェクト反映
     if (droneObj_) {
         droneObj_->SetTranslate(drone_.GetPos());
         droneObj_->Update();
     }
 
-    // Gate処理が終わった後あたりで
     goalSys_.Update(gates_, nextGate_, drone_.GetPos());
+    if (goalSys_.IsCleared()) stageCleared_ = true;
 
-    if (goalSys_.IsCleared()) {
-        stageCleared_ = true;
-    }
-
-
-    // Gateの見た目更新（色タイマー）
     for (auto& g : gates_) g.Tick(dt);
 
-    // ★選択ハイライト反映
     for (int i = 0; i < (int)gates_.size(); ++i) {
         gates_[i].SetSelected(editMode_ == EditMode::Gate && i == selectedGate_);
     }
 
-    // Gateの見た目更新（色タイマー）
-    for (auto& g : gates_) g.Tick(dt);
-
-
-    // --- Editor UI ---
-  /*  AddGate();
-    EditWallsImGui();
-    StageIOImGui();
-    GoalEditorImGui();*/
-
     UpdateEditorInput(dt);
 
-
-    // デバッグ更新
     if (drawWallDebug_) wallSys_.UpdateDebug();
 
-    if (Input::GetInstance()->IsKeyTrigger(DIK_H)) {
+    if (input.IsKeyTrigger(DIK_H)) {
         showHelp_ = !showHelp_;
     }
-
-
 }
 
 void StageEditorScene::Draw2D()
@@ -465,6 +611,14 @@ void StageEditorScene::Draw2D()
     DrawEditorParamHud_();
 
     DrawGateIndices_();
+
+    SpriteManager::GetInstance()->PreDraw();
+
+    if (stageNameSprite_) {
+        stageNameSprite_->Update();
+        stageNameSprite_->Draw();
+    }
+
 
 }
 
@@ -806,13 +960,17 @@ void StageEditorScene::EditWallsImGui()
     wallSys_.SetSelectedIndex(editWall);
 }
 
+//ステージセーブ
 bool StageEditorScene::SaveStageJson(const std::string& fileName)
 {
-    const std::string path = "resources/stage/" + fileName;
+    std::string safe = SanitizeFileNameUtf8(fileName);
+
+    // "resources/stage/" は wide で持つ（安定）
+    std::filesystem::path dir = std::filesystem::path(L"resources") / L"stage";
+    std::filesystem::path path = dir / Utf8ToWide(safe);
 
     json root;
     root["version"] = 1;
-
     root["drone"]["spawnPos"] = ToJsonVec3(drone_.GetPos());
     root["drone"]["spawnYaw"] = drone_.GetYaw();
     root["goal"]["pos"] = ToJsonVec3(goalSys_.GetGoalPos());
@@ -848,83 +1006,45 @@ bool StageEditorScene::SaveStageJson(const std::string& fileName)
         root["walls"] = arr;
     }
 
-    std::ofstream ofs(path);
+    // ★ path を直接渡す（MSVCならこれで日本語OK）
+    std::ofstream ofs(path, std::ios::binary);
     if (!ofs.is_open()) return false;
 
     ofs << root.dump(2);
     return true;
 }
 
+//ステージロード
 bool StageEditorScene::LoadStageJson(const std::string& fileName)
 {
-    const std::string path = "resources/stage/" + fileName;
-
-    std::ifstream ifs(path);
-    if (!ifs.is_open()) return false;
-
-    json root;
-    ifs >> root;
-
-    // goal
-    bool hasGoalPos = false;
-    Vector3 goalPos{};
-
-    bool hasGoalOffset = false;
-    Vector3 goalOfs{};
-
-    if (root.contains("goal")) {
-        const auto& g = root["goal"];
-        if (g.contains("pos")) { hasGoalPos = true; goalPos = FromJsonVec3(g["pos"]); }
-        if (g.contains("spawnOffset")) { hasGoalOffset = true; goalOfs = FromJsonVec3(g["spawnOffset"]); }
-    }
+    StageData data;
+    if (!StageIO::Load(fileName, data)) return false;
 
     // drone
-    if (root.contains("drone")) {
-        const auto& d = root["drone"];
-        if (d.contains("spawnPos")) drone_.SetPos(FromJsonVec3(d["spawnPos"]));
-        if (d.contains("spawnYaw")) drone_.SetYaw(d["spawnYaw"].get<float>());
-        drone_.SetVel({ 0,0,0 });
-    }
+    drone_.SetPos(data.droneSpawnPos);
+    drone_.SetYaw(data.droneSpawnYaw);
+    drone_.SetVel({ 0,0,0 });
 
     // gates
     gates_.clear();
-    if (root.contains("gates")) {
-        for (const auto& j : root["gates"]) {
-            GateVisual gv;
-            gv.gate.pos = FromJsonVec3(j.at("pos"));
-            gv.gate.rot = FromJsonVec3(j.at("rot"));
-            gv.gate.scale = FromJsonVec3(j.at("scale"));
-            gv.gate.perfectRadius = j.at("perfectRadius").get<float>();
-            gv.gate.gateRadius = j.at("gateRadius").get<float>();
-            gv.gate.thickness = j.at("thickness").get<float>();
-            gv.Initialize(Object3dManager::GetInstance(), "cube.obj", camera_);
-            gates_.push_back(std::move(gv));
-        }
+    for (const auto& g : data.gates) {
+        GateVisual gv;
+        gv.gate = g;
+        gv.Initialize(Object3dManager::GetInstance(), "cube.obj", camera_);
+        gates_.push_back(std::move(gv));
     }
 
     // walls
-    wallSys_.Walls().clear();
-    if (root.contains("walls")) {
-        for (const auto& j : root["walls"]) {
-            WallSystem::Wall w;
-            const std::string type = j.at("type").get<std::string>();
-            w.type = (type == "OBB") ? WallSystem::Type::OBB : WallSystem::Type::AABB;
-            w.center = FromJsonVec3(j.at("center"));
-            w.half = FromJsonVec3(j.at("half"));
-            w.rot = FromJsonVec3(j.at("rot"));
-            wallSys_.Walls().push_back(w);
-        }
-    }
+    wallSys_.Walls() = data.walls;
 
-    nextGate_ = 0;
-
+    // goal
     goalSys_.Reset();
     stageCleared_ = false;
-
-    if (hasGoalOffset) goalSys_.SetSpawnOffset(goalOfs);
-    if (hasGoalPos) goalSys_.SetGoalPos(goalPos);
+    if (data.hasGoalSpawnOffset) goalSys_.SetSpawnOffset(data.goalSpawnOffset);
+    if (data.hasGoalPos) goalSys_.SetGoalPos(data.goalPos);
 
     wallSys_.BuildDebug(Object3dManager::GetInstance(), "cube.obj");
+    nextGate_ = 0;
     return true;
 }
 

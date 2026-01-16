@@ -83,7 +83,7 @@
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <AdditionalIncludeDirectories>audio;debugcamera;math;input;Winapp;externals;Logger;StringUtility;D3DResourceLeakChecker;2D;DirectXCommon;TextureManager;3D;Camera;SrvManager;Particle;ImGuiManager;blend;%(AdditionalIncludeDirectories);$(ProjectDir)Game\Drone;$(ProjectDir)Game\Gate;$(ProjectDir)Game\Goal</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>audio;debugcamera;math;input;Winapp;externals;Logger;StringUtility;D3DResourceLeakChecker;2D;DirectXCommon;TextureManager;3D;Camera;SrvManager;Particle;ImGuiManager;blend;%(AdditionalIncludeDirectories);$(ProjectDir)Game\Drone;$(ProjectDir)Game\Gate;$(ProjectDir)Game\Goal;$(ProjectDir)Game\Stage</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -110,7 +110,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <AdditionalIncludeDirectories>audio;debugcamera;math;input;Winapp;externals;Logger;StringUtility;D3DResourceLeakChecker;2D;DirectXCommon;TextureManager;3D;Camera;SrvManager;Particle;ImGuiManager;blend;%(AdditionalIncludeDirectories);$(ProjectDir)Game\Drone;$(ProjectDir)Game\Gate;$(ProjectDir)Game\Goal</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>audio;debugcamera;math;input;Winapp;externals;Logger;StringUtility;D3DResourceLeakChecker;2D;DirectXCommon;TextureManager;3D;Camera;SrvManager;Particle;ImGuiManager;blend;%(AdditionalIncludeDirectories);$(ProjectDir)Game\Drone;$(ProjectDir)Game\Gate;$(ProjectDir)Game\Goal;$(ProjectDir)Game\Stage</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -141,7 +141,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <Optimization>Disabled</Optimization>
       <WholeProgramOptimization>false</WholeProgramOptimization>
-      <AdditionalIncludeDirectories>audio;debugcamera;math;input;Winapp;externals;Logger;StringUtility;D3DResourceLeakChecker;2D;DirectXCommon;TextureManager;3D;Camera;SrvManager;Particle;ImGuiManager;%(AdditionalIncludeDirectories);$(ProjectDir)Game\Drone;$(ProjectDir)Game\Gate;$(ProjectDir)Game\Goal</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>audio;debugcamera;math;input;Winapp;externals;Logger;StringUtility;D3DResourceLeakChecker;2D;DirectXCommon;TextureManager;3D;Camera;SrvManager;Particle;ImGuiManager;%(AdditionalIncludeDirectories);$(ProjectDir)Game\Drone;$(ProjectDir)Game\Gate;$(ProjectDir)Game\Goal;$(ProjectDir)Game\Stage</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -236,7 +236,10 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="math\SpriteStruct.cpp" />
     <ClCompile Include="SrvManager\SrvManager.cpp" />
     <ClCompile Include="Scene\StageEditorScene.cpp" />
+    <ClCompile Include="Scene\StageSelectScene.cpp" />
+    <ClCompile Include="Game\Stage\StageIO.cpp" />
     <ClCompile Include="StringUtility\StringUtility.cpp" />
+    <ClCompile Include="input\TextInput.cpp" />
     <ClCompile Include="TextureManager\TextureManager.cpp" />
     <ClCompile Include="Scene\TitleScene.cpp" />
     <ClCompile Include="Winapp\Utility.cpp">
@@ -273,6 +276,8 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Game\Drone\Walls.h" />
     <ClInclude Include="Game\Goal\Goal.h" />
     <ClInclude Include="Game\Goal\GoalSystem.h" />
+    <ClInclude Include="Game\Stage\StageData.h" />
+    <ClInclude Include="Game\Stage\StageNameInput.h" />
     <ClInclude Include="math\Light.h" />
     <ClInclude Include="Light\LightManager.h" />
     <ClInclude Include="math\MathStruct.h" />
@@ -312,7 +317,10 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="math\SpriteStruct.h" />
     <ClInclude Include="SrvManager\SrvManager.h" />
     <ClInclude Include="Scene\StageEditorScene.h" />
+    <ClInclude Include="Scene\StageSelectScene.h" />
+    <ClInclude Include="Game\Stage\StageIO.h" />
     <ClInclude Include="StringUtility\StringUtility.h" />
+    <ClInclude Include="input\TextInput.h" />
     <ClInclude Include="TextureManager\TextureManager.h" />
     <ClInclude Include="Scene\TitleScene.h" />
     <ClInclude Include="Winapp\Utility.h" />

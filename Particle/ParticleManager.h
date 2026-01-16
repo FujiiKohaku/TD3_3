@@ -115,6 +115,10 @@ public:
     // void ImGui();
     Particle MakeParticleDefault(const Vector3& pos);
 
+    void SetCamera(Camera* camera) { camera_ = camera; }
+
+    void ClearAllParticles();
+
 private:
     // =========================================================
     // Singleton Safety
