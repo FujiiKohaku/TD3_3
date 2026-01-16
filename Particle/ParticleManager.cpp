@@ -34,27 +34,43 @@ void ParticleManager::Initialize(DirectXCommon* dxCommon, SrvManager* srvManager
 
 void ParticleManager::Update()
 {
+    // カメラが無いなら何もしない
+    if (!camera_) {
+        return;
+    }
 
-    // ビルボード行列
+    // ビルボード行列（平行移動成分をゼロにして回転だけ使う）
     Matrix4x4 cameraMat = camera_->GetWorldMatrix();
-    cameraMat.m[3][0] = 0.0f; 
+    cameraMat.m[3][0] = 0.0f;
     cameraMat.m[3][1] = 0.0f;
     cameraMat.m[3][2] = 0.0f;
-    Matrix4x4 billboardMatrix = cameraMat;
+    const Matrix4x4 billboardMatrix = cameraMat;
 
     // VP 行列
-    Matrix4x4 vp = camera_->GetViewProjectionMatrix();
+    const Matrix4x4 vp = camera_->GetViewProjectionMatrix();
 
     // 全グループ処理
     for (auto& [name, group] : particleGroups_) {
 
+        // ★インスタンシングが準備できてないグループはスキップ
+        if (!group.instancingResource || !group.instanceData) {
+            continue;
+        }
+
         group.numInstance = 0;
 
         // グループ内パーティクル
-        for (auto it = group.particles.begin();
-            it != group.particles.end();) {
+        for (auto it = group.particles.begin(); it != group.particles.end(); ) {
 
             Particle& p = *it;
+
+            // ★ここで listノードが壊れてるかどうかを即判定する
+            if (!std::isfinite(p.lifeTime) || !std::isfinite(p.currentTime) ||
+                !std::isfinite(p.transform.scale.x) || !std::isfinite(p.transform.scale.y) || !std::isfinite(p.transform.scale.z)) {
+                assert(false && "Particle data corrupted (memory overwrite likely)");
+            }
+
+
 
             // 寿命
             if (p.currentTime >= p.lifeTime) {
@@ -67,21 +83,20 @@ void ParticleManager::Update()
             p.transform.translate += p.velocity * kdeltaTime;
 
             // α
-            float alpha = 1.0f - (p.currentTime / p.lifeTime);
+            const float alpha = 1.0f - (p.currentTime / p.lifeTime);
 
             // World 行列
-            Matrix4x4 world;
+            Matrix4x4 world{};
             if (useBillboard_) {
-                Matrix4x4 scaleMat = MatrixMath::Matrix4x4MakeScaleMatrix(p.transform.scale);
-                Matrix4x4 transMat = MatrixMath::MakeTranslateMatrix(p.transform.translate);
-
+                const Matrix4x4 scaleMat = MatrixMath::Matrix4x4MakeScaleMatrix(p.transform.scale);
+                const Matrix4x4 transMat = MatrixMath::MakeTranslateMatrix(p.transform.translate);
                 world = MatrixMath::Multiply(MatrixMath::Multiply(scaleMat, billboardMatrix), transMat);
             } else {
                 world = MatrixMath::MakeAffineMatrix(p.transform.scale, p.transform.rotate, p.transform.translate);
             }
 
             // WVP
-            Matrix4x4 wvp = MatrixMath::Multiply(world, vp);
+            const Matrix4x4 wvp = MatrixMath::Multiply(world, vp);
 
             // GPU へ
             if (group.numInstance < kNumMaxInstance) {
@@ -91,12 +106,13 @@ void ParticleManager::Update()
                 group.instanceData[group.numInstance].color.w = alpha;
                 ++group.numInstance;
             }
+            if (group.particles.size() > 100000) {
+                assert(false && "Too many particles (emitter runaway)");
+            }
 
             ++it;
         }
     }
-
-    //  ImGui();
 }
 
 void ParticleManager::Draw()
@@ -461,8 +477,8 @@ void ParticleManager::Finalize()
     dxCommon_ = nullptr;
     srvManager_ = nullptr;
     camera_ = nullptr;
-    delete instance;
-    instance = nullptr;
+ /*   delete instance;
+    instance = nullptr;*/
 }
 
 void ParticleManager::CreateParticleGroup(const std::string& name, const std::string& textureFilePath)
@@ -615,4 +631,13 @@ ParticleManager::Particle ParticleManager::MakeParticleDefault(const Vector3& po
     p.currentTime = 0.0f;
 
     return p;
+}
+
+void ParticleManager::ClearAllParticles()
+{
+    for (auto& [name, group] : particleGroups_) {
+        group.particles.clear();
+        group.numInstance = 0;
+        // instanceData は Map したままでOK（FinalizeでだけUnmapする）
+    }
 }

@@ -1,5 +1,6 @@
 #pragma once
 #include "BaseScene.h"
+#include <string> 
 
 class SceneManager {
 public:
@@ -21,6 +22,11 @@ public:
     void Draw();
     void Finalize();
 
+    void DrawImGui();
+
+    void SetSelectedStageFile(const std::string& file) { selectedStageFile_ = file; }
+    const std::string& GetSelectedStageFile() const { return selectedStageFile_; }
+
 private:
     // --------- Singleton基本処理 ---------
     SceneManager() = default;
@@ -32,4 +38,5 @@ private:
 private:
     BaseScene* scene_ = nullptr;
     BaseScene* nextScene_ = nullptr;
+    std::string selectedStageFile_;
 };

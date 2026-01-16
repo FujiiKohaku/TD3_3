@@ -236,7 +236,10 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="math\SpriteStruct.cpp" />
     <ClCompile Include="SrvManager\SrvManager.cpp" />
     <ClCompile Include="Scene\StageEditorScene.cpp" />
+    <ClCompile Include="Scene\StageSelectScene.cpp" />
+    <ClCompile Include="Game\Stage\StageIO.cpp" />
     <ClCompile Include="StringUtility\StringUtility.cpp" />
+    <ClCompile Include="input\TextInput.cpp" />
     <ClCompile Include="TextureManager\TextureManager.cpp" />
     <ClCompile Include="Scene\TitleScene.cpp" />
     <ClCompile Include="Winapp\Utility.cpp">
@@ -268,10 +271,13 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="2D\BitmapFont.h" />
     <ClInclude Include="3D\CreateSphere.h" />
     <ClInclude Include="Game\Drone\Walls.h" />
     <ClInclude Include="Game\Goal\Goal.h" />
     <ClInclude Include="Game\Goal\GoalSystem.h" />
+    <ClInclude Include="Game\Stage\StageData.h" />
+    <ClInclude Include="Game\Stage\StageNameInput.h" />
     <ClInclude Include="math\Light.h" />
     <ClInclude Include="Light\LightManager.h" />
     <ClInclude Include="math\MathStruct.h" />
@@ -311,7 +317,10 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="math\SpriteStruct.h" />
     <ClInclude Include="SrvManager\SrvManager.h" />
     <ClInclude Include="Scene\StageEditorScene.h" />
+    <ClInclude Include="Scene\StageSelectScene.h" />
+    <ClInclude Include="Game\Stage\StageIO.h" />
     <ClInclude Include="StringUtility\StringUtility.h" />
+    <ClInclude Include="input\TextInput.h" />
     <ClInclude Include="TextureManager\TextureManager.h" />
     <ClInclude Include="Scene\TitleScene.h" />
     <ClInclude Include="Winapp\Utility.h" />

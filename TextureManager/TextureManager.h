@@ -52,7 +52,15 @@ public:
         uint32_t srvIndex; // SRVインデックス
         D3D12_CPU_DESCRIPTOR_HANDLE srvHandleCPU {}; // CPUハンドル
         D3D12_GPU_DESCRIPTOR_HANDLE srvHandleGPU {}; // GPUハンドル
+
+        bool everUploaded = false; //動的更新で使う
+
     };
+
+
+    void CreateDynamicTextureRGBA8(const std::string& key, uint32_t width, uint32_t height);
+    void UpdateDynamicTextureRGBA8(const std::string& key, const uint8_t* rgba, uint32_t width, uint32_t height);
+
 
 private:
     //==================================================================

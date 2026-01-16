@@ -62,6 +62,19 @@ void GoalSystem::Update(const std::vector<GateVisual>& gates, int nextGate, cons
     //    return;
     //}
 
+     // ★エディタでは常に表示：ゲート全通過条件を無視
+    if (editorAlwaysVisible_) {
+        active_ = true;   // 念のため
+        spawned_ = true;
+
+        // 触れたら cleared にするかは好み（エディタなら基本不要）
+        // if (CheckTouch_(dronePos)) cleared_ = true;
+
+        ApplyVisual_();
+        return;
+    }
+
+
     if (forceActive_) {
         // 強制表示中もクリア判定したいならここだけやる
         if (active_ && !cleared_ && CheckTouch_(dronePos)) {
@@ -74,15 +87,25 @@ void GoalSystem::Update(const std::vector<GateVisual>& gates, int nextGate, cons
     // 1) まだ出してない → 全ゲート通過で出す
     if (!spawned_) {
         if (!gates.empty() && nextGate >= (int)gates.size()) {
-            // 最後のゲート位置 + オフセット
-            Vector3 p = gates.back().gate.pos;
-            p.x += spawnOffset_.x;
-            p.y += spawnOffset_.y;
-            p.z += spawnOffset_.z;
+
+            Vector3 p{};
+
+            // ★固定ゴールがあるならそれを優先
+            if (hasFixedGoalPos_) {
+                p = fixedGoalPos_;
+            } else {
+                // いつもの：最後のゲート + オフセット
+                p = gates.back().gate.pos;
+                p.x += spawnOffset_.x;
+                p.y += spawnOffset_.y;
+                p.z += spawnOffset_.z;
+            }
 
             SpawnAt_(p);
+            ApplyVisual_(); // ★色/alpha反映したいならここで
         }
     }
+
 
     // 2) 出ているなら触れたか判定
     if (active_) {
@@ -115,10 +138,13 @@ void GoalSystem::ApplyVisual_()
 
     goalObj_->SetTranslate(goalPos_);
     goalObj_->SetScale(goalScale_);
-    goalObj_->SetColor({ 1.0f, 1.0f, 1.0f, goalAlpha_ });
 
-    goalObj_->Update(); // ★これを追加
+    const float a = highlighted_ ? highlightAlpha_ : goalAlpha_;
+    goalObj_->SetColor({ 1.0f, 1.0f, 1.0f, a });
+
+    goalObj_->Update();
 }
+
 
 void GoalSystem::SetGoalAlpha(float a)
 {
@@ -174,4 +200,27 @@ void GoalSystem::Reset()
 
     // ここで goalPos_ を初期化してるなら注意！
     // 位置を保持したいなら goalPos_ は触らない方がいい
+}
+
+void GoalSystem::SetEditorAlwaysVisible(bool v)
+{
+    editorAlwaysVisible_ = v;
+
+    if (editorAlwaysVisible_) {
+        // エディタでは常に表示（spawned/activeを立てる）
+        spawned_ = true;
+        active_ = true;
+
+        // 位置は今の goalPos_ のまま描画更新
+        ApplyVisual_();
+    } else {
+        // 通常挙動に戻す
+        Reset();
+    }
+}
+
+void GoalSystem::SetHighlighted(bool v)
+{
+    highlighted_ = v;
+    ApplyVisual_();
 }

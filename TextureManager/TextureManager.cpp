@@ -144,3 +144,122 @@ const DirectX::TexMetadata& TextureManager::GetMetaData(const std::string& fileP
     static DirectX::TexMetadata dummy {}; 
     return dummy;
 }
+
+//動的テクスチャ
+void TextureManager::CreateDynamicTextureRGBA8(const std::string& key, uint32_t width, uint32_t height)
+{
+    if (textureDatas.contains(key)) return;
+
+    assert(dxCommon_ && srvManager_);
+    assert(srvManager_->CanAllocate());
+
+    TextureData& td = textureDatas[key];
+
+    DirectX::TexMetadata md{};
+    md.width = width;
+    md.height = height;
+    md.depth = 1;
+    md.arraySize = 1;
+    md.mipLevels = 1;
+    md.format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    md.dimension = DirectX::TEX_DIMENSION_TEXTURE2D;
+    td.metadata = md;
+
+    // 初期 COPY_DEST
+    td.resource = dxCommon_->CreateTextureResource(dxCommon_->GetDevice(), td.metadata);
+
+    td.srvIndex = srvManager_->Allocate();
+    td.srvHandleCPU = srvManager_->GetCPUDescriptorHandle(td.srvIndex);
+    td.srvHandleGPU = srvManager_->GetGPUDescriptorHandle(td.srvIndex);
+
+    D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{};
+    srvDesc.Format = td.metadata.format;
+    srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+    srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+    srvDesc.Texture2D.MipLevels = 1;
+
+    dxCommon_->GetDevice()->CreateShaderResourceView(td.resource.Get(), &srvDesc, td.srvHandleCPU);
+
+    // =========================================================
+    // ★B案：ここで COPY_DEST -> GENERIC_READ にしておく
+    // （描画でサンプルできる状態にする）
+    // =========================================================
+    {
+        auto* cl = dxCommon_->GetCommandList();
+
+        D3D12_RESOURCE_BARRIER b{};
+        b.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+        b.Transition.pResource = td.resource.Get();
+        b.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
+        b.Transition.StateAfter = D3D12_RESOURCE_STATE_GENERIC_READ;
+        b.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+        cl->ResourceBarrier(1, &b);
+
+        // ここは “初期化中に一回だけ” なので Execute して待ってOK
+        cl->Close();
+        ID3D12CommandList* lists[] = { cl };
+        dxCommon_->GetCommandQueue()->ExecuteCommandLists(1, lists);
+
+        dxCommon_->WaitForGPU();
+
+        dxCommon_->GetCommandAllocator()->Reset();
+        cl->Reset(dxCommon_->GetCommandAllocator(), nullptr);
+    }
+
+    td.everUploaded = true; // ★「GENERIC_READにした」印として使う
+}
+
+
+void TextureManager::UpdateDynamicTextureRGBA8(
+    const std::string& key, const uint8_t* rgba, uint32_t width, uint32_t height)
+{
+    if (!textureDatas.contains(key)) {
+        CreateDynamicTextureRGBA8(key, width, height);
+    }
+
+    assert(dxCommon_ && srvManager_);
+    TextureData& td = textureDatas.at(key);
+
+    // サイズ固定運用
+    assert(td.metadata.width == width && td.metadata.height == height);
+
+    // ScratchImageへコピー
+    DirectX::ScratchImage img{};
+    HRESULT hr = img.Initialize2D(DXGI_FORMAT_R8G8B8A8_UNORM, width, height, 1, 1);
+    assert(SUCCEEDED(hr));
+
+    const DirectX::Image* im = img.GetImage(0, 0, 0);
+    assert(im);
+
+    for (uint32_t y = 0; y < height; ++y) {
+        std::memcpy(im->pixels + im->rowPitch * y,
+            rgba + (size_t)width * 4 * y,
+            (size_t)width * 4);
+    }
+
+    // ★2回目以降は GENERIC_READ -> COPY_DEST に戻す
+    if (td.everUploaded) {
+        D3D12_RESOURCE_BARRIER b{};
+        b.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+        b.Transition.pResource = td.resource.Get();
+        b.Transition.StateBefore = D3D12_RESOURCE_STATE_GENERIC_READ;
+        b.Transition.StateAfter = D3D12_RESOURCE_STATE_COPY_DEST;
+        b.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+        dxCommon_->GetCommandList()->ResourceBarrier(1, &b);
+    }
+
+    // UploadTextureData は COPY_DEST -> GENERIC_READ までやってくれる
+    Microsoft::WRL::ComPtr<ID3D12Resource> intermediate = dxCommon_->UploadTextureData(td.resource, img);
+
+    // 実行
+    dxCommon_->GetCommandList()->Close();
+    ID3D12CommandList* lists[] = { dxCommon_->GetCommandList() };
+    dxCommon_->GetCommandQueue()->ExecuteCommandLists(_countof(lists), lists);
+
+    // 待機して次フレームに備える（あなたの設計に合わせてる）
+    dxCommon_->WaitForGPU();
+    dxCommon_->GetCommandAllocator()->Reset();
+    dxCommon_->GetCommandList()->Reset(dxCommon_->GetCommandAllocator(), nullptr);
+
+    td.everUploaded = true;
+}

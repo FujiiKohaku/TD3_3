@@ -34,7 +34,9 @@ void Game::Initialize()
 	ModelManager::GetInstance()->LoadModel("cube.obj");
     TextureManager::GetInstance()->LoadTexture("resources/uvChecker.png");
     TextureManager::GetInstance()->LoadTexture("resources/fence.png");
-   
+    TextureManager::GetInstance()->LoadTexture("resources/ui/bitMap.png");
+    TextureManager::GetInstance()->LoadTexture("resources/ui/ascii_font_16x6_cell32_first32.png");
+
 
     BaseScene* scene = new TitleScene();
     // シーンマネージャーに最初のシーンをセット
@@ -59,6 +61,8 @@ void Game::Update()
 
     SceneManager::GetInstance()->Update();
 
+    SceneManager::GetInstance()->DrawImGui();
+
     // ======== ImGui end ========
     ImGuiManager::GetInstance()->End();
 }
@@ -81,7 +85,7 @@ void Game::Finalize()
 {
     // シーンマネージャーも singleton
     SceneManager::GetInstance()->Finalize();
-   // ParticleManager::GetInstance()->Finalize();
+    ParticleManager::GetInstance()->Finalize();
     Object3dManager::GetInstance()->Finalize();
     SpriteManager::GetInstance()->Finalize();
     ModelManager::GetInstance()->Finalize();
