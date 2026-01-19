@@ -6,8 +6,8 @@
 
 // あなたの Vector3 / Gate / WallSystem::Wall が見えるように include 調整
 #include "MathStruct.h"
-#include "GateVisual.h"
-#include "Walls.h"
+#include "../Game/Gate/GateVisual.h"
+#include "../Game/Drone/Walls.h"
 
 struct StageData
 {

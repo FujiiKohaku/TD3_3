@@ -11,7 +11,7 @@
 #include "SpriteManager.h"
 #include "TextureManager.h"
 #include "SceneManager.h"
-#include "StageIO.h"
+#include "../Game/Stage/StageIO.h"
 #include "StageSelectScene.h"
 
 //ゲームプレイ用

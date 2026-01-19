@@ -13,7 +13,7 @@
 #include "BitmapFont.h"
 #include "TextInput.h"
 #include "Input.h"
-#include "StageIO.h"
+#include "../Game/Stage/StageIO.h"
 
 
 #include "../Game/Drone/Drone.h"
