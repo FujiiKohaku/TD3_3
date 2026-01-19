@@ -10,8 +10,10 @@
 #include "Sprite.h"
 #include "SpriteManager.h"
 #include "TextureManager.h"
-
+#include "BitmapFont.h"
+#include "TextInput.h"
 #include "Input.h"
+#include "../Game/Stage/StageIO.h"
 
 
 #include "../Game/Drone/Drone.h"
@@ -71,6 +73,10 @@ private:
     void StageIOImGui();
     void GoalEditorImGui();
 
+    void DrawEditorParamHud_();
+
+    void DrawGateIndices_();
+
     Vector3 camPosInit_{ 0.0f, 3.0f, -10.0f };
     float camYawInit_ = 0.0f;
     float camPitchInit_ = 0.0f;
@@ -94,5 +100,30 @@ private:
 
     //2D
     Sprite* modeHud_ = nullptr;
+    BitmapFont font_;
+    BitmapFont gateNum;
+
+    //操作方法
+    bool showHelp_ = true;
+    Vector2 helpPosLeft_ = { 16.0f, 48.0f };
+    Vector2 helpPosRight_ = { 800.0f, 48.0f }; // 右カラム（画面幅に応じて調整）
+    float   helpScale_ = 0.5f;
+
+    // StageEditorScene.h
+    bool isNaming_ = false;
+    // 入力中の表示用（IMEの合成含む）
+    std::wstring stageNameW_;
+
+    // 保存用（UTF-8に変換してここに入れる）
+    std::string stageNameUtf8_;
+
+    Sprite* stageNameSprite_ = nullptr;
+
+    static constexpr uint32_t kNameTexW = 1024;
+    static constexpr uint32_t kNameTexH = 128;
+    static constexpr const char* kNameTexKey = "__StageNameRT__";
+
+    std::vector<uint8_t> nameRgba_; // 作業用
+   
 
 };

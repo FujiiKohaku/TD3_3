@@ -13,6 +13,10 @@ struct GateVisual {
     // 見た目の厚み（板っぽくする）
     float visualThicknessMul = 1.0f;
 
+    // 選択中か
+    bool selected = false;
+    void SetSelected(bool v) { selected = v; }
+
     void Initialize(Object3dManager* mgr, const std::string& modelPath, Camera* cam) {
         objGood.Initialize(mgr);
         objGood.SetModel(modelPath);
@@ -57,15 +61,19 @@ struct GateVisual {
 
 private:
     void ApplyColor_() {
-        // 通常時：ゾーンが分かるように薄色で固定
-        // フラッシュ中：判定色で強調
         const bool flashing = (gate.feedbackTimer > 0.0f);
         const Color4 flash = gate.GetDrawColor();
+
+        // ★選択時の色（目立つやつ）
+        const Color4 selGood{ 1.0f, 0.9f, 0.1f, 0.95f }; // 黄色
+        const Color4 selPerfect{ 1.0f, 0.5f, 0.1f, 0.95f }; // オレンジ寄り（内側）
 
         // Good（外側）
         if (Material* m = objGood.GetMaterial()) {
             if (flashing) {
                 m->color = { flash.r, flash.g, flash.b, 0.9f };
+            } else if (selected) {
+                m->color = { selGood.r, selGood.g, selGood.b, selGood.a };
             } else {
                 m->color = { 0.2f, 1.0f, 0.3f, 0.35f }; // 薄緑
             }
@@ -75,9 +83,12 @@ private:
         if (Material* m = objPerfect.GetMaterial()) {
             if (flashing) {
                 m->color = { flash.r, flash.g, flash.b, 0.9f };
+            } else if (selected) {
+                m->color = { selPerfect.r, selPerfect.g, selPerfect.b, selPerfect.a };
             } else {
                 m->color = { 0.2f, 0.7f, 1.0f, 0.35f }; // 薄青
             }
         }
     }
+
 };

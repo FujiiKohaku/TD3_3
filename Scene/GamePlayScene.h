@@ -10,6 +10,9 @@
 #include "Sprite.h"
 #include "SpriteManager.h"
 #include "TextureManager.h"
+#include "SceneManager.h"
+#include "../Game/Stage/StageIO.h"
+#include "StageSelectScene.h"
 
 //ゲームプレイ用
 #include "Input.h"
@@ -96,5 +99,7 @@ private:
     //ゴール
     GoalSystem goalSys_;
     bool stageCleared_ = false; // クリア後の演出用（任意）
+
+    bool requestBackToSelect_ = false;
 
 };

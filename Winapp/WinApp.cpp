@@ -4,6 +4,8 @@
 #include "imgui/imgui_impl_win32.h" // Win32 連携
 #include <Windows.h>
 #include <cstdint>
+#include "TextInput.h"
+
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 //==================================================================
@@ -12,19 +14,17 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg
 //==================================================================
 LRESULT CALLBACK WinApp::WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 {
-    // ImGui用メッセージ処理（優先）
-    if (ImGui_ImplWin32_WndProcHandler(hwnd, msg, wparam, lparam)) {
-        return true;
-    }
-
-    // メッセージに応じた固有処理
-    switch (msg) {
-    case WM_DESTROY: // ウィンドウが破棄された
-        PostQuitMessage(0); // OSにアプリ終了を通知
+    // ★IME入力を拾う
+    if (TextInput::GetInstance()->HandleWndProc(hwnd, msg, wparam, lparam)) {
         return 0;
     }
 
-    // 標準のメッセージ処理を実行
+    switch (msg) {
+    case WM_DESTROY:
+        PostQuitMessage(0);
+        return 0;
+    }
+
     return DefWindowProc(hwnd, msg, wparam, lparam);
 }
 

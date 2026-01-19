@@ -36,14 +36,16 @@ void SceneManager::Update()
         scene_->Update();
     }
 }
-
 void SceneManager::Draw()
 {
-    if (!scene_)
-        return; // 安全処理
-
+    if (!scene_) return;
     scene_->Draw3D();
     scene_->Draw2D();
+}
+
+void SceneManager::DrawImGui()
+{
+    if (!scene_) return;
     scene_->DrawImGui();
 }
 void SceneManager::Finalize()
