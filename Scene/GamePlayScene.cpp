@@ -266,7 +266,7 @@ void GamePlayScene::Update()
         droneObj_->Update();
     }
 
-    // ★これを毎フレーム呼ぶ
+    // これを毎フレーム呼ぶ
     camera_->FollowDroneRigid(drone_, 7.5f, 1.8f, -0.18f, droneYawOffset);
 
     // 更新系
@@ -442,8 +442,7 @@ void GamePlayScene::Update()
     ImGui::Begin("Drone Tuning");
     ImGui::SliderAngle("Yaw Offset", &droneYawOffset); // -pi～+pi を度で触れる
 
-    ImGui::Text("yaw(rad)=%.3f  yaw(deg)=%.1f",
-        drone_.GetYaw(), drone_.GetYaw() * 180.0f / std::numbers::pi_v<float>);
+    ImGui::Text("yaw(rad)=%.3f  yaw(deg)=%.1f",drone_.GetYaw(), drone_.GetYaw() * 180.0f / std::numbers::pi_v<float>);
     ImGui::Text("pos=%.2f %.2f %.2f", drone_.GetPos().x, drone_.GetPos().y, drone_.GetPos().z);
 
     ImGui::Text("nextGate=%d / %d", nextGate_, (int)gates_.size());

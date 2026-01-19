@@ -14,6 +14,11 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg
 //==================================================================
 LRESULT CALLBACK WinApp::WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 {
+    // ★ ImGui に入力を渡す（これが無いと動かない）
+    if (ImGui_ImplWin32_WndProcHandler(hwnd, msg, wparam, lparam)) {
+        return true;
+    }
+
     // ★IME入力を拾う
     if (TextInput::GetInstance()->HandleWndProc(hwnd, msg, wparam, lparam)) {
         return 0;

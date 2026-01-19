@@ -25,6 +25,9 @@ void TitleScene::Initialize()
 
     titleModel_->SetTranslate({ 0, 0, 0 });
     titleModel_->Update();
+    LightManager::GetInstance()->SetIntensity(0.0f);
+    LightManager::GetInstance()->SetPointIntensity(0.0f);
+    LightManager::GetInstance()->SetSpotLightIntensity(1.0f);
    
 }
 
@@ -42,11 +45,12 @@ void TitleScene::Update()
   // titleModel->Update();
     camera_->Update();
 
-   
-    i.y += 1.0f;
-
+ 
+    i.y += 0.01f;
+     
     titleModel_->SetRotate(i);
     titleModel_->Update();
+
 }
 
 
@@ -65,6 +69,22 @@ void TitleScene::Draw3D()
 
 void TitleScene::DrawImGui()
 {
+    ImGui::Begin("Camera");
+
+    Vector3 pos = camera_->GetTranslate();
+    Vector3 rot = camera_->GetRotate();
+
+    if (ImGui::DragFloat3("Position", &pos.x, 0.1f)) {
+        camera_->SetTranslate(pos);
+    }
+
+    if (ImGui::DragFloat3("Rotate", &rot.x, 0.01f)) {
+        camera_->SetRotate(rot);
+    }
+
+    camera_->Update(); 
+
+    ImGui::End();
 }
 
 void TitleScene::Finalize()
