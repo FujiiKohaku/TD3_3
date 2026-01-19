@@ -18,6 +18,8 @@ public:
 
 private:
     Vector3 i = { 0.0f, 0.0f, 0.0f };
-    Object3d* titleModel_ = nullptr;
     Camera* camera_;
+    Object3d* outShellModel_ = nullptr;
+    Object3d* homeModel_ = nullptr;
+    Object3d* railModel_ = nullptr;
 };
