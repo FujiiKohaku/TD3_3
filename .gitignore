@@ -323,3 +323,4 @@ project/imgui.ini
 /Dumps
 
 !*.obj
+/imgui.ini
