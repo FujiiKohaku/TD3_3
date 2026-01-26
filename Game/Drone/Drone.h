@@ -46,6 +46,7 @@ public:
 	const Vector3& GetVel() const { return vel_; }
 	void SetYaw(float y) { yaw_ = y; }
 
+	bool HasJustLanded() const;
 
 private:
 	Vector3 pos_{ 0,0,0 };
@@ -88,8 +89,9 @@ private:
 
 
 	float minY_ = -5.0f; // 地面の高さ
-
+	bool groundedNow = false;
 	bool hitGround_ = false;
 	Camera camera_;
-	
+	bool justLanded_ = false;
+
 };

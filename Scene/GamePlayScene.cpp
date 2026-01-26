@@ -229,6 +229,16 @@ void GamePlayScene::Initialize()
 
 	droneObj_->Update();
 
+
+	if (drone_.HasJustLanded()) {
+		// 画面シェイク
+		camera_->StartShake(0.4f, 0.15f);
+
+		// 着地エフェクト
+		landingEffect_.Play(drone_.GetPos());
+
+	}
+	 
 }
 
 void GamePlayScene::Update()

@@ -138,7 +138,7 @@ void Drone::UpdateMode1(const Input& input, float dt)
     pos_.x += vel_.x * dt;
     pos_.y += vel_.y * dt;
     pos_.z += vel_.z * dt;
-    bool groundedNow = false;
+  
     // -------------------------
 // 6) 下降制限（地面）
 // -------------------------
@@ -149,16 +149,16 @@ void Drone::UpdateMode1(const Input& input, float dt)
             vel_.y = 0.0f;
         }
 
-        groundedNow = true;
-    }
-
-
-    // ---- 着地した瞬間だけイベント ----
-    if (groundedNow && !hitGround_) {
-        // ここで「シェイクしていい」
        
-
     }
+
+
+    justLanded_ = false;
+
+    if (groundedNow && !hitGround_) {
+        justLanded_ = true;
+    }
+
     hitGround_ = groundedNow;
 }
 
@@ -241,4 +241,7 @@ void Drone::UpdateDebugNoInertia(const Input& input, float dt)
     // 4) vel はデバッグなので 0 にしておく（壁押し戻し等が楽）
     // -------------------------
     vel_ = { 0.0f, 0.0f, 0.0f };
+}
+bool Drone::HasJustLanded() const {
+    return justLanded_;
 }
