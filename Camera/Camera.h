@@ -30,6 +30,7 @@ public:
     void DebugUpdate();
     void Initialize();
     // 更新
+    void Update();
     void Update(float deltaTime);
     // ===============================
     // setter（外部から値を設定）

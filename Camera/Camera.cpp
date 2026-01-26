@@ -22,7 +22,9 @@ void Camera::Initialize()
     cameraResource_->Map(0, nullptr, reinterpret_cast<void**>(&cameraData_));
 
 }
-
+void Camera::Update() {
+    Update(0.0f);
+}
 void Camera::Update(float deltaTime) {
     assert(cameraData_ && "Camera::Initialize() is not called");
 
