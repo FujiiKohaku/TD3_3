@@ -289,7 +289,7 @@ void GamePlayScene::Update()
 	//  camera_->DebugUpdate();
 
 
-	camera_->Update();
+	camera_->Update(dt);
 
 	//ゲート
 
@@ -571,7 +571,7 @@ void GamePlayScene::Update()
 		// ★ここでは return してOK（もうImGuiは全部閉じた後だから）
 		return;
 	}
-
+	
 }
 
 void GamePlayScene::Draw3D()

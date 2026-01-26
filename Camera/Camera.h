@@ -30,7 +30,7 @@ public:
     void DebugUpdate();
     void Initialize();
     // 更新
-    void Update();
+    void Update(float deltaTime);
     // ===============================
     // setter（外部から値を設定）
     // ===============================
@@ -70,6 +70,7 @@ public:
     void ClearCustomView();
     void SetCustomView(const Matrix4x4& v);
 
+    void StartShake(float power, float time);
 
 private:
     struct CameraForGPU {
@@ -93,6 +94,9 @@ private:
 
     bool useCustomView_ = false;
     Matrix4x4 customView_{};
-
+    //シェイク
+    float shakeTime_ = 0.0f;
+    float shakePower_ = 0.0f;
+    Vector3 shakeOffset_{ 0,0,0 };
 
 };

@@ -23,16 +23,49 @@ void Camera::Initialize()
 
 }
 
-void Camera::Update()
-{
+void Camera::Update(float deltaTime) {
     assert(cameraData_ && "Camera::Initialize() is not called");
-    cameraData_->worldPosition = transform_.translate;
 
-    worldMatrix_ = MatrixMath::MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
+    // -------------------------
+    // 1) シェイク更新
+    // -------------------------
+    if (shakeTime_ > 0.0f) {
+        shakeTime_ -= deltaTime;
+
+        float rx = (float(rand()) / RAND_MAX) * 2.0f - 1.0f;
+        float ry = (float(rand()) / RAND_MAX) * 2.0f - 1.0f;
+
+        shakeOffset_.x = rx * shakePower_;
+        shakeOffset_.y = ry * shakePower_;
+        shakeOffset_.z = 0.0f;
+    }
+    else {
+        shakeOffset_ = { 0.0f, 0.0f, 0.0f };
+    }
+
+    // -------------------------
+    // 2) シェイクを位置に反映
+    // -------------------------
+    Vector3 shakenPos = transform_.translate;
+    shakenPos.x += shakeOffset_.x;
+    shakenPos.y += shakeOffset_.y;
+    shakenPos.z += shakeOffset_.z;
+
+    cameraData_->worldPosition = shakenPos;
+
+    // -------------------------
+    // 3) 行列計算
+    // -------------------------
+    worldMatrix_ = MatrixMath::MakeAffineMatrix(
+        transform_.scale,
+        transform_.rotate,
+        shakenPos
+    );
 
     if (useCustomView_) {
-        viewMatrix_ = customView_;                 // ★LookAtの結果を使う
-    } else {
+        viewMatrix_ = customView_;
+    }
+    else {
         viewMatrix_ = MatrixMath::Inverse(worldMatrix_);
     }
 
@@ -44,6 +77,7 @@ void Camera::Update()
 
     viewProjectionMatrix_ = MatrixMath::Multiply(viewMatrix_, projectionMatrix_);
 }
+
 
 
 void Camera::DebugUpdate()
@@ -106,4 +140,8 @@ void Camera::SetCustomView(const Matrix4x4& v)
 {
     useCustomView_ = true;
     customView_ = v;
+}
+void Camera::StartShake(float power, float time) {
+    shakePower_ = power;
+    shakeTime_ = time;
 }
