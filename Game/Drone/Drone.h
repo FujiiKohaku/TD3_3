@@ -83,5 +83,5 @@ private:
     float yawDrag_ = 6.0f;  // 角速度減衰
 
 
-
+    float minY_ = -5.0f; // 地面の高さ
 };

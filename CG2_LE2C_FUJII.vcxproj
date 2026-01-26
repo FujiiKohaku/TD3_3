@@ -273,6 +273,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
   <ItemGroup>
     <ClInclude Include="2D\BitmapFont.h" />
     <ClInclude Include="3D\CreateSphere.h" />
+    <ClInclude Include="Game\Drone\Drone.h" />
     <ClInclude Include="Game\Drone\Walls.h" />
     <ClInclude Include="Game\Goal\Goal.h" />
     <ClInclude Include="Game\Goal\GoalSystem.h" />

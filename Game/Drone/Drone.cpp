@@ -138,6 +138,17 @@ void Drone::UpdateMode1(const Input& input, float dt)
     pos_.x += vel_.x * dt;
     pos_.y += vel_.y * dt;
     pos_.z += vel_.z * dt;
+
+    // -------------------------
+// 6) 下降制限（地面）
+// -------------------------
+    if (pos_.y < minY_) {
+        pos_.y = minY_;
+
+        if (vel_.y < 0.0f) {
+            vel_.y = 0.0f;
+        }
+    }
 }
 
 void Drone::UpdateDebugNoInertia(const Input& input, float dt)
