@@ -227,8 +227,8 @@ void GamePlayScene::Initialize()
 		goalSys_.ClearFixedGoalPos();
 	}
 
-	ModelManager::GetInstance ()->LoadModel ("resources/skydome/skydome.obj");
-	TextureManager::GetInstance ()->LoadTexture ("resources/skydome/skydome.png");
+	ModelManager::GetInstance ()->LoadModel ("skydome.obj");
+	TextureManager::GetInstance ()->LoadTexture ("resources/skydome.png");
 	skydome_ = std::make_unique<Object3d> ();
 	skydome_->Initialize (Object3dManager::GetInstance ());
 	skydome_->SetModel ("skydome.obj");
@@ -280,8 +280,8 @@ void GamePlayScene::Update()
 	player2_->Update();
 	sprite_->Update();
 	sphere_->Update(camera_);
-	droneObj_->Update ();
-	skydome_->Update ();
+	droneObj_->Update();
+	skydome_->Update();
 
 	// ★最後に一回
 
