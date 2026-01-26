@@ -10,7 +10,7 @@
 #pragma comment(lib, "Xinput.lib")
 #include"Camera.h"
 #include"../Particle/ParticleManager.h"
-#include"../LandingEffect/LamdingEffect.h"
+#include"../Game/LandingEffect/LandingEffect.h"
 #include"../3D/Object3dManager.h"
 class Input;
 
@@ -89,9 +89,11 @@ private:
 
 
 	float minY_ = -5.0f; // 地面の高さ
-	bool groundedNow = false;
-	bool hitGround_ = false;
+	
+
 	Camera camera_;
 	bool justLanded_ = false;
+	
+	bool wasOnGround_ = false;
 
 };

@@ -1,5 +1,6 @@
 #pragma once
 #include "MathStruct.h"
+#include <vector>
 
 class Object3d;
 class Object3dManager;
@@ -11,21 +12,24 @@ public:
     ~LandingEffect();
 
     void Initialize(Object3dManager* objManager, Camera* camera);
-
     void Play(const Vector3& pos);
 
     void Update(float dt);
     void Draw();
 
 private:
-    Object3d* effectObj_;
+    struct Piece {
+        Object3d* obj = nullptr;
+        Vector3 velocity{};
+        float life = 0.0f;
+    };
 
-    bool active_;
-    float time_;
+    std::vector<Piece> pieces_;
 
-    float startScale_;
-    float endScale_;
-    float yOffset_;
-    float duration_ = 0.3f;
+    Object3dManager* objManager_ = nullptr;
+    Camera* camera_ = nullptr;
 
+    bool isPlaying_ = false;
+
+    float yOffset_ = 0.08f;
 };

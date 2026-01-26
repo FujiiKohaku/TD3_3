@@ -171,7 +171,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)Game\Goal;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <ClCompile Include="Game\Goal\GoalSystem.cpp" />
-    <ClCompile Include="Game\LandingEffect\LamdingEffect.cpp" />
+    <ClCompile Include="Game\LandingEffect\LandingEffect.cpp" />
     <ClCompile Include="math\Light.cpp" />
     <ClCompile Include="Light\LightManager.cpp" />
     <ClCompile Include="math\MathStruct.cpp" />
@@ -282,7 +282,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Game\Goal\GoalSystem.h" />
     <ClInclude Include="Game\Stage\StageData.h" />
     <ClInclude Include="Game\Stage\StageNameInput.h" />
-    <ClInclude Include="Game\LandingEffect\LamdingEffect.h" />
+    <ClInclude Include="Game\LandingEffect\LandingEffect.h" />
     <ClInclude Include="math\Light.h" />
     <ClInclude Include="Light\LightManager.h" />
     <ClInclude Include="math\MathStruct.h" />
