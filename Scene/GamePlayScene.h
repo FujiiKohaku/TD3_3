@@ -102,5 +102,6 @@ private:
 
     bool requestBackToSelect_ = false;
 
-    LandingEffect landingEffect_;
+    //天球
+    std::unique_ptr<Object3d> skydome_ = nullptr;
 };

@@ -14,8 +14,8 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg
 //==================================================================
 LRESULT CALLBACK WinApp::WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 {
-    // ★ ImGui に入力を渡す（これが無いと動かない）
-    if (ImGui_ImplWin32_WndProcHandler(hwnd, msg, wparam, lparam)) {
+    // ImGui用メッセージ処理（優先）
+    if (ImGui_ImplWin32_WndProcHandler (hwnd, msg, wparam, lparam)) {
         return true;
     }
 

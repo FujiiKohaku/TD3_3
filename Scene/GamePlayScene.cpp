@@ -233,14 +233,13 @@ void GamePlayScene::Initialize()
         goalSys_.ClearFixedGoalPos();
     }
 
-	droneObj_->Update();
-
-
-
-	 
-
-	
-
+	ModelManager::GetInstance ()->LoadModel ("skydome.obj");
+	TextureManager::GetInstance ()->LoadTexture ("resources/skydome.png");
+	skydome_ = std::make_unique<Object3d> ();
+	skydome_->Initialize (Object3dManager::GetInstance ());
+	skydome_->SetModel ("skydome.obj");
+	skydome_->SetCamera (camera_);
+	skydome_->SetEnableLighting (false);
 }
 
 void GamePlayScene::Update()
@@ -284,12 +283,16 @@ void GamePlayScene::Update()
     // これを毎フレーム呼ぶ
     camera_->FollowDroneRigid(drone_, 7.5f, 1.8f, -0.18f, droneYawOffset);
 
-    // 更新系
-    emitter_.Update();
-    ParticleManager::GetInstance()->Update();
-    player2_->Update();
-    sprite_->Update();
-    sphere_->Update(camera_);
+
+
+	// 更新系
+	emitter_.Update();
+	ParticleManager::GetInstance()->Update();
+	player2_->Update();
+	sprite_->Update();
+	sphere_->Update(camera_);
+	droneObj_->Update();
+	skydome_->Update();
 
     // ★最後に一回
 
@@ -592,11 +595,11 @@ void GamePlayScene::Update()
 
 void GamePlayScene::Draw3D()
 {
-    Object3dManager::GetInstance()->PreDraw();
-    LightManager::GetInstance()->Bind(DirectXCommon::GetInstance()->GetCommandList());
-    //	player2_->Draw();
-    if (droneObj_)
-        droneObj_->Draw();
+	Object3dManager::GetInstance()->PreDraw();
+	LightManager::GetInstance()->Bind(DirectXCommon::GetInstance()->GetCommandList());
+//	player2_->Draw();
+	if (droneObj_) droneObj_->Draw();
+	if (skydome_) skydome_->Draw ();
 
     for (auto& g : gates_) {
         g.Draw();
