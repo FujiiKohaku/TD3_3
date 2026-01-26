@@ -1145,7 +1145,7 @@ void StageEditorScene::UpdateFreeCamera(float dt)
     Matrix4x4 view = MatrixMath::MakeLookAtMatrix(camPos_, target, { 0,1,0 });
     camera_->SetTranslate(camPos_);     // GPUに渡すworldPosition用
     camera_->SetCustomView(view);
-    camera_->Update(dt);
+    camera_->Update();
 
     if (input.IsKeyTrigger(DIK_Y)) {
         camPos_ = camPosInit_;
@@ -1155,7 +1155,7 @@ void StageEditorScene::UpdateFreeCamera(float dt)
         // ついでに即反映（この後の処理でも上書きされない）
         camera_->SetTranslate(camPos_);
         camera_->SetRotate({ camPitch_, camYaw_, 0.0f });
-        camera_->Update(dt);
+        camera_->Update();
         return; // ★好み：このフレームは他の移動/回転を無視
     }
 

@@ -184,7 +184,7 @@ void GamePlayScene::Initialize()
         }
     }
 
-	landingEffect_.Initialize(Object3dManager::GetInstance(), camera_);
+	
 
 	drone_.Initialize(stage.droneSpawnPos);
 
@@ -247,13 +247,7 @@ void GamePlayScene::Update()
 
     float dt = 1.0f / 60.0f;
 
-	if (drone_.HasJustLanded()) {
-		camera_->StartShake(0.4f, 0.15f);
-		landingEffect_.Play(drone_.GetPos());
-	}
-
-	landingEffect_.Update(dt);
-	// ★入力更新（必須）
+	
 
     Input& input = *Input::GetInstance();
 
@@ -304,7 +298,7 @@ void GamePlayScene::Update()
     //  camera_->DebugUpdate();
 
 
-	camera_->Update(dt);
+	camera_->Update();
 
     // ゲート
 
@@ -610,7 +604,7 @@ void GamePlayScene::Draw3D()
 	if (drawWallDebug_) {
 		wallSys_.DrawDebug();
 	}
-	landingEffect_.Draw();
+	
 	//sphere_->Draw(DirectXCommon::GetInstance()->GetCommandList());
 	ParticleManager::GetInstance()->PreDraw();
 	ParticleManager::GetInstance()->Draw();
