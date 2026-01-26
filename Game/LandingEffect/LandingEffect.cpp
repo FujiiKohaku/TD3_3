@@ -32,11 +32,11 @@ void LandingEffect::Initialize(Object3dManager* objManager, Camera* camera) {
 }
 
 void LandingEffect::Play(const Vector3& pos) {
-	if (isPlaying_) {
+	if (isPlaying_) {//isPlayingがtrueだと入れない
 		return;
 	}
 
-	isPlaying_ = true;
+	isPlaying_ = true;//isPlayingをtrueに
 
 	const float speed = 3.0f;
 	const float upSpeed = 2.0f;
@@ -67,14 +67,14 @@ void LandingEffect::Play(const Vector3& pos) {
 
 void LandingEffect::Update(float dt) {
 	const float gravity = 9.8f;
-	bool anyAlive = false;
+	bool anyAlive = false;//ピースが生きているか否か
 
 	for (Piece& p : pieces_) {
-		if (p.life <= 0.0f) {
+		if (p.life <= 0.0f) {//lifeが0以下ならスキップ全部チェック
 			continue;
 		}
 
-		anyAlive = true;
+		anyAlive = true;//もしピースが一個でも生きていたらtrue
 
 		p.velocity.y -= gravity * dt;
 
@@ -84,9 +84,9 @@ void LandingEffect::Update(float dt) {
 		pos.z += p.velocity.z * dt;
 
 
-		p.scale.x -= 0.001f;
-		p.scale.y -= 0.001f;
-		p.scale.z -= 0.001f;
+		p.scale.x -= 0.002f;
+		p.scale.y -= 0.002f;
+		p.scale.z -= 0.002f;
 		if (p.scale.x < 0.0f) p.scale.x = 0.0f;
 		if (p.scale.y < 0.0f) p.scale.y = 0.0f;
 		if (p.scale.z < 0.0f) p.scale.z = 0.0f;
