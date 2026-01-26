@@ -1,18 +1,31 @@
 #pragma once
-#include "Object3d.h"
-#include "Camera.h"
+#include "MathStruct.h"
+
+class Object3d;
+class Object3dManager;
+class Camera;
 
 class LandingEffect {
 public:
+    LandingEffect();
+    ~LandingEffect();
+
     void Initialize(Object3dManager* objManager, Camera* camera);
+
     void Play(const Vector3& pos);
+
     void Update(float dt);
     void Draw();
 
 private:
-    Object3d* effectObj_ = nullptr;
+    Object3d* effectObj_;
 
-    float lifeTime_ = 0.0f;
-    float duration_ = 0.25f;
-    bool active_ = false;
+    bool active_;
+    float time_;
+
+    float startScale_;
+    float endScale_;
+    float yOffset_;
+    float duration_ = 0.3f;
+
 };
