@@ -175,6 +175,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Light\LightManager.cpp" />
     <ClCompile Include="math\MathStruct.cpp" />
     <ClCompile Include="math\Object3DStruct.cpp" />
+    <ClCompile Include="Scene\ResultScene.cpp" />
     <ClCompile Include="Scene\SceneManager.cpp" />
     <ClCompile Include="Scene\BaseScene.cpp" />
     <ClCompile Include="blend\BlendUtil.cpp" />
@@ -238,6 +239,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Scene\StageEditorScene.cpp" />
     <ClCompile Include="Scene\StageSelectScene.cpp" />
     <ClCompile Include="Game\Stage\StageIO.cpp" />
+    <ClCompile Include="Camera\BaseCamera.cpp" />
     <ClCompile Include="StringUtility\StringUtility.cpp" />
     <ClCompile Include="input\TextInput.cpp" />
     <ClCompile Include="TextureManager\TextureManager.cpp" />
@@ -282,6 +284,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Light\LightManager.h" />
     <ClInclude Include="math\MathStruct.h" />
     <ClInclude Include="math\Object3DStruct.h" />
+    <ClInclude Include="Scene\ResultScene.h" />
     <ClInclude Include="Scene\SceneManager.h" />
     <ClInclude Include="Scene\BaseScene.h" />
     <ClInclude Include="blend\BlendUtil.h" />
@@ -319,6 +322,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Scene\StageEditorScene.h" />
     <ClInclude Include="Scene\StageSelectScene.h" />
     <ClInclude Include="Game\Stage\StageIO.h" />
+    <ClInclude Include="Camera\BaseCamera.h" />
     <ClInclude Include="StringUtility\StringUtility.h" />
     <ClInclude Include="input\TextInput.h" />
     <ClInclude Include="TextureManager\TextureManager.h" />

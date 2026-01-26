@@ -102,4 +102,6 @@ private:
 
     bool requestBackToSelect_ = false;
 
+    //天球
+    std::unique_ptr<Object3d> skydome_ = nullptr;
 };
