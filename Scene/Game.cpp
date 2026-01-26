@@ -18,25 +18,25 @@ void Game::Initialize()
     // TextureManager::GetInstance()->LoadTexture("resources/circle.png")
     ModelManager::GetInstance()->Initialize(DirectXCommon::GetInstance());
     Object3dManager::GetInstance()->Initialize(DirectXCommon::GetInstance());
-   // camera_ = new Camera();
-    //camera_->SetTranslate({ 0.0f, 0.0f, 2.0f });
-    //Object3dManager::GetInstance()->SetDefaultCamera(camera_);
+    // camera_ = new Camera();
+    // camera_->SetTranslate({ 0.0f, 0.0f, 2.0f });
+    // Object3dManager::GetInstance()->SetDefaultCamera(camera_);
     modelCommon_.Initialize(DirectXCommon::GetInstance());
     // 入力関連
     Input::GetInstance()->Initialize(winApp_);
     // パーティクル関連
-    //ParticleManager::GetInstance()->Initialize(DirectXCommon::GetInstance(), SrvManager::GetInstance(), camera_);
+    // ParticleManager::GetInstance()->Initialize(DirectXCommon::GetInstance(), SrvManager::GetInstance(), camera_);
     ModelManager::GetInstance()->LoadModel("plane.obj");
     ModelManager::GetInstance()->LoadModel("axis.obj");
     ModelManager::GetInstance()->LoadModel("titleTex.obj");
     ModelManager::GetInstance()->LoadModel("fence.obj");
     ModelManager::GetInstance()->LoadModel("terrain.obj");
-	ModelManager::GetInstance()->LoadModel("cube.obj");
+    ModelManager::GetInstance()->LoadModel("cube.obj");
+    TextureManager::GetInstance()->LoadTexture("resources/uvChecker.png");
     TextureManager::GetInstance()->LoadTexture("resources/uvChecker.png");
     TextureManager::GetInstance()->LoadTexture("resources/fence.png");
     TextureManager::GetInstance()->LoadTexture("resources/ui/bitMap.png");
     TextureManager::GetInstance()->LoadTexture("resources/ui/ascii_font_16x6_cell32_first32.png");
-
 
     BaseScene* scene = new TitleScene();
     // シーンマネージャーに最初のシーンをセット
@@ -50,9 +50,9 @@ void Game::Update()
 
     // --- ゲーム更新 ---
     Input::GetInstance()->Update();
-   // camera_->Update();
+    // camera_->Update();
 
-   // camera_->DebugUpdate();
+    // camera_->DebugUpdate();
 
     // エスケープで離脱
     if (Input::GetInstance()->IsKeyPressed(DIK_ESCAPE)) {
