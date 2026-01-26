@@ -233,6 +233,7 @@ void GamePlayScene::Initialize()
 	skydome_->Initialize (Object3dManager::GetInstance ());
 	skydome_->SetModel ("skydome.obj");
 	skydome_->SetCamera (camera_);
+	skydome_->SetEnableLighting (false);
 }
 
 void GamePlayScene::Update()
