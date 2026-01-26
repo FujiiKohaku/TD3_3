@@ -21,7 +21,7 @@
 #include "../Game/Gate/GateVisual.h"
 #include "../Game/Drone/Walls.h"
 #include "../Game/Goal/GoalSystem.h"
-
+#include"../Game/LandingEffect/LamdingEffect.h"
 
 class SphereObject;
 class GamePlayScene : public BaseScene {
@@ -102,4 +102,5 @@ private:
 
     bool requestBackToSelect_ = false;
 
+    LandingEffect landingEffect_;
 };

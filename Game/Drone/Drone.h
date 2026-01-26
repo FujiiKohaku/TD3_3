@@ -9,6 +9,9 @@
 #include <Xinput.h>
 #pragma comment(lib, "Xinput.lib")
 #include"Camera.h"
+#include"../Particle/ParticleManager.h"
+#include"../LandingEffect/LamdingEffect.h"
+#include"../3D/Object3dManager.h"
 class Input;
 
 class Drone {
@@ -25,11 +28,12 @@ public:
 		rollVel_ = 0.0f;
 		pitchI_ = 0.0f;
 		rollI_ = 0.0f;
+		
 	}
 
 	void UpdateMode1(const Input& input, float dt);
 
-	// ★追加：慣性なし（デバッグ用）
+	// 追加：慣性なし（デバッグ用）
 	void UpdateDebugNoInertia(const Input& input, float dt);
 
 	const Vector3& GetPos() const { return pos_; }
@@ -87,4 +91,5 @@ private:
 
 	bool hitGround_ = false;
 	Camera camera_;
+	
 };

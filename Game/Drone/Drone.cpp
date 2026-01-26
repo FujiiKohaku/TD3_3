@@ -156,7 +156,8 @@ void Drone::UpdateMode1(const Input& input, float dt)
     // ---- 着地した瞬間だけイベント ----
     if (groundedNow && !hitGround_) {
         // ここで「シェイクしていい」
-        camera_.StartShake(5.5f,3.2f);
+       
+
     }
     hitGround_ = groundedNow;
 }
