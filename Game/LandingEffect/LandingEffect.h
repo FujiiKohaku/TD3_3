@@ -21,6 +21,7 @@ private:
     struct Piece {
         Object3d* obj = nullptr;
         Vector3 velocity{};
+        Vector3 scale = { 0.05f,0.05f,0.05f };
         float life = 0.0f;
     };
 

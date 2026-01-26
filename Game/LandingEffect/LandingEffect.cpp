@@ -45,12 +45,15 @@ void LandingEffect::Play(const Vector3& pos) {
 	const int pieceCount = static_cast<int>(pieces_.size());
 
 	for (int i = 0; i < pieceCount; i++) {
-		auto& piece = pieces_[i];
+		Piece& piece = pieces_[i];
+
+		piece.scale = { 0.05f, 0.05f, 0.05f };
+	
 
 		Vector3 start = pos;
 		start.y += yOffset_;
 		piece.obj->SetTranslate(start);
-		piece.obj->SetScale({ 0.05f, 0.05f, 0.05f });
+		piece.obj->SetScale(piece.scale);
 
 		float angle = (2.0f * std::numbers::pi_v<float> / pieceCount) * i;
 		piece.velocity.x = std::cosf(angle) * speed;
@@ -80,8 +83,17 @@ void LandingEffect::Update(float dt) {
 		pos.y += p.velocity.y * dt;
 		pos.z += p.velocity.z * dt;
 
+
+		p.scale.x -= 0.001f;
+		p.scale.y -= 0.001f;
+		p.scale.z -= 0.001f;
+		if (p.scale.x < 0.0f) p.scale.x = 0.0f;
+		if (p.scale.y < 0.0f) p.scale.y = 0.0f;
+		if (p.scale.z < 0.0f) p.scale.z = 0.0f;
 		p.obj->SetTranslate(pos);
+		p.obj->SetScale(p.scale);
 		p.obj->Update();
+
 
 		p.life -= dt;
 	}
