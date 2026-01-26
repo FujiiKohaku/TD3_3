@@ -172,6 +172,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     </ClCompile>
     <ClCompile Include="Game\Goal\GoalSystem.cpp" />
     <ClCompile Include="Camera\MainCamera.cpp" />
+    <ClCompile Include="Game\LandingEffect\LandingEffect.cpp" />
     <ClCompile Include="math\Light.cpp" />
     <ClCompile Include="Light\LightManager.cpp" />
     <ClCompile Include="math\MathStruct.cpp" />
@@ -276,12 +277,14 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
   <ItemGroup>
     <ClInclude Include="2D\BitmapFont.h" />
     <ClInclude Include="3D\CreateSphere.h" />
+    <ClInclude Include="Game\Drone\Drone.h" />
     <ClInclude Include="Game\Drone\Walls.h" />
     <ClInclude Include="Game\Goal\Goal.h" />
     <ClInclude Include="Game\Goal\GoalSystem.h" />
     <ClInclude Include="Game\Stage\StageData.h" />
     <ClInclude Include="Game\Stage\StageNameInput.h" />
     <ClInclude Include="Camera\MainCamera.h" />
+    <ClInclude Include="Game\LandingEffect\LandingEffect.h" />
     <ClInclude Include="math\Light.h" />
     <ClInclude Include="Light\LightManager.h" />
     <ClInclude Include="math\MathStruct.h" />

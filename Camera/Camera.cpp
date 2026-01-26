@@ -11,20 +11,17 @@ Camera::Camera()
     , worldMatrix_(MatrixMath::MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate))
     , viewMatrix_(MatrixMath::Inverse(worldMatrix_))
     , projectionMatrix_(MatrixMath::MakePerspectiveFovMatrix(fovY_, aspectRatio_, nearClip_, farClip_))
-    , viewProjectionMatrix_(MatrixMath::Multiply(viewMatrix_, projectionMatrix_))
-{
+    , viewProjectionMatrix_(MatrixMath::Multiply(viewMatrix_, projectionMatrix_)) {
 }
 
-void Camera::Initialize()
-{
+void Camera::Initialize() {
     cameraResource_ = DirectXCommon::GetInstance()->CreateBufferResource(sizeof(CameraForGPU));
 
     cameraResource_->Map(0, nullptr, reinterpret_cast<void**>(&cameraData_));
 
 }
 
-void Camera::Update()
-{
+void Camera::Update() {
     assert(cameraData_ && "Camera::Initialize() is not called");
     cameraData_->worldPosition = transform_.translate;
 
@@ -32,7 +29,8 @@ void Camera::Update()
 
     if (useCustomView_) {
         viewMatrix_ = customView_;                 // ★LookAtの結果を使う
-    } else {
+    }
+    else {
         viewMatrix_ = MatrixMath::Inverse(worldMatrix_);
     }
 
@@ -46,8 +44,7 @@ void Camera::Update()
 }
 
 
-void Camera::DebugUpdate()
-{
+void Camera::DebugUpdate() {
 #ifdef USE_IMGUI
 
     ImGui::Begin("Settings");
@@ -65,8 +62,7 @@ void Camera::DebugUpdate()
 #endif
 }
 
-void Camera::FollowDroneRigid(const Drone& drone, float backDist, float height, float pitchRad, float yawOffset)
-{
+void Camera::FollowDroneRigid(const Drone& drone, float backDist, float height, float pitchRad, float yawOffset) {
     const Vector3 target{ drone.GetPos().x, drone.GetPos().y, drone.GetPos().z };
 
     const float yawBase = -drone.GetYaw() + yawOffset; // ★ここがポイント
@@ -92,18 +88,15 @@ void Camera::FollowDroneRigid(const Drone& drone, float backDist, float height, 
     transform_.rotate = { camPitch, camYaw, 0.0f };
 }
 
-void Camera::SetViewLookAt(const Vector3& eye, const Vector3& target, const Vector3& up)
-{
+void Camera::SetViewLookAt(const Vector3& eye, const Vector3& target, const Vector3& up) {
     useCustomView_ = true;
     customView_ = MatrixMath::MakeLookAtMatrix(eye, target, up); // ←あなたのLookAt関数名に合わせて
 }
-void Camera::ClearCustomView()
-{
+void Camera::ClearCustomView() {
     useCustomView_ = false;
 }
 
-void Camera::SetCustomView(const Matrix4x4& v)
-{
+void Camera::SetCustomView(const Matrix4x4& v) {
     useCustomView_ = true;
     customView_ = v;
 }

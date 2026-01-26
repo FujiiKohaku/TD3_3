@@ -61,8 +61,7 @@ public:
     float GetAspectRatio() const { return aspectRatio_; }
     float GetNearClip() const { return nearClip_; }
     float GetFarClip() const { return farClip_; }
-    D3D12_GPU_VIRTUAL_ADDRESS GetGPUAddress() const
-    {
+    D3D12_GPU_VIRTUAL_ADDRESS GetGPUAddress() const {
         return cameraResource_->GetGPUVirtualAddress();
     }
 

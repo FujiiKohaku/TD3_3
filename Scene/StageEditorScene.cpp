@@ -355,7 +355,7 @@ void StageEditorScene::Initialize()
 
     camera_->SetTranslate(camPos_);
     camera_->SetRotate({ camPitch_, camYaw_, 0.0f });
-    camera_->Update();
+    
 
     goalAlpha_ = 0.25f;
     goalSys_.SetGoalAlpha(goalAlpha_);

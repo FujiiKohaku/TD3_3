@@ -11,12 +11,12 @@ public:
     void Bind(ID3D12GraphicsCommandList* cmd);
 
     // 平行光の設定
-
     void SetDirectional(const Vector4& color, const Vector3& dir, float intensity);
     void SetDirection(const Vector3& dir);
     void SetIntensity(float intensity);
-    void SetPointLight(const Vector4& color,const Vector3& pos,float intensity);
-
+    void SetPointLight(const Vector4& color, const Vector3& pos, float intensity);
+    void SetColor(const Vector4& color);
+    //pointlight
     void SetPointPosition(const Vector3& pos);
     void SetPointIntensity(float intensity);
     void SetPointColor(const Vector4& color);
@@ -46,13 +46,13 @@ private:
     DirectXCommon* dxCommon_ = nullptr;
 
     // GPU 定数バッファ
+    // ライト
     Microsoft::WRL::ComPtr<ID3D12Resource> lightResource_;
     DirectionalLight* lightData_ = nullptr;
-
+    // ポイントライト
     Microsoft::WRL::ComPtr<ID3D12Resource> pointLightResource_;
     PointLight* pointLightData_ = nullptr;
-
-     Microsoft::WRL::ComPtr<ID3D12Resource> spotLightResource_;
+    // スポットライト
+    Microsoft::WRL::ComPtr<ID3D12Resource> spotLightResource_;
     SpotLight* spotLightData_ = nullptr;
-
 };

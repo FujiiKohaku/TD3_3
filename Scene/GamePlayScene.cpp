@@ -11,15 +11,14 @@
 using json = nlohmann::json;
 
 static inline json ToJsonVec3(const Vector3& v) {
-	return json{ {"x", v.x}, {"y", v.y}, {"z", v.z} };
+	return json{ { "x", v.x }, { "y", v.y }, { "z", v.z } };
 }
 static inline Vector3 FromJsonVec3(const json& j) {
 	return Vector3{ j.at("x").get<float>(), j.at("y").get<float>(), j.at("z").get<float>() };
 }
 
 // ===== World -> Screen (row-vector行列想定) =====
-static Vector4 MulRowVec4Mat4(const Vector4& v, const Matrix4x4& m)
-{
+static Vector4 MulRowVec4Mat4(const Vector4& v, const Matrix4x4& m) {
 	Vector4 o{};
 	o.x = v.x * m.m[0][0] + v.y * m.m[1][0] + v.z * m.m[2][0] + v.w * m.m[3][0];
 	o.y = v.x * m.m[0][1] + v.y * m.m[1][1] + v.z * m.m[2][1] + v.w * m.m[3][1];
@@ -29,11 +28,12 @@ static Vector4 MulRowVec4Mat4(const Vector4& v, const Matrix4x4& m)
 }
 
 // ===== RowVec * Mat4 で w除算して Vector3 にする =====
-static Vector3 TransformCoord_RowVector4(const Vector4& v, const Matrix4x4& m)
-{
+static Vector3 TransformCoord_RowVector4(const Vector4& v, const Matrix4x4& m) {
 	Vector4 o = MulRowVec4Mat4(v, m);
 	if (std::abs(o.w) > 1e-6f) {
-		o.x /= o.w; o.y /= o.w; o.z /= o.w;
+		o.x /= o.w;
+		o.y /= o.w;
+		o.z /= o.w;
 	}
 	return { o.x, o.y, o.z };
 }
@@ -44,9 +44,7 @@ static bool ScreenRayToPlaneY0_RowVector(
 	int mouseX, int mouseY,
 	float screenW, float screenH,
 	const Matrix4x4& viewProj,
-	Vector3& outHit
-)
-{
+	Vector3& outHit) {
 	// ViewProj の逆
 	Matrix4x4 invVP = MatrixMath::Inverse(viewProj);
 
@@ -61,30 +59,33 @@ static bool ScreenRayToPlaneY0_RowVector(
 	// ray
 	Vector3 dir{ pFar.x - pNear.x, pFar.y - pNear.y, pFar.z - pNear.z };
 	float len = std::sqrt(dir.x * dir.x + dir.y * dir.y + dir.z * dir.z);
-	if (len < 1e-6f) return false;
-	dir.x /= len; dir.y /= len; dir.z /= len;
+	if (len < 1e-6f)
+		return false;
+	dir.x /= len;
+	dir.y /= len;
+	dir.z /= len;
 
 	// 平面 y=0 と交差
-	if (std::abs(dir.y) < 1e-6f) return false; // 平面と平行
+	if (std::abs(dir.y) < 1e-6f)
+		return false; // 平面と平行
 	float t = (0.0f - pNear.y) / dir.y;
-	if (t <= 0.0f) return false; // カメラの後ろ側
+	if (t <= 0.0f)
+		return false; // カメラの後ろ側
 
 	outHit = { pNear.x + dir.x * t, 0.0f, pNear.z + dir.z * t };
 	return true;
 }
 
-
 static bool WorldToScreen_RowVector(
 	const Vector3& worldPos,
 	const Matrix4x4& viewProj,
 	float screenW, float screenH,
-	ImVec2& outScreen
-)
-{
+	ImVec2& outScreen) {
 	Vector4 clip = MulRowVec4Mat4({ worldPos.x, worldPos.y, worldPos.z, 1.0f }, viewProj);
 
 	// カメラ後ろ(またはwが小さい)は描かない
-	if (clip.w <= 1e-6f) return false;
+	if (clip.w <= 1e-6f)
+		return false;
 
 	// NDC化
 	const float ndcX = clip.x / clip.w;
@@ -97,9 +98,7 @@ static bool WorldToScreen_RowVector(
 	return true;
 }
 
-
-void GamePlayScene::Initialize()
-{
+void GamePlayScene::Initialize() {
 	camera_ = new Camera();
 	camera_->Initialize();
 	camera_->SetTranslate({ 0, 0, 0 });
@@ -118,9 +117,9 @@ void GamePlayScene::Initialize()
 	player2_ = new Object3d();
 	player2_->Initialize(Object3dManager::GetInstance());
 	player2_->SetModel("cube.obj");
-	//player2_->SetModel("terrain.obj"); 
+	// player2_->SetModel("terrain.obj");
 	player2_->SetTranslate({ 3.0f, 0.0f, 0.0f });
-	//player2_->SetRotate({ std::numbers::pi_v<float> / 2.0f, std::numbers::pi_v<float>, 0.0f });
+	// player2_->SetRotate({ std::numbers::pi_v<float> / 2.0f, std::numbers::pi_v<float>, 0.0f });
 
 	ParticleManager::GetInstance()->CreateParticleGroup("circle", "resources/circle.png");
 	Transform t{};
@@ -144,8 +143,8 @@ void GamePlayScene::Initialize()
 	droneObj_ = new Object3d();
 	droneObj_->Initialize(Object3dManager::GetInstance());
 
-	// ★存在するモデル名にしてね（無ければ cube.obj とか）
-  //  droneObj_->SetModel("cube.obj");
+	// 存在するモデル名にしてね（無ければ cube.obj とか）
+	//  droneObj_->SetModel("cube.obj");
 	droneObj_->SetModel("cube.obj"); // ←まずこれで見えるかテスト
 
 	droneObj_->SetScale({ 0.1f, 0.1f, 0.1f });
@@ -179,13 +178,13 @@ void GamePlayScene::Initialize()
 	}
 
 
+
 	drone_.Initialize(stage.droneSpawnPos);
 
 	// yaw も使うなら（Drone に SetYaw がある想定。無ければ Initialize に含めるか、メンバへ直接）
 	drone_.SetYaw(stage.droneSpawnYaw); // 無いならコメントアウト
 
 	droneObj_->SetTranslate(stage.droneSpawnPos);
-
 
 	// ---- gates build ----
 	gates_.clear();
@@ -212,7 +211,8 @@ void GamePlayScene::Initialize()
 	for (const auto& w : stage.walls) {
 		if (w.type == WallSystem::Type::AABB) {
 			wallSys_.AddAABB(w.center, w.half);
-		} else {
+		}
+		else {
 			wallSys_.AddOBB(w.center, w.half, w.rot);
 		}
 	}
@@ -223,32 +223,35 @@ void GamePlayScene::Initialize()
 
 	if (stage.hasGoalPos) {
 		goalSys_.SetFixedGoalPos(stage.goalPos);
-	} else {
+	}
+	else {
 		goalSys_.ClearFixedGoalPos();
 	}
 
-	ModelManager::GetInstance ()->LoadModel ("skydome.obj");
-	TextureManager::GetInstance ()->LoadTexture ("resources/skydome.png");
-	skydome_ = std::make_unique<Object3d> ();
-	skydome_->Initialize (Object3dManager::GetInstance ());
-	skydome_->SetModel ("skydome.obj");
-	skydome_->SetCamera (camera_);
-	skydome_->SetEnableLighting (false);
+	ModelManager::GetInstance()->LoadModel("skydome.obj");
+	TextureManager::GetInstance()->LoadTexture("resources/skydome.png");
+	skydome_ = std::make_unique<Object3d>();
+	skydome_->Initialize(Object3dManager::GetInstance());
+	skydome_->SetModel("skydome.obj");
+	skydome_->SetCamera(camera_);
+	skydome_->SetEnableLighting(false);
+
+	landingEffect_.Initialize(Object3dManager::GetInstance(),camera_);
 }
 
-void GamePlayScene::Update()
-{
+void GamePlayScene::Update() {
 
 	float dt = 1.0f / 60.0f;
 
-	// ★入力更新（必須）
+
 
 	Input& input = *Input::GetInstance();
 
 	// ドローン更新（※これが無いとカメラも動かない）
 	if (isDebug_) {
 		drone_.UpdateDebugNoInertia(input, dt);
-	} else {
+	}
+	else {
 		drone_.UpdateMode1(input, dt);
 	}
 	{
@@ -261,16 +264,20 @@ void GamePlayScene::Update()
 		drone_.SetVel(vel);
 	}
 
+	if (drone_.HasJustLanded()) {
+		landingEffect_.Play(drone_.GetPos());
 
-	// ★ドローン実体 → 描画Object3dへ反映（毎フレーム必須）
+	}
+	landingEffect_.Update(dt);
+
+	// ドローン実体 → 描画Object3dへ反映（毎フレーム必須）
 	if (droneObj_) {
 		droneObj_->SetTranslate(drone_.GetPos());
 		droneObj_->SetRotate({ drone_.GetPitch(), drone_.GetYaw() + droneYawOffset, drone_.GetRoll() });
 		droneObj_->Update();
 	}
 
-
-	// ★これを毎フレーム呼ぶ
+	// これを毎フレーム呼ぶ
 	camera_->FollowDroneRigid(drone_, 7.5f, 1.8f, -0.18f, droneYawOffset);
 
 
@@ -291,16 +298,14 @@ void GamePlayScene::Update()
 		isDebug_ = !isDebug_;
 	}
 
-
-
 	//  camera_->DebugUpdate();
 
 
 	camera_->Update();
 
-	//ゲート
+	// ゲート
 
-	   // 1) 全ゲートの見た目更新（色タイマーもここで進む）
+	// 1) 全ゲートの見た目更新（色タイマーもここで進む）
 	for (auto& g : gates_) {
 		g.Tick(dt);
 	}
@@ -311,11 +316,20 @@ void GamePlayScene::Update()
 		const Vector3 dronePos = drone_.GetPos(); // ★ここはあなたのドローン取得に合わせる
 
 		if (gates_[nextGate_].TryPass(dronePos, res)) {
-			if (res == GateResult::Perfect) { perfectCount_++; nextGate_++; } else if (res == GateResult::Good) { goodCount_++; nextGate_++; } else {
+			if (res == GateResult::Perfect) {
+				perfectCount_++;
+				nextGate_++;
+			}
+			else if (res == GateResult::Good) {
+				goodCount_++;
+				nextGate_++;
+			}
+			else {
 				// Miss：進まない（色は赤になる）
 			}
 		}
-	} else {
+	}
+	else {
 		// ---- GoalSystem update ----
 		goalSys_.Update(gates_, nextGate_, drone_.GetPos());
 
@@ -447,8 +461,7 @@ void GamePlayScene::Update()
 	ImGui::Begin("Drone Tuning");
 	ImGui::SliderAngle("Yaw Offset", &droneYawOffset); // -pi～+pi を度で触れる
 
-	ImGui::Text("yaw(rad)=%.3f  yaw(deg)=%.1f",
-		drone_.GetYaw(), drone_.GetYaw() * 180.0f / std::numbers::pi_v<float>);
+	ImGui::Text("yaw(rad)=%.3f  yaw(deg)=%.1f", drone_.GetYaw(), drone_.GetYaw() * 180.0f / std::numbers::pi_v<float>);
 	ImGui::Text("pos=%.2f %.2f %.2f", drone_.GetPos().x, drone_.GetPos().y, drone_.GetPos().z);
 
 	ImGui::Text("nextGate=%d / %d", nextGate_, (int)gates_.size());
@@ -477,7 +490,7 @@ void GamePlayScene::Update()
 			// 次のゲートだけ目立たせる
 			const bool isNext = (i == nextGate_);
 			const ImU32 col = isNext
-				? IM_COL32(255, 255, 0, 255)   // 黄色
+				? IM_COL32(255, 255, 0, 255) // 黄色
 				: IM_COL32(255, 255, 255, 200); // 白薄め
 
 			// 文字を中心に寄せる（だいたい）
@@ -492,8 +505,8 @@ void GamePlayScene::Update()
 	}
 
 	// ================================
-// GOAL overlay (ImGui)
-// ================================
+	// GOAL overlay (ImGui)
+	// ================================
 	if (stageCleared_) {
 
 		// Enterで戻る（トリガー）
@@ -558,7 +571,6 @@ void GamePlayScene::Update()
 
 	ImGui::End();
 
-
 	ImGui::End();
 
 	// 反映
@@ -581,13 +593,12 @@ void GamePlayScene::Update()
 
 }
 
-void GamePlayScene::Draw3D()
-{
+void GamePlayScene::Draw3D() {
 	Object3dManager::GetInstance()->PreDraw();
 	LightManager::GetInstance()->Bind(DirectXCommon::GetInstance()->GetCommandList());
-//	player2_->Draw();
+	//	player2_->Draw();
 	if (droneObj_) droneObj_->Draw();
-	if (skydome_) skydome_->Draw ();
+	if (skydome_) skydome_->Draw();
 
 	for (auto& g : gates_) {
 		g.Draw();
@@ -598,28 +609,25 @@ void GamePlayScene::Draw3D()
 	if (drawWallDebug_) {
 		wallSys_.DrawDebug();
 	}
-
+	landingEffect_.Draw();
 	//sphere_->Draw(DirectXCommon::GetInstance()->GetCommandList());
 	ParticleManager::GetInstance()->PreDraw();
 	ParticleManager::GetInstance()->Draw();
 }
 
-void GamePlayScene::Draw2D()
-{
+void GamePlayScene::Draw2D() {
 	SpriteManager::GetInstance()->PreDraw();
 
 	// sprite_->Draw();
 }
 
-void GamePlayScene::DrawImGui()
-{
+void GamePlayScene::DrawImGui() {
 #ifdef USE_IMGUI
 
 #endif
 }
 
-void GamePlayScene::Finalize()
-{
+void GamePlayScene::Finalize() {
 	ParticleManager::GetInstance()->Finalize();
 
 	LightManager::GetInstance()->Finalize();
@@ -643,4 +651,3 @@ void GamePlayScene::Finalize()
 
 	SoundManager::GetInstance()->SoundUnload(&bgm);
 }
-

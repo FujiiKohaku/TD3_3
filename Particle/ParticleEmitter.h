@@ -18,8 +18,8 @@ public:
     void Update();
     void Emit();
 
-private:
     std::string name_;
+private:
     Transform transform_ {};
     uint32_t count_ = 0;
     float frequency_ = 0.0f;
