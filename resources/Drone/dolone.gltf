@@ -502,6 +502,94 @@
 				"metallicFactor":0,
 				"roughnessFactor":0.5
 			}
+		},
+		{
+			"doubleSided":true,
+			"name":"\u30de\u30c6\u30ea\u30a2\u30eb.004",
+			"pbrMetallicRoughness":{
+				"baseColorTexture":{
+					"index":1
+				},
+				"metallicFactor":0,
+				"roughnessFactor":0.5
+			}
+		},
+		{
+			"doubleSided":true,
+			"name":"\u30de\u30c6\u30ea\u30a2\u30eb.003",
+			"pbrMetallicRoughness":{
+				"baseColorTexture":{
+					"index":2
+				},
+				"metallicFactor":0,
+				"roughnessFactor":0.5
+			}
+		},
+		{
+			"doubleSided":true,
+			"name":"\u30de\u30c6\u30ea\u30a2\u30eb",
+			"pbrMetallicRoughness":{
+				"baseColorTexture":{
+					"index":3
+				},
+				"metallicFactor":0,
+				"roughnessFactor":0.5
+			}
+		},
+		{
+			"doubleSided":true,
+			"name":"\u30de\u30c6\u30ea\u30a2\u30eb.008",
+			"pbrMetallicRoughness":{
+				"baseColorTexture":{
+					"index":4
+				},
+				"metallicFactor":0,
+				"roughnessFactor":0.5
+			}
+		},
+		{
+			"doubleSided":true,
+			"name":"\u30de\u30c6\u30ea\u30a2\u30eb.006",
+			"pbrMetallicRoughness":{
+				"baseColorTexture":{
+					"index":5
+				},
+				"metallicFactor":0,
+				"roughnessFactor":0.5
+			}
+		},
+		{
+			"doubleSided":true,
+			"name":"\u30de\u30c6\u30ea\u30a2\u30eb.005",
+			"pbrMetallicRoughness":{
+				"baseColorTexture":{
+					"index":6
+				},
+				"metallicFactor":0,
+				"roughnessFactor":0.5
+			}
+		},
+		{
+			"doubleSided":true,
+			"name":"\u30de\u30c6\u30ea\u30a2\u30eb.002",
+			"pbrMetallicRoughness":{
+				"baseColorTexture":{
+					"index":7
+				},
+				"metallicFactor":0,
+				"roughnessFactor":0.5
+			}
+		},
+		{
+			"doubleSided":true,
+			"name":"\u30de\u30c6\u30ea\u30a2\u30eb.007",
+			"pbrMetallicRoughness":{
+				"baseColorTexture":{
+					"index":8
+				},
+				"metallicFactor":0,
+				"roughnessFactor":0.5
+			}
 		}
 	],
 	"meshes":[
@@ -528,7 +616,8 @@
 						"NORMAL":5,
 						"TEXCOORD_0":6
 					},
-					"indices":7
+					"indices":7,
+					"material":1
 				}
 			]
 		},
@@ -541,7 +630,8 @@
 						"NORMAL":9,
 						"TEXCOORD_0":10
 					},
-					"indices":11
+					"indices":11,
+					"material":2
 				}
 			]
 		},
@@ -554,7 +644,8 @@
 						"NORMAL":13,
 						"TEXCOORD_0":14
 					},
-					"indices":15
+					"indices":15,
+					"material":3
 				}
 			]
 		},
@@ -567,7 +658,8 @@
 						"NORMAL":17,
 						"TEXCOORD_0":18
 					},
-					"indices":19
+					"indices":19,
+					"material":4
 				}
 			]
 		},
@@ -580,7 +672,8 @@
 						"NORMAL":21,
 						"TEXCOORD_0":22
 					},
-					"indices":23
+					"indices":23,
+					"material":5
 				}
 			]
 		},
@@ -593,7 +686,8 @@
 						"NORMAL":25,
 						"TEXCOORD_0":26
 					},
-					"indices":27
+					"indices":27,
+					"material":6
 				}
 			]
 		},
@@ -606,7 +700,8 @@
 						"NORMAL":29,
 						"TEXCOORD_0":30
 					},
-					"indices":31
+					"indices":31,
+					"material":7
 				}
 			]
 		},
@@ -619,7 +714,8 @@
 						"NORMAL":33,
 						"TEXCOORD_0":34
 					},
-					"indices":35
+					"indices":35,
+					"material":8
 				}
 			]
 		}
@@ -628,6 +724,38 @@
 		{
 			"sampler":0,
 			"source":0
+		},
+		{
+			"sampler":0,
+			"source":1
+		},
+		{
+			"sampler":0,
+			"source":2
+		},
+		{
+			"sampler":0,
+			"source":3
+		},
+		{
+			"sampler":0,
+			"source":4
+		},
+		{
+			"sampler":0,
+			"source":5
+		},
+		{
+			"sampler":0,
+			"source":6
+		},
+		{
+			"sampler":0,
+			"source":7
+		},
+		{
+			"sampler":0,
+			"source":8
 		}
 	],
 	"images":[
@@ -635,6 +763,46 @@
 			"mimeType":"image/png",
 			"name":"body",
 			"uri":"body.png"
+		},
+		{
+			"mimeType":"image/png",
+			"name":"y",
+			"uri":"y.png"
+		},
+		{
+			"mimeType":"image/png",
+			"name":"skydome",
+			"uri":"skydome.png"
+		},
+		{
+			"mimeType":"image/png",
+			"name":"frameUV",
+			"uri":"frameUV.png"
+		},
+		{
+			"mimeType":"image/png",
+			"name":"propellerUV",
+			"uri":"propellerUV.png"
+		},
+		{
+			"mimeType":"image/png",
+			"name":"propellerUV",
+			"uri":"propellerUV-1.png"
+		},
+		{
+			"mimeType":"image/png",
+			"name":"frameUV",
+			"uri":"frameUV-1.png"
+		},
+		{
+			"mimeType":"image/png",
+			"name":"propellerUV",
+			"uri":"propellerUV-2.png"
+		},
+		{
+			"mimeType":"image/png",
+			"name":"frameUV",
+			"uri":"frameUV-2.png"
 		}
 	],
 	"accessors":[

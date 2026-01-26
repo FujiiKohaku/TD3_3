@@ -3,6 +3,7 @@
 #include "GamePlayScene.h"
 #include "StageEditorScene.h"  
 #include "StageSelectScene.h"
+#include "ResultScene.h"
 
 void TitleScene::Initialize()
 {
@@ -22,6 +23,11 @@ void TitleScene::Update()
     // ★Sキーでステージセレクトへ
     if (Input::GetInstance()->IsKeyPressed(DIK_S)) {
      
+    }
+
+    //Tキーでリザルトシーン
+    if (Input::GetInstance ()->IsKeyTrigger (DIK_T)) {
+        SceneManager::GetInstance ()->SetNextScene (new ResultScene ());
     }
 }
 
