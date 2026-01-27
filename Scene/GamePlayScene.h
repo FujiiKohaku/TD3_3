@@ -22,7 +22,7 @@
 #include "../Game/Drone/Walls.h"
 #include "../Game/Goal/GoalSystem.h"
 #include"../Game/LandingEffect/LandingEffect.h"
-
+#include "../Game/Particle/ParticleGate.h"
 class SphereObject;
 class GamePlayScene : public BaseScene {
 public:
@@ -98,7 +98,7 @@ private:
 
 	//ゴール
 	GoalSystem goalSys_;
-	bool stageCleared_ = false; // クリア後の演出用（任意）
+	bool stageCleared_ = false; // クリア後の演出用
 
 	bool requestBackToSelect_ = false;
 
@@ -108,4 +108,9 @@ private:
 	std::unique_ptr<Object3d> ground_ = nullptr;
 
 	LandingEffect landingEffect_;
+	ParticleGate particleGate_;
+	//gateのフラグ
+	bool isPaused_ = false;
+	bool requestBackToTitle_ = false;
+	void	UpdateDronePointLight();
 };

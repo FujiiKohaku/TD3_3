@@ -8,6 +8,9 @@
 #include <format>
 #include <wrl.h>
 
+#include <filesystem> // create_directories
+#include "DirectXTex/DirectXTex.h"
+
 DirectXCommon* DirectXCommon::instance = nullptr; // 知らないシングルトン
 
 // Singleton Instance
@@ -467,50 +470,46 @@ void DirectXCommon::PreDraw()
 }
 
 // 描画後処理
-void DirectXCommon::PostDraw()
-{
-
-    // これから書き込むバックバッファの番号を取得
+void DirectXCommon::PostDraw() {
     UINT backBufferIndex = swapChain->GetCurrentBackBufferIndex();
 
-    // リソースバリアでプレゼント可能に変更
-    D3D12_RESOURCE_BARRIER barrier {};
+    // RT -> PRESENT
+    D3D12_RESOURCE_BARRIER barrier{};
     barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-    barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
     barrier.Transition.pResource = swapChainResources[backBufferIndex].Get();
     barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
     barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
+    barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
     commandList->ResourceBarrier(1, &barrier);
 
-    // グラフィックコマンドをクローズ
     HRESULT hr = commandList->Close();
     assert(SUCCEEDED(hr));
 
-    // GPUコマンドの実行
-    // GPUにコマンドリストの実行を行わせる;
-    ID3D12CommandList* commandLists[] = { commandList.Get() };
-    commandQueue->ExecuteCommandLists(_countof(commandLists), commandLists);
-    // GPU画面の交換を通知
-    swapChain->Present(1, 0);
-    assert(SUCCEEDED(hr));
-    // フェンスの値を更新
-    fenceValue++;
-    // コマンドキューにシグナルを送る
-    commandQueue->Signal(fence.Get(), fenceValue);
-    // コマンド完了待ち
-    if (fence->GetCompletedValue() < fenceValue) {
+    ID3D12CommandList* lists[] = { commandList.Get() };
+    commandQueue->ExecuteCommandLists(_countof(lists), lists);
 
+    // ★GPU完了待ち（描画結果確定）
+    fenceValue++;
+    commandQueue->Signal(fence.Get(), fenceValue);
+    if (fence->GetCompletedValue() < fenceValue) {
         fence->SetEventOnCompletion(fenceValue, fenceEvent);
         WaitForSingleObject(fenceEvent, INFINITE);
     }
 
-    // コマンドアロケータ―のリセット
-    hr = commandAllocator->Reset();
-    assert(SUCCEEDED(hr));
-    // コマンドリストのリセット
-    hr = commandList->Reset(commandAllocator.Get(), nullptr);
-    assert(SUCCEEDED(hr));
+    // ★このフレームのbackbufferをPRESENT状態としてキャプチャ（ここが安全）
+    if (capturePending_) {
+        SaveBackBufferToPng(capturePath_, captureW_, captureH_);
+        capturePending_ = false;
+    }
+
+    // 最後にPresent
+    swapChain->Present(1, 0);
+
+    // reset
+    hr = commandAllocator->Reset(); assert(SUCCEEDED(hr));
+    hr = commandList->Reset(commandAllocator.Get(), nullptr); assert(SUCCEEDED(hr));
 }
+
 #pragma endregion
 
 #pragma region シェーダーコンパイル関数
@@ -705,4 +704,84 @@ void DirectXCommon::WaitForGPU()
         fence->SetEventOnCompletion(fenceValue, fenceEvent);
         WaitForSingleObject(fenceEvent, INFINITE);
     }
+}
+
+UINT DirectXCommon::GetCurrentBackBufferIndex() const {
+    return swapChain->GetCurrentBackBufferIndex();
+}
+
+ID3D12Resource* DirectXCommon::GetCurrentBackBuffer() const {
+    return swapChainResources[GetCurrentBackBufferIndex()].Get();
+}
+
+bool DirectXCommon::SaveBackBufferToPng(
+    const std::wstring& outPngPath,
+    uint32_t thumbW,
+    uint32_t thumbH) {
+    if (!device || !commandQueue || !swapChain) return false;
+
+    std::filesystem::create_directories(
+        std::filesystem::path(outPngPath).parent_path()
+    );
+
+    ID3D12Resource* backBuffer = GetCurrentBackBuffer();
+    if (!backBuffer) return false;
+
+    // 1) GPU → CPU にキャプチャ
+    DirectX::ScratchImage captured;
+    HRESULT hr = DirectX::CaptureTexture(
+        commandQueue.Get(),
+        backBuffer,
+        false,
+        captured,
+        D3D12_RESOURCE_STATE_PRESENT,
+        D3D12_RESOURCE_STATE_PRESENT
+    );
+
+    if (FAILED(hr)) return false;
+
+    const DirectX::ScratchImage* src = &captured;
+    DirectX::ScratchImage converted;
+
+    // 2) SRGB → UNORM 変換（PNG保存保険）
+    if (src->GetMetadata().format == DXGI_FORMAT_R8G8B8A8_UNORM_SRGB) {
+        hr = DirectX::Convert(
+            src->GetImages(), src->GetImageCount(), src->GetMetadata(),
+            DXGI_FORMAT_R8G8B8A8_UNORM,
+            DirectX::TEX_FILTER_DEFAULT, 0.0f,
+            converted
+        );
+        if (FAILED(hr)) return false;
+        src = &converted;
+    }
+
+    // 3) ★縮小（サムネ）
+    DirectX::ScratchImage resized;
+    if (thumbW > 0 && thumbH > 0) {
+        hr = DirectX::Resize(
+            src->GetImages(), src->GetImageCount(), src->GetMetadata(),
+            thumbW, thumbH,
+            DirectX::TEX_FILTER_FANT, // 高品質
+            resized
+        );
+        if (FAILED(hr)) return false;
+        src = &resized;
+    }
+
+    // 4) PNG保存
+    hr = DirectX::SaveToWICFile(
+        *src->GetImage(0, 0, 0),
+        DirectX::WIC_FLAGS_NONE,
+        DirectX::GetWICCodec(DirectX::WIC_CODEC_PNG),
+        outPngPath.c_str()
+    );
+
+    return SUCCEEDED(hr);
+}
+
+void DirectXCommon::RequestBackBufferCapture(const std::wstring& path, uint32_t w, uint32_t h) {
+    capturePending_ = true;
+    capturePath_ = path;
+    captureW_ = w;
+    captureH_ = h;
 }

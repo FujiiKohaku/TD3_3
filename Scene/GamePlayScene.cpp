@@ -9,6 +9,7 @@
 #include <string>
 #include "ResultScene.h"
 
+#include"TitleScene.h"
 using json = nlohmann::json;
 
 static inline json ToJsonVec3(const Vector3& v) {
@@ -198,7 +199,7 @@ void GamePlayScene::Initialize() {
 		gates_[i].gate = stage.gates[i];
 
 		// 見た目モデル（今は cube 固定でOK）
-		gates_[i].Initialize(Object3dManager::GetInstance(), "cube.obj", camera_);
+		gates_[i].Initialize(Object3dManager::GetInstance(), "Gate.obj", camera_);
 	}
 
 	nextGate_ = 0;
@@ -237,24 +238,65 @@ void GamePlayScene::Initialize() {
 	skydome_->SetCamera(camera_);
 	skydome_->SetEnableLighting(false);
 
-	ModelManager::GetInstance ()->LoadModel ("ground.obj");
-	ground_ = std::make_unique<Object3d> ();
-	ground_->Initialize (Object3dManager::GetInstance ());
-	ground_->SetModel ("ground.obj");
-	ground_->SetCamera (camera_);
-	ground_->SetEnableLighting (false);
-	ground_->SetTranslate ({ 0.0f, -5.5f, 0.0f });
+	ModelManager::GetInstance()->LoadModel("ground.obj");
+	ground_ = std::make_unique<Object3d>();
+	ground_->Initialize(Object3dManager::GetInstance());
+	ground_->SetModel("ground.obj");
+	ground_->SetCamera(camera_);
+	ground_->SetEnableLighting(false);
+	ground_->SetTranslate({ 0.0f, -5.5f, 0.0f });
 
-	landingEffect_.Initialize(Object3dManager::GetInstance(),camera_);
+	landingEffect_.Initialize(Object3dManager::GetInstance(), camera_);
+
+
+	skydome_->SetTranslate({ 0.0f,0.01f,0.0f });
+
+	particleGate_.Initialize(Object3dManager::GetInstance(), camera_);
 }
 
 void GamePlayScene::Update() {
 
 	float dt = 1.0f / 60.0f;
 
-
-
+	//入出力取得
 	Input& input = *Input::GetInstance();
+
+	//TABキーを押したらポーズ画面になる
+	if (input.IsKeyTrigger(DIK_TAB)) {
+		isPaused_ = !isPaused_;
+
+	}
+	//ポーズ画面のUI
+	if (isPaused_) {
+
+		ImGui::Begin("Pause Menu");
+
+		ImGui::Text("PAUSE");
+
+		ImGui::Separator();
+
+		if (ImGui::Button("Continue")) {
+			isPaused_ = false;
+		}
+
+		if (ImGui::Button("Back to Title")) {
+			requestBackToTitle_ = true;
+		}
+
+		ImGui::End();
+
+		// タイトルへ戻る要求が出たらシーン切り替え
+		if (requestBackToTitle_) {
+			requestBackToTitle_ = false;
+			SceneManager::GetInstance()->SetNextScene(new TitleScene());
+			return;
+		}
+
+		// ゲーム本体はここで完全停止
+		return;
+	}
+
+	UpdateDronePointLight();
 
 	// ドローン更新（※これが無いとカメラも動かない）
 	if (isDebug_) {
@@ -299,9 +341,9 @@ void GamePlayScene::Update() {
 	sphere_->Update(camera_);
 	droneObj_->Update();
 	skydome_->Update();
-	ground_->Update ();
+	ground_->Update();
 
-	// ★最後に一回
+	// 最後に一回
 
 	if (input.IsKeyTrigger(DIK_O)) {
 
@@ -311,6 +353,8 @@ void GamePlayScene::Update() {
 	//  camera_->DebugUpdate();
 
 
+	particleGate_.Update(dt);
+
 	camera_->Update();
 
 	// ゲート
@@ -318,12 +362,22 @@ void GamePlayScene::Update() {
 	// 1) 全ゲートの見た目更新（色タイマーもここで進む）
 	for (auto& g : gates_) {
 		g.Tick(dt);
+
+		if (g.gate.GetIsHitGate() && !g.gate.playedEffect) {
+			particleGate_.Play(drone_.GetPos());
+			g.gate.playedEffect = true;
+		}
+
+		if (!g.gate.GetIsHitGate()) {
+			g.gate.playedEffect = false;
+		}
 	}
 
 	// 2) 次ゲートだけ判定
 	if (nextGate_ < (int)gates_.size()) {
 		GateResult res;
 		const Vector3 dronePos = drone_.GetPos(); // ★ここはあなたのドローン取得に合わせる
+
 
 		if (gates_[nextGate_].TryPass(dronePos, res)) {
 			if (res == GateResult::Perfect) {
@@ -343,12 +397,13 @@ void GamePlayScene::Update() {
 		// ---- GoalSystem update ----
 		goalSys_.Update(gates_, nextGate_, drone_.GetPos());
 
+
 		if (goalSys_.IsCleared()) {
 			stageCleared_ = true;
 
 			// ここで「リザルトへ遷移」「SE」「フェード」等を入れる
 			// 例：次シーンへ
-			SceneManager::GetInstance()->SetNextScene (new ResultScene (perfectCount_, goodCount_));
+			SceneManager::GetInstance()->SetNextScene(new ResultScene(perfectCount_, goodCount_));
 		}
 	}
 
@@ -409,8 +464,8 @@ void GamePlayScene::Update() {
 	static Vector4 pointColor = { 1.0f, 1.0f, 1.0f, 1.0f };
 	ImGui::ColorEdit3("Point Color", (float*)&pointColor);
 
-	static Vector3 pointPos = { 0.0f, 2.0f, 0.0f };
-	ImGui::SliderFloat3("Point Position", &pointPos.x, -10.0f, 10.0f);
+	//atic Vector3 pointPos = { 0.0f, 2.0f, 0.0f };
+	//Gui::SliderFloat3("Point Position", &pointPos.x, -10.0f, 10.0f);
 
 	static float pointIntensity = 1.0f;
 	ImGui::SliderFloat("Point Intensity", &pointIntensity, 0.0f, 5.0f);
@@ -424,31 +479,31 @@ void GamePlayScene::Update() {
 
 	LightManager::GetInstance()->SetPointRadius(pointRadius);
 	LightManager::GetInstance()->SetPointDecay(pointDecay);
-	LightManager::GetInstance()->SetPointLight(pointColor, pointPos, pI);
+	//ghtManager::GetInstance()->SetPointLight(pointColor, pointPos, pI);
 
 	ImGui::End();
 
-	// ==================================
-	// Sphere Control
-	// ==================================
-	ImGui::Begin("Sphere Control");
+	//// ==================================
+	//// Sphere Control
+	//// ==================================
+	//ImGui::Begin("Sphere Control");
 
-	// ---- このオブジェクトだけ ライティングする？ ----
-	// OFF にすると「フラット表示」になる
-	ImGui::Checkbox("Enable Lighting", &sphereLighting);
+	//// ---- このオブジェクトだけ ライティングする？ ----
+	//// OFF にすると「フラット表示」になる
+	//ImGui::Checkbox("Enable Lighting", &sphereLighting);
 
-	// ---- 位置 ----
-	ImGui::SliderFloat3("Position", &spherePos.x, -10.0f, 10.0f);
+	//// ---- 位置 ----
+	//ImGui::SliderFloat3("Position", &spherePos.x, -10.0f, 10.0f);
 
-	// ---- 回転 ----
-	ImGui::SliderFloat3("Rotate", &sphereRotate.x, -3.14f, 3.14f);
+	//// ---- 回転 ----
+	//ImGui::SliderFloat3("Rotate", &sphereRotate.x, -3.14f, 3.14f);
 
-	ImGui::SliderFloat3("Scale", &sphereScale.x, 1.0f, 10.0f);
-	// ---- テカり具合（鏡面反射の鋭さ） ----
-	static float shininess = 32.0f;
-	ImGui::SliderFloat("Shininess", &shininess, 1.0f, 128.0f);
+	//ImGui::SliderFloat3("Scale", &sphereScale.x, 1.0f, 10.0f);
+	//// ---- テカり具合（鏡面反射の鋭さ） ----
+	//static float shininess = 32.0f;
+	//ImGui::SliderFloat("Shininess", &shininess, 1.0f, 128.0f);
 
-	ImGui::End();
+	//ImGui::End();
 
 	ImGui::Begin("Camera Debug");
 
@@ -588,7 +643,7 @@ void GamePlayScene::Update() {
 	sphere_->SetTranslate(spherePos);
 	sphere_->SetRotate(sphereRotate);
 	sphere_->SetScale(sphereScale);
-	sphere_->SetShininess(shininess);
+	//here_->SetShininess(shininess);
 
 	if (drawWallDebug_) {
 		wallSys_.UpdateDebug();
@@ -609,7 +664,7 @@ void GamePlayScene::Draw3D() {
 	//	player2_->Draw();
 	if (droneObj_) droneObj_->Draw();
 	if (skydome_) skydome_->Draw();
-	if (ground_) ground_->Draw ();
+	if (ground_) ground_->Draw();
 
 	for (auto& g : gates_) {
 		g.Draw();
@@ -621,6 +676,9 @@ void GamePlayScene::Draw3D() {
 		wallSys_.DrawDebug();
 	}
 	landingEffect_.Draw();
+
+
+	particleGate_.Draw();
 	//sphere_->Draw(DirectXCommon::GetInstance()->GetCommandList());
 	ParticleManager::GetInstance()->PreDraw();
 	ParticleManager::GetInstance()->Draw();
@@ -661,4 +719,23 @@ void GamePlayScene::Finalize() {
 	goalSys_.Finalize();
 
 	SoundManager::GetInstance()->SoundUnload(&bgm);
+}
+void GamePlayScene::UpdateDronePointLight()
+{
+	float yaw = drone_.GetYaw();
+	float pitch = drone_.GetPitch();
+
+	Vector3 forward;
+	forward.x = std::sinf(yaw) * std::cosf(pitch);
+	forward.y = std::sinf(pitch);
+	forward.z = std::cosf(yaw) * std::cosf(pitch);
+
+	const float offset = 1.2f;
+
+	Vector3 pos = drone_.GetPos();
+	pos.x += forward.x * offset;
+	pos.y += forward.y * offset;
+	pos.z += forward.z * offset;
+
+	LightManager::GetInstance()->SetPointPosition(pos);
 }

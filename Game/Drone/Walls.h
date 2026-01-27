@@ -60,25 +60,18 @@ struct OBB {
 
 // Euler -> basis (XYZ回転順で1つに固定)
 // ※あなたのエンジン側で行列があるならそれに置き換えてOK
-static inline void MakeBasisFromEulerXYZ(const Vector3& rot, Vector3& outX, Vector3& outY, Vector3& outZ)
-{
-    const float cx = std::cos(rot.x), sx = std::sin(rot.x);
-    const float cy = std::cos(rot.y), sy = std::sin(rot.y);
-    const float cz = std::cos(rot.z), sz = std::sin(rot.z);
+static inline void MakeBasisFromEuler_LikeObject3d(
+    const Vector3& rot,
+    Vector3& outX, Vector3& outY, Vector3& outZ) {
+    // Object3d と同じ回転生成に合わせる（scale=1, translate=0）
+    Matrix4x4 m = MatrixMath::MakeAffineMatrix({ 1,1,1 }, rot, { 0,0,0 });
 
-    // 回転行列 R = Rz * Ry * Rx (よくある形)
-    // 列ベクトルがローカル軸の向き、という扱いにします
-    // Xaxis
-    outX = { cz * cy,  sz * cy,  -sy };
-    // Yaxis
-    outY = { cz * sy * sx - sz * cx,  sz * sy * sx + cz * cx,  cy * sx };
-    // Zaxis
-    outZ = { cz * sy * cx + sz * sx,  sz * sy * cx - cz * sx,  cy * cx };
-
-    outX = V3Norm(outX);
-    outY = V3Norm(outY);
-    outZ = V3Norm(outZ);
+    // ★row-vector運用なら「行(row)がローカル軸」になってることが多い
+    outX = V3Norm({ m.m[0][0], m.m[0][1], m.m[0][2] }); // local X (Right)
+    outY = V3Norm({ m.m[1][0], m.m[1][1], m.m[1][2] }); // local Y (Up)
+    outZ = V3Norm({ m.m[2][0], m.m[2][1], m.m[2][2] }); // local Z (Forward)
 }
+
 
 // AABB(ドローン) vs OBB(壁) を SAT で解決（最小押し戻しMTV）
 // 返り値: ぶつかってたら true, outPush に押し戻しベクトル
@@ -92,7 +85,7 @@ static inline bool ResolveAABB_vs_OBB_MinPush(
     // ここでは “壁”用途として安定を優先して「15軸SAT(交差軸も含む)」を入れます。
 
     Vector3 Ax, Ay, Az;
-    MakeBasisFromEulerXYZ(obb.rot, Ax, Ay, Az);
+    MakeBasisFromEuler_LikeObject3d(obb.rot, Ax, Ay, Az);
 
     // ワールド軸
     const Vector3 Wx{ 1,0,0 };
@@ -268,10 +261,24 @@ public:
                 if (hitAny && (std::abs(push.x) + std::abs(push.y) + std::abs(push.z) > 0.0f)) {
                     pos = V3Add(pos, push);
 
-                    // 押した軸の速度を殺す（滑り）
-                    if (std::abs(push.x) > 0.0f) vel.x = 0.0f;
-                    if (std::abs(push.y) > 0.0f) vel.y = 0.0f;
-                    if (std::abs(push.z) > 0.0f) vel.z = 0.0f;
+                    //// 押した軸の速度を殺す（滑り）
+                    //if (std::abs(push.x) > 0.0f) vel.x = 0.0f;
+                    //if (std::abs(push.y) > 0.0f) vel.y = 0.0f;
+                    //if (std::abs(push.z) > 0.0f) vel.z = 0.0f;
+
+                    // ---- slide: 法線方向の速度成分だけ取り除く ----
+                    const float pushLen = V3Len(push);
+                    if (pushLen > 1e-6f) {
+                        const Vector3 n = V3Mul(push, 1.0f / pushLen); // 衝突法線（押し戻し方向）
+
+                        const float vn = V3Dot(vel, n);
+
+                        // 壁に向かっている成分だけ消す（離れていく方向は触らない）
+                        if (vn < 0.0f) {
+                            vel = V3Sub(vel, V3Mul(n, vn)); // vel -= n * vn
+                        }
+                    }
+
 
                     // 更新
                     droneBox = MakeAABB_CenterHalf(pos, droneHalf);

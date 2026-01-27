@@ -75,7 +75,7 @@ private:
             } else if (selected) {
                 m->color = { selGood.r, selGood.g, selGood.b, selGood.a };
             } else {
-                m->color = { 0.2f, 1.0f, 0.3f, 0.35f }; // 薄緑
+                m->color = { 0.2f, 1.0f, 0.3f, 1.0f }; // 薄緑
             }
         }
 
@@ -86,7 +86,7 @@ private:
             } else if (selected) {
                 m->color = { selPerfect.r, selPerfect.g, selPerfect.b, selPerfect.a };
             } else {
-                m->color = { 0.2f, 0.7f, 1.0f, 0.35f }; // 薄青
+                m->color = { 0.2f, 0.7f, 1.0f, 1.0f }; // 薄青
             }
         }
     }

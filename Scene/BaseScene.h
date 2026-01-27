@@ -15,6 +15,9 @@ public:
     virtual void Draw3D() = 0;
     virtual void DrawImGui() = 0;
 
+    virtual bool AllowThumbnailCapture() const { return false; }
+    virtual bool HideUIForThumbnail() const { return false; }
+
     // 仮想デストラクタ（必須）
     virtual ~BaseScene() noexcept = default;
 };

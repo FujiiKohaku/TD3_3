@@ -310,19 +310,19 @@ void StageEditorScene::Initialize()
     gates_[0].gate.perfectRadius = 1.0f;
     gates_[0].gate.gateRadius = 2.5f;
     gates_[0].gate.thickness = 0.8f;
-    gates_[0].Initialize(Object3dManager::GetInstance(), "cube.obj", camera_);
+    gates_[0].Initialize(Object3dManager::GetInstance(), "Gate.obj", camera_);
 
     // Gate 2
     gates_[1].gate.pos = { 5, 3, 20 };
     gates_[1].gate.rot = { 0, 0.7f, 0 };
     gates_[1].gate.scale = { 2, 2, 2 };
-    gates_[1].Initialize(Object3dManager::GetInstance(), "cube.obj", camera_);
+    gates_[1].Initialize(Object3dManager::GetInstance(), "Gate.obj", camera_);
 
     // Gate 3
     gates_[2].gate.pos = { -3, 3, 30 };
     gates_[2].gate.rot = { 0.2f, -0.4f, 0 };
     gates_[2].gate.scale = { 2, 2, 2 };
-    gates_[2].Initialize(Object3dManager::GetInstance(), "cube.obj", camera_);
+    gates_[2].Initialize(Object3dManager::GetInstance(), "Gate.obj", camera_);
 
     nextGate_ = 0;
 
@@ -419,17 +419,35 @@ void StageEditorScene::Update()
     // ★命名入力は Update の最優先で処理する
     // =========================
     if (input.IsKeyTrigger(DIK_F2)) {
-        isNaming_ = !isNaming_;
-        if (isNaming_) {
+
+        if (!isNaming_) {
+            // === 命名開始 ===
+            isNaming_ = true;
+
             TextInput::GetInstance()->Clear();
             stageNameW_.clear();
 
-            // ついでに前回表示を消したいなら
+            // 表示を消す（任意）
+            nameRgba_.assign((size_t)kNameTexW * kNameTexH * 4, 0);
+            TextureManager::GetInstance()->UpdateDynamicTextureRGBA8(
+                kNameTexKey, nameRgba_.data(), kNameTexW, kNameTexH);
+
+        }
+        else {
+            // === 命名キャンセル（F2 2回目）===
+            isNaming_ = false;
+
+            // 変換中も含めて掃除したいなら（任意）
+            TextInput::GetInstance()->Clear();
+            stageNameW_.clear();
+
+            // 表示も消したいなら（任意）
             nameRgba_.assign((size_t)kNameTexW * kNameTexH * 4, 0);
             TextureManager::GetInstance()->UpdateDynamicTextureRGBA8(
                 kNameTexKey, nameRgba_.data(), kNameTexW, kNameTexH);
         }
     }
+
 
     if (isNaming_) {
         // 表示用（確定+変換中）
@@ -449,12 +467,6 @@ void StageEditorScene::Update()
             stageFile_ = stageNameUtf8_ + ".json";
             isNaming_ = false;
         }
-
-        // キャンセル（Esc）
-        if (input.IsKeyTrigger(DIK_ESCAPE)) {
-            isNaming_ = false;
-        }
-
         // ★命名中は “ここで終了”。移動/編集/カメラ処理に行かせない
         return;
     }
@@ -539,8 +551,9 @@ void StageEditorScene::Draw2D()
             "  Y        : Reset Camera\n"
             "\n"
             "Common:\n"
-            "  LMB Click          : Select\n"
+            "  LMB Click : Select\n"
             "  Hold P + LMB Click : Place (Y=0)\n"
+			"  F2 : Name Stage or Name Finishn"
             "  F5 : Save\n"
             "  F9 : Load\n";
 
@@ -961,71 +974,37 @@ void StageEditorScene::EditWallsImGui()
 }
 
 //ステージセーブ
-bool StageEditorScene::SaveStageJson(const std::string& fileName)
-{
-    std::string safe = SanitizeFileNameUtf8(fileName);
+bool StageEditorScene::SaveStageJson(const std::string& fileName) {
+    StageData s{};
+    s.version = 1;
 
-    // "resources/stage/" は wide で持つ（安定）
-    std::filesystem::path dir = std::filesystem::path(L"resources") / L"stage";
-    std::filesystem::path path = dir / Utf8ToWide(safe);
+    s.droneSpawnPos = drone_.GetPos();
+    s.droneSpawnYaw = drone_.GetYaw();
 
-    json root;
-    root["version"] = 1;
-    root["drone"]["spawnPos"] = ToJsonVec3(drone_.GetPos());
-    root["drone"]["spawnYaw"] = drone_.GetYaw();
-    root["goal"]["pos"] = ToJsonVec3(goalSys_.GetGoalPos());
+    s.goalPos = goalSys_.GetGoalPos();
+    s.hasGoalPos = true;
 
     // gates
-    {
-        json arr = json::array();
-        for (const auto& gv : gates_) {
-            const Gate& g = gv.gate;
-            json j;
-            j["pos"] = ToJsonVec3(g.pos);
-            j["rot"] = ToJsonVec3(g.rot);
-            j["scale"] = ToJsonVec3(g.scale);
-            j["perfectRadius"] = g.perfectRadius;
-            j["gateRadius"] = g.gateRadius;
-            j["thickness"] = g.thickness;
-            arr.push_back(j);
-        }
-        root["gates"] = arr;
+    s.gates.clear();
+    for (const auto& gv : gates_) {
+        s.gates.push_back(gv.gate);
     }
 
     // walls
-    {
-        json arr = json::array();
-        for (const auto& w : wallSys_.Walls()) {
-            json j;
-            j["type"] = (w.type == WallSystem::Type::AABB) ? "AABB" : "OBB";
-            j["center"] = ToJsonVec3(w.center);
-            j["half"] = ToJsonVec3(w.half);
-            j["rot"] = ToJsonVec3(w.rot);
-            arr.push_back(j);
-        }
-        root["walls"] = arr;
-    }
+    s.walls = wallSys_.Walls();
 
-    // ★ path を直接渡す（MSVCならこれで日本語OK）
-    std::ofstream ofs(path, std::ios::binary);
-    if (!ofs.is_open()) return false;
-
-    ofs << root.dump(2);
-    return true;
+    return StageIO::Save(fileName, s);
 }
 
 //ステージロード
-bool StageEditorScene::LoadStageJson(const std::string& fileName)
-{
+bool StageEditorScene::LoadStageJson(const std::string& fileName) {
     StageData data;
     if (!StageIO::Load(fileName, data)) return false;
 
-    // drone
     drone_.SetPos(data.droneSpawnPos);
     drone_.SetYaw(data.droneSpawnYaw);
     drone_.SetVel({ 0,0,0 });
 
-    // gates
     gates_.clear();
     for (const auto& g : data.gates) {
         GateVisual gv;
@@ -1034,14 +1013,12 @@ bool StageEditorScene::LoadStageJson(const std::string& fileName)
         gates_.push_back(std::move(gv));
     }
 
-    // walls
     wallSys_.Walls() = data.walls;
 
-    // goal
     goalSys_.Reset();
     stageCleared_ = false;
     if (data.hasGoalSpawnOffset) goalSys_.SetSpawnOffset(data.goalSpawnOffset);
-    if (data.hasGoalPos) goalSys_.SetGoalPos(data.goalPos);
+    if (data.hasGoalPos)         goalSys_.SetGoalPos(data.goalPos);
 
     wallSys_.BuildDebug(Object3dManager::GetInstance(), "cube.obj");
     nextGate_ = 0;
@@ -1200,6 +1177,20 @@ void StageEditorScene::UpdateEditorInput(float dt)
     if (input.IsKeyTrigger(DIK_2)) editMode_ = EditMode::Wall;
     if (input.IsKeyTrigger(DIK_3)) editMode_ = EditMode::Goal;
 
+    if (Input::GetInstance()->IsKeyTrigger(DIK_F6)) {
+
+        std::filesystem::path p =
+            std::filesystem::path(L"resources") / L"stage" / Utf8ToWide(stageFile_); // stageFile_ が utf8なら
+        std::wstring stem = p.stem().wstring();
+
+        std::filesystem::path out =
+            std::filesystem::path(L"resources") / L"stage" / L"thumbs" / (stem + L".png");
+
+        // ★ここがポイント：DirectXCommonに即保存させない。予約だけ。
+        SceneManager::GetInstance()->RequestThumbnail(out.wstring(), 512, 288);
+    }
+
+
     const bool fast = input.IsKeyPressed(DIK_LSHIFT);
     const float mv = moveStep_ * (fast ? 5.0f : 1.0f);
     const float rv = rotStep_ * (fast ? 5.0f : 1.0f);
@@ -1291,13 +1282,22 @@ void StageEditorScene::UpdateEditorInput(float dt)
                 gates_.insert(gates_.begin() + (selectedGate_ + 1), std::move(gv));
                 selectedGate_++;
             }
-            if (input.IsKeyTrigger(DIK_DELETE)) {
+          /*  if (input.IsKeyTrigger(DIK_DELETE)) {
                 gates_.erase(gates_.begin() + selectedGate_);
                 if (!gates_.empty())
                     selectedGate_ = std::clamp(selectedGate_, 0, (int)gates_.size() - 1);
                 else
                     selectedGate_ = 0;
+            }*/
+
+            if (input.IsKeyTrigger(DIK_DELETE)) {
+                if ((int)gates_.size() > 1) {
+                    gates_.erase(gates_.begin() + selectedGate_);
+                    selectedGate_ = std::clamp(selectedGate_, 0, (int)gates_.size() - 1);
+                }
+                // else: 1個しかないので消さない
             }
+
 
 
             // マウス配置（Pでトグルでもいいけど、まずは常時でもOK）
@@ -1368,18 +1368,15 @@ void StageEditorScene::UpdateEditorInput(float dt)
 
             // 削除（Delete）
             if (input.IsKeyTrigger(DIK_DELETE)) {
-                walls.erase(walls.begin() + selectedWall_);
-
-                if (walls.empty()) {
-                    selectedWall_ = 0;
-                    wallSys_.SetSelectedIndex(-1);
-                } else {
+                if ((int)walls.size() > 1) {
+                    walls.erase(walls.begin() + selectedWall_);
                     selectedWall_ = std::clamp(selectedWall_, 0, (int)walls.size() - 1);
                     wallSys_.SetSelectedIndex(selectedWall_);
+                    wallSys_.BuildDebug(Object3dManager::GetInstance(), "cube.obj");
                 }
-
-                wallSys_.BuildDebug(Object3dManager::GetInstance(), "cube.obj");
+                // else: 1個しかないので消さない
             }
+
 
             // （削除で walls が空になった可能性があるのでガード）
             if (!walls.empty())
@@ -1552,4 +1549,15 @@ void StageEditorScene::DrawGateIndices_()
         // 中央寄せしたいなら少し左にずらす（1文字想定の簡易）
         gateNum.DrawString(screen.x - 8.0f, screen.y - 8.0f, txt, 0.8f);
     }
+}
+
+void StageEditorScene::LateDrawCapture() {
+    if (!requestThumb_) return;
+    requestThumb_ = false;
+
+    std::filesystem::path stagePath = std::filesystem::path(L"resources") / L"stage" / Utf8ToWide(stageFile_);
+    std::wstring stem = stagePath.stem().wstring();
+
+    std::filesystem::path out = std::filesystem::path(L"resources") / L"stage" / L"thumbs" / (stem + L".png");
+    DirectXCommon::GetInstance()->SaveBackBufferToPng(out.wstring());
 }
