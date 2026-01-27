@@ -26,6 +26,7 @@ void ResultScene::Update () {
 }
 
 void ResultScene::Draw2D () {
+
 }
 
 void ResultScene::Draw3D () {
