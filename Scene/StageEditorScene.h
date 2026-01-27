@@ -13,6 +13,7 @@
 #include "BitmapFont.h"
 #include "TextInput.h"
 #include "Input.h"
+#include "SceneManager.h"
 #include "../Game/Stage/StageIO.h"
 
 
@@ -39,6 +40,11 @@ public:
     void DrawImGui() override;
 
     void UpdateEditorInput(float dt);
+
+    void LateDrawCapture();
+
+    bool AllowThumbnailCapture() const override { return true; }
+    bool HideUIForThumbnail() const override { return true; }
 
 private:
     // --- editor runtime ---
@@ -124,6 +130,7 @@ private:
     static constexpr const char* kNameTexKey = "__StageNameRT__";
 
     std::vector<uint8_t> nameRgba_; // 作業用
-   
+
+    bool requestThumb_ = false;
 
 };

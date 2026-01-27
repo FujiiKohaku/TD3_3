@@ -37,13 +37,20 @@ static std::string SanitizeFileNameUtf8_(std::string s)
     return s;
 }
 
-static std::filesystem::path MakeStagePath_(const std::string& fileNameUtf8)
-{
+static std::filesystem::path MakeStagePath_(const std::string& fileNameUtf8) {
     std::string safe = SanitizeFileNameUtf8_(fileNameUtf8);
+
+    // 拡張子が無ければ付ける
+    if (safe.find(".json") == std::string::npos) {
+        safe += ".json";
+    }
+
     std::filesystem::path dir = std::filesystem::path(L"resources") / L"stage";
-    std::filesystem::path path = dir / Utf8ToWide_(safe);
-    return path;
+    std::filesystem::create_directories(dir); // LoadでもあってOK（害なし）
+
+    return dir / Utf8ToWide_(safe);
 }
+
 
 namespace StageIO
 {
