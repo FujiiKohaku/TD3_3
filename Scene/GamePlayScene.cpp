@@ -238,28 +238,31 @@ void GamePlayScene::Initialize() {
 	skydome_->SetCamera(camera_);
 	skydome_->SetEnableLighting(false);
 
-	ModelManager::GetInstance ()->LoadModel ("ground.obj");
-	ground_ = std::make_unique<Object3d> ();
-	ground_->Initialize (Object3dManager::GetInstance ());
-	ground_->SetModel ("ground.obj");
-	ground_->SetCamera (camera_);
-	ground_->SetEnableLighting (false);
-	ground_->SetTranslate ({ 0.0f, -5.5f, 0.0f });
+	ModelManager::GetInstance()->LoadModel("ground.obj");
+	ground_ = std::make_unique<Object3d>();
+	ground_->Initialize(Object3dManager::GetInstance());
+	ground_->SetModel("ground.obj");
+	ground_->SetCamera(camera_);
+	ground_->SetEnableLighting(false);
+	ground_->SetTranslate({ 0.0f, -5.5f, 0.0f });
 
-	landingEffect_.Initialize(Object3dManager::GetInstance(),camera_);
-	
+	landingEffect_.Initialize(Object3dManager::GetInstance(), camera_);
 
-	skydome_->SetTranslate({0.0f,0.01f,0.0f});
+
+	skydome_->SetTranslate({ 0.0f,0.01f,0.0f });
+
+	particleGate_.Initialize(Object3dManager::GetInstance(), camera_);
 }
 
 void GamePlayScene::Update() {
-	
+
 	float dt = 1.0f / 60.0f;
 
 	Input& input = *Input::GetInstance();
 
 	if (input.IsKeyTrigger(DIK_TAB)) {
 		isPaused_ = !isPaused_;
+
 	}
 	if (isPaused_) {
 
@@ -289,6 +292,7 @@ void GamePlayScene::Update() {
 		// ゲーム本体はここで完全停止
 		return;
 	}
+
 
 	// ドローン更新（※これが無いとカメラも動かない）
 	if (isDebug_) {
@@ -333,7 +337,7 @@ void GamePlayScene::Update() {
 	sphere_->Update(camera_);
 	droneObj_->Update();
 	skydome_->Update();
-	ground_->Update ();
+	ground_->Update();
 
 	// ★最後に一回
 
@@ -345,7 +349,7 @@ void GamePlayScene::Update() {
 	//  camera_->DebugUpdate();
 
 
-
+	particleGate_.Update(dt);
 
 	camera_->Update();
 
@@ -354,6 +358,15 @@ void GamePlayScene::Update() {
 	// 1) 全ゲートの見た目更新（色タイマーもここで進む）
 	for (auto& g : gates_) {
 		g.Tick(dt);
+
+		if (g.gate.GetIsHitGate() && !g.gate.playedEffect) {
+			particleGate_.Play(drone_.GetPos());
+			g.gate.playedEffect = true;
+		}
+
+		if (!g.gate.GetIsHitGate()) {
+			g.gate.playedEffect = false;
+		}
 	}
 
 	// 2) 次ゲートだけ判定
@@ -361,6 +374,7 @@ void GamePlayScene::Update() {
 		GateResult res;
 		const Vector3 dronePos = drone_.GetPos(); // ★ここはあなたのドローン取得に合わせる
 
+	   
 		if (gates_[nextGate_].TryPass(dronePos, res)) {
 			if (res == GateResult::Perfect) {
 				perfectCount_++;
@@ -379,12 +393,13 @@ void GamePlayScene::Update() {
 		// ---- GoalSystem update ----
 		goalSys_.Update(gates_, nextGate_, drone_.GetPos());
 
+		
 		if (goalSys_.IsCleared()) {
 			stageCleared_ = true;
 
 			// ここで「リザルトへ遷移」「SE」「フェード」等を入れる
 			// 例：次シーンへ
-			SceneManager::GetInstance()->SetNextScene (new ResultScene (perfectCount_, goodCount_));
+			SceneManager::GetInstance()->SetNextScene(new ResultScene(perfectCount_, goodCount_));
 		}
 	}
 
@@ -645,7 +660,7 @@ void GamePlayScene::Draw3D() {
 	//	player2_->Draw();
 	if (droneObj_) droneObj_->Draw();
 	if (skydome_) skydome_->Draw();
-	if (ground_) ground_->Draw ();
+	if (ground_) ground_->Draw();
 
 	for (auto& g : gates_) {
 		g.Draw();
@@ -657,6 +672,9 @@ void GamePlayScene::Draw3D() {
 		wallSys_.DrawDebug();
 	}
 	landingEffect_.Draw();
+
+
+	particleGate_.Draw();
 	//sphere_->Draw(DirectXCommon::GetInstance()->GetCommandList());
 	ParticleManager::GetInstance()->PreDraw();
 	ParticleManager::GetInstance()->Draw();

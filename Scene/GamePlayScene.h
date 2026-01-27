@@ -22,7 +22,7 @@
 #include "../Game/Drone/Walls.h"
 #include "../Game/Goal/GoalSystem.h"
 #include"../Game/LandingEffect/LandingEffect.h"
-
+#include "../Game/Particle/ParticleGate.h"
 class SphereObject;
 class GamePlayScene : public BaseScene {
 public:
@@ -87,8 +87,8 @@ private:
 	//ゲート(リング)
 
 	std::vector<GateVisual> gates_;
-	int nextGate_ = 0;    
-	int perfectCount_ = 0;           
+	int nextGate_ = 0;
+	int perfectCount_ = 0;
 	int goodCount_ = 0;
 
 	//壁
@@ -108,7 +108,8 @@ private:
 	std::unique_ptr<Object3d> ground_ = nullptr;
 
 	LandingEffect landingEffect_;
-
+	ParticleGate particleGate_;
+	//gateのフラグ
 	bool isPaused_ = false;
 	bool requestBackToTitle_ = false;
 };

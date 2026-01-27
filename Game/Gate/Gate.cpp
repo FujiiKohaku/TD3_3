@@ -45,6 +45,11 @@ Color4 Gate::GetDrawColor() const
     return baseColor;
 }
 
+bool Gate::GetIsHitGate() const
+{
+    return isHitGate_;
+}
+
 bool Gate::TryPass(const Vector3& droneWorldPos, GateResult& outResult)
 {
     outResult = GateResult::None;
@@ -106,5 +111,6 @@ bool Gate::TryPass(const Vector3& droneWorldPos, GateResult& outResult)
     lastResult = outResult;
     feedbackTimer = feedbackDuration;
 
+    isHitGate_ = true;
     return true; // “通過イベント”が起きた
 }

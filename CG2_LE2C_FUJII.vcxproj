@@ -177,6 +177,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Light\LightManager.cpp" />
     <ClCompile Include="math\MathStruct.cpp" />
     <ClCompile Include="math\Object3DStruct.cpp" />
+    <ClCompile Include="Game\Particle\ParticleGate.cpp" />
     <ClCompile Include="Scene\ResultScene.cpp" />
     <ClCompile Include="Scene\SceneManager.cpp" />
     <ClCompile Include="Scene\BaseScene.cpp" />
@@ -292,6 +293,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Light\LightManager.h" />
     <ClInclude Include="math\MathStruct.h" />
     <ClInclude Include="math\Object3DStruct.h" />
+    <ClInclude Include="Game\Particle\ParticleGate.h" />
     <ClInclude Include="Scene\ResultScene.h" />
     <ClInclude Include="Scene\SceneManager.h" />
     <ClInclude Include="Scene\BaseScene.h" />
