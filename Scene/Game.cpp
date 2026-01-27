@@ -37,6 +37,8 @@ void Game::Initialize()
     TextureManager::GetInstance()->LoadTexture("resources/fence.png");
     TextureManager::GetInstance()->LoadTexture("resources/ui/bitMap.png");
     TextureManager::GetInstance()->LoadTexture("resources/ui/ascii_font_16x6_cell32_first32.png");
+    TextureManager::GetInstance()->LoadTexture("resources/ui/no_thumb.png");
+
 
     BaseScene* scene = new TitleScene();
     // シーンマネージャーに最初のシーンをセット
@@ -54,6 +56,20 @@ void Game::Update()
 
     // camera_->DebugUpdate();
 
+    if (Input::GetInstance()->IsKeyTrigger(DIK_F6)) {
+
+        BaseScene* scene = SceneManager::GetInstance()->GetCurrentScene();
+
+        if (scene && scene->AllowThumbnailCapture()) {
+            requestCapture_ = true;
+
+            if (scene->HideUIForThumbnail()) {
+                hideUIThisFrame_ = true;
+            }
+        }
+    }
+
+
     // エスケープで離脱
     if (Input::GetInstance()->IsKeyPressed(DIK_ESCAPE)) {
         endRequest_ = true;
@@ -67,19 +83,36 @@ void Game::Update()
     ImGuiManager::GetInstance()->End();
 }
 
-void Game::Draw()
-{
-    // === フレーム開始 ===
+void Game::Draw() {
     SrvManager::GetInstance()->PreDraw();
     DirectXCommon::GetInstance()->PreDraw();
 
-    // === シーンに渡す ===
-    SceneManager::GetInstance()->Draw();
+    BaseScene* scene = SceneManager::GetInstance()->GetCurrentScene();
 
-    // === フレーム終了 ===
-    ImGuiManager::GetInstance()->Draw();
-    DirectXCommon::GetInstance()->PostDraw();
+    bool skipUI = false;
+
+    // ★ここで「保存したい」ことだけ予約する
+    SceneManager::ThumbnailRequest req;
+    if (scene &&
+        scene->AllowThumbnailCapture() &&
+        SceneManager::GetInstance()->ConsumeThumbnailRequest(req)) {
+
+        DirectXCommon::GetInstance()->RequestBackBufferCapture(req.path, req.w, req.h);
+
+        // ★UI非表示で撮りたいなら、このフレームは2D/ImGui描かない
+        if (scene->HideUIForThumbnail()) {
+            skipUI = true;
+        }
+    }
+
+    if (scene) scene->Draw3D();
+    if (scene && !skipUI) scene->Draw2D();
+    if (!skipUI) ImGuiManager::GetInstance()->Draw();
+
+    DirectXCommon::GetInstance()->PostDraw(); // ★ここで実際の保存をやる
 }
+
+
 
 void Game::Finalize()
 {
