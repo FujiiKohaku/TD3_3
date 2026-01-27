@@ -104,6 +104,8 @@ private:
 
 	//天球
 	std::unique_ptr<Object3d> skydome_ = nullptr;
+	//地面
+	std::unique_ptr<Object3d> ground_ = nullptr;
 
 	LandingEffect landingEffect_;
 

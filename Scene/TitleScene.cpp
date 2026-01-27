@@ -69,8 +69,8 @@ void TitleScene::Update() {
     }
 
     //Tキーでリザルトシーン
-    if (Input::GetInstance ()->IsKeyTrigger (DIK_T)) {
-        SceneManager::GetInstance ()->SetNextScene (new ResultScene ());
+    if (Input::GetInstance ()->IsKeyTrigger (DIK_R)) {
+        SceneManager::GetInstance ()->SetNextScene (new ResultScene (0, 0));
     }
 	// titleModel->Update();
 	camera_->Update();

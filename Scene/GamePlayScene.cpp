@@ -7,6 +7,8 @@
 #include "../externals/nlohmann/json.hpp"
 #include <fstream>
 #include <string>
+#include "ResultScene.h"
+
 #include"TitleScene.h"
 using json = nlohmann::json;
 
@@ -236,6 +238,14 @@ void GamePlayScene::Initialize() {
 	skydome_->SetCamera(camera_);
 	skydome_->SetEnableLighting(false);
 
+	ModelManager::GetInstance ()->LoadModel ("ground.obj");
+	ground_ = std::make_unique<Object3d> ();
+	ground_->Initialize (Object3dManager::GetInstance ());
+	ground_->SetModel ("ground.obj");
+	ground_->SetCamera (camera_);
+	ground_->SetEnableLighting (false);
+	ground_->SetTranslate ({ 0.0f, -5.5f, 0.0f });
+
 	landingEffect_.Initialize(Object3dManager::GetInstance(),camera_);
 	
 
@@ -323,6 +333,7 @@ void GamePlayScene::Update() {
 	sphere_->Update(camera_);
 	droneObj_->Update();
 	skydome_->Update();
+	ground_->Update ();
 
 	// ★最後に一回
 
@@ -371,7 +382,7 @@ void GamePlayScene::Update() {
 
 			// ここで「リザルトへ遷移」「SE」「フェード」等を入れる
 			// 例：次シーンへ
-			// sceneManager_->ChangeScene(new ResultScene());
+			SceneManager::GetInstance()->SetNextScene (new ResultScene (perfectCount_, goodCount_));
 		}
 	}
 
@@ -632,6 +643,7 @@ void GamePlayScene::Draw3D() {
 	//	player2_->Draw();
 	if (droneObj_) droneObj_->Draw();
 	if (skydome_) skydome_->Draw();
+	if (ground_) ground_->Draw ();
 
 	for (auto& g : gates_) {
 		g.Draw();
