@@ -310,19 +310,19 @@ void StageEditorScene::Initialize()
     gates_[0].gate.perfectRadius = 1.0f;
     gates_[0].gate.gateRadius = 2.5f;
     gates_[0].gate.thickness = 0.8f;
-    gates_[0].Initialize(Object3dManager::GetInstance(), "cube.obj", camera_);
+    gates_[0].Initialize(Object3dManager::GetInstance(), "Gate.obj", camera_);
 
     // Gate 2
     gates_[1].gate.pos = { 5, 3, 20 };
     gates_[1].gate.rot = { 0, 0.7f, 0 };
     gates_[1].gate.scale = { 2, 2, 2 };
-    gates_[1].Initialize(Object3dManager::GetInstance(), "cube.obj", camera_);
+    gates_[1].Initialize(Object3dManager::GetInstance(), "Gate.obj", camera_);
 
     // Gate 3
     gates_[2].gate.pos = { -3, 3, 30 };
     gates_[2].gate.rot = { 0.2f, -0.4f, 0 };
     gates_[2].gate.scale = { 2, 2, 2 };
-    gates_[2].Initialize(Object3dManager::GetInstance(), "cube.obj", camera_);
+    gates_[2].Initialize(Object3dManager::GetInstance(), "Gate.obj", camera_);
 
     nextGate_ = 0;
 
@@ -419,17 +419,35 @@ void StageEditorScene::Update()
     // ★命名入力は Update の最優先で処理する
     // =========================
     if (input.IsKeyTrigger(DIK_F2)) {
-        isNaming_ = !isNaming_;
-        if (isNaming_) {
+
+        if (!isNaming_) {
+            // === 命名開始 ===
+            isNaming_ = true;
+
             TextInput::GetInstance()->Clear();
             stageNameW_.clear();
 
-            // ついでに前回表示を消したいなら
+            // 表示を消す（任意）
+            nameRgba_.assign((size_t)kNameTexW * kNameTexH * 4, 0);
+            TextureManager::GetInstance()->UpdateDynamicTextureRGBA8(
+                kNameTexKey, nameRgba_.data(), kNameTexW, kNameTexH);
+
+        }
+        else {
+            // === 命名キャンセル（F2 2回目）===
+            isNaming_ = false;
+
+            // 変換中も含めて掃除したいなら（任意）
+            TextInput::GetInstance()->Clear();
+            stageNameW_.clear();
+
+            // 表示も消したいなら（任意）
             nameRgba_.assign((size_t)kNameTexW * kNameTexH * 4, 0);
             TextureManager::GetInstance()->UpdateDynamicTextureRGBA8(
                 kNameTexKey, nameRgba_.data(), kNameTexW, kNameTexH);
         }
     }
+
 
     if (isNaming_) {
         // 表示用（確定+変換中）
@@ -449,12 +467,6 @@ void StageEditorScene::Update()
             stageFile_ = stageNameUtf8_ + ".json";
             isNaming_ = false;
         }
-
-        // キャンセル（Esc）
-        if (input.IsKeyTrigger(DIK_ESCAPE)) {
-            isNaming_ = false;
-        }
-
         // ★命名中は “ここで終了”。移動/編集/カメラ処理に行かせない
         return;
     }
@@ -539,8 +551,9 @@ void StageEditorScene::Draw2D()
             "  Y        : Reset Camera\n"
             "\n"
             "Common:\n"
-            "  LMB Click          : Select\n"
+            "  LMB Click : Select\n"
             "  Hold P + LMB Click : Place (Y=0)\n"
+			"  F2 : Name Stage or Name Finishn"
             "  F5 : Save\n"
             "  F9 : Load\n";
 
@@ -1291,13 +1304,22 @@ void StageEditorScene::UpdateEditorInput(float dt)
                 gates_.insert(gates_.begin() + (selectedGate_ + 1), std::move(gv));
                 selectedGate_++;
             }
-            if (input.IsKeyTrigger(DIK_DELETE)) {
+          /*  if (input.IsKeyTrigger(DIK_DELETE)) {
                 gates_.erase(gates_.begin() + selectedGate_);
                 if (!gates_.empty())
                     selectedGate_ = std::clamp(selectedGate_, 0, (int)gates_.size() - 1);
                 else
                     selectedGate_ = 0;
+            }*/
+
+            if (input.IsKeyTrigger(DIK_DELETE)) {
+                if ((int)gates_.size() > 1) {
+                    gates_.erase(gates_.begin() + selectedGate_);
+                    selectedGate_ = std::clamp(selectedGate_, 0, (int)gates_.size() - 1);
+                }
+                // else: 1個しかないので消さない
             }
+
 
 
             // マウス配置（Pでトグルでもいいけど、まずは常時でもOK）
@@ -1368,18 +1390,15 @@ void StageEditorScene::UpdateEditorInput(float dt)
 
             // 削除（Delete）
             if (input.IsKeyTrigger(DIK_DELETE)) {
-                walls.erase(walls.begin() + selectedWall_);
-
-                if (walls.empty()) {
-                    selectedWall_ = 0;
-                    wallSys_.SetSelectedIndex(-1);
-                } else {
+                if ((int)walls.size() > 1) {
+                    walls.erase(walls.begin() + selectedWall_);
                     selectedWall_ = std::clamp(selectedWall_, 0, (int)walls.size() - 1);
                     wallSys_.SetSelectedIndex(selectedWall_);
+                    wallSys_.BuildDebug(Object3dManager::GetInstance(), "cube.obj");
                 }
-
-                wallSys_.BuildDebug(Object3dManager::GetInstance(), "cube.obj");
+                // else: 1個しかないので消さない
             }
+
 
             // （削除で walls が空になった可能性があるのでガード）
             if (!walls.empty())
