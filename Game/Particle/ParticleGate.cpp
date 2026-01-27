@@ -23,7 +23,7 @@ void ParticleGate::Initialize(Object3dManager* objManager, Camera* camera)
 	objManager_ = objManager;
 	camera_ = camera;
 
-	const int pieceCount = 16;
+	const int pieceCount = 32;
 	pieces_.resize(pieceCount);
 
 	ModelManager::GetInstance()->LoadModel("star.obj");
@@ -35,7 +35,13 @@ void ParticleGate::Initialize(Object3dManager* objManager, Camera* camera)
 		piece.obj->SetCamera(camera_);
 		piece.phase = Phase::None;
 		piece.life = 0.0f;
-		piece.scale = { 0.05f, 0.05f, 0.05f };
+		piece.baseColor.x = RandomFloat(0.6f, 1.0f);
+		piece.baseColor.y = RandomFloat(0.6f, 1.0f);
+		piece.baseColor.z = RandomFloat(0.6f, 1.0f);
+		piece.baseColor.w = 1.0f;
+		piece.startScale = { 0.08f, 0.08f, 0.08f };
+		piece.scale = piece.startScale;
+		piece.obj->SetColor(piece.baseColor);
 	}
 }
 
@@ -54,44 +60,65 @@ void ParticleGate::Play(const Vector3& centerPos)
 void ParticleGate::StartRing(const Vector3& centerPos)
 {
 	const int pieceCount = static_cast<int>(pieces_.size());
-
 	for (int i = 0; i < pieceCount; i++) {
 		Piece& piece = pieces_[i];
 
-		piece.phase = Phase::Ring;
-		piece.life = ringLife_;
-		piece.scale = { 0.06f, 0.06f, 0.06f };
+		piece.phase = Phase::Burst;
+		piece.life = burstLife_;
 
-		Vector3 startPos = centerPos;
+		Vector3 startPos = centerPos_;
 		startPos.y += yOffset_;
-
 		piece.obj->SetTranslate(startPos);
-		piece.obj->SetScale(piece.scale);
 
-		float angle = (2.0f * std::numbers::pi_v<float> / pieceCount) * static_cast<float>(i);
-		piece.velocity.x = std::cosf(angle) * ringSpeed_;
-		piece.velocity.z = std::sinf(angle) * ringSpeed_;
-		piece.velocity.y = 0.0f;
-
+		StartBurst(piece);   
+		piece.obj->SetScale(piece.startScale);
 		piece.obj->Update();
 	}
+
 }
 
-void ParticleGate::StartBurst(Piece& piece, int index, int count)
+void ParticleGate::StartBurst(Piece& piece)
 {
 	piece.phase = Phase::Burst;
 	piece.life = burstLife_;
+	if (piece.phase == Phase::Burst) {
 
-	float angle = (2.0f * std::numbers::pi_v<float> / count) * static_cast<float>(index);
+		float flicker = RandomFloat(-0.15f, 0.15f);
 
-	float spread = 0.6f + 0.4f * std::sinf(static_cast<float>(index) * 1.7f);
-	float horizontalSpeed = burstSpeed_ * spread;
+		Vector4 color = piece.baseColor;
+		color.x = std::clamp(color.x + flicker, 0.0f, 1.0f);
+		color.y = std::clamp(color.y + flicker, 0.0f, 1.0f);
+		color.z = std::clamp(color.z + flicker, 0.0f, 1.0f);
+		float intensity = RandomFloat(0.7f, 1.3f);
+		color.x = piece.baseColor.x * intensity;
+		color.y = piece.baseColor.y * intensity;
+		color.z = piece.baseColor.z * intensity;
+		color.w = 1.0f;
 
-	piece.velocity.x = std::cosf(angle) * horizontalSpeed;
-	piece.velocity.z = std::sinf(angle) * horizontalSpeed;
+		
+		piece.obj->SetColor(color);
+	}
+	float theta = RandomFloat(0.0f, 2.0f * std::numbers::pi_v<float>);
+	float phi = RandomFloat(0.0f, std::numbers::pi_v<float>);
 
-	float up = 2.0f + 1.5f * std::cosf(static_cast<float>(index) * 2.3f);
-	piece.velocity.y = up;
+	Vector3 dir;
+	dir.x = std::sinf(phi) * std::cosf(theta);
+	dir.y = std::cosf(phi);
+	dir.z = std::sinf(phi) * std::sinf(theta);
+
+	dir = Normalize(dir);
+
+	piece.velocity.x = dir.x * burstSpeed_;
+	piece.velocity.y = dir.y * burstSpeed_;
+	piece.velocity.z = dir.z * burstSpeed_;
+
+	piece.scale = { 0.08f, 0.08f, 0.08f };
+}
+
+float ParticleGate::RandomFloat(float min, float max)
+{
+	float r = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
+	return min + (max - min) * r;
 }
 
 void ParticleGate::Update(float dt)
@@ -114,24 +141,19 @@ void ParticleGate::Update(float dt)
 		pos.y += piece.velocity.y * dt;
 		pos.z += piece.velocity.z * dt;
 
-		if (piece.phase == Phase::Ring) {
-			pos.y = centerPos_.y + yOffset_;
+		
+		if (piece.phase == Phase::Burst) {
 
-			piece.scale.x -= ringShrink_;
-			piece.scale.y -= ringShrink_;
-			piece.scale.z -= ringShrink_;
-
-			if (piece.life - dt <= 0.0f) {
-				StartBurst(piece, i, pieceCount);
-			}
-		}
-		else if (piece.phase == Phase::Burst) {
 			piece.velocity.y -= 9.8f * dt;
 
-			piece.scale.x -= burstShrink_;
-			piece.scale.y -= burstShrink_;
-			piece.scale.z -= burstShrink_;
+			float t = piece.life / burstLife_; 
+			if (t < 0.0f) t = 0.0f;
+
+			piece.scale.x = piece.startScale.x * t;
+			piece.scale.y = piece.startScale.y * t;
+			piece.scale.z = piece.startScale.z * t;
 		}
+
 
 		if (piece.scale.x < 0.0f) piece.scale.x = 0.0f;
 		if (piece.scale.y < 0.0f) piece.scale.y = 0.0f;

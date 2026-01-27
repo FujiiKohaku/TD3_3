@@ -8,50 +8,53 @@ class Camera;
 class ParticleGate
 {
 public:
-    ParticleGate();
-    ~ParticleGate();
+	ParticleGate();
+	~ParticleGate();
 
-    void Initialize(Object3dManager* objManager, Camera* camera);
-    void Play(const Vector3& centerPos);
+	void Initialize(Object3dManager* objManager, Camera* camera);
+	void Play(const Vector3& centerPos);
 
-    void Update(float dt);
-    void Draw();
-
-private:
-    enum class Phase {
-        None,
-        Ring,
-        Burst
-    };
-
-    struct Piece {
-        Object3d* obj = nullptr;
-        Vector3 velocity{};
-        Vector3 scale{ 0.05f, 0.05f, 0.05f };
-        float life = 0.0f;
-        Phase phase = Phase::None;
-    };
-
-    void StartRing(const Vector3& centerPos);
-    void StartBurst(Piece& piece, int index, int count);
+	void Update(float dt);
+	void Draw();
 
 private:
-    std::vector<Piece> pieces_;
+	enum class Phase {
+		None,
+		Burst
+	};
 
-    Object3dManager* objManager_ = nullptr;
-    Camera* camera_ = nullptr;
+	struct Piece {
+		Object3d* obj = nullptr;
+		Vector3 velocity{};
+		Vector3 scale;
+		float life;
+		Phase phase;
+		Vector3 startScale;
+		Vector4 baseColor;
+	};
 
-    bool isPlaying_ = false;
-    Vector3 centerPos_{};
 
-    float yOffset_ = 0.08f;
+	void StartRing(const Vector3& centerPos);
+	void StartBurst(Piece& piece);
+	float RandomFloat(float min, float max);
+private:
+	std::vector<Piece> pieces_;
 
-    float ringLife_ = 0.35f;
-    float burstLife_ = 0.20f;
+	Object3dManager* objManager_ = nullptr;
+	Camera* camera_ = nullptr;
 
-    float ringSpeed_ = 4.0f;
-    float burstSpeed_ = 6.0f;
+	bool isPlaying_ = false;
+	Vector3 centerPos_{};
 
-    float ringShrink_ = 0.0018f;
-    float burstShrink_ = 0.0040f;
+	float yOffset_ = 0.08f;
+
+	float ringLife_ = 0.94f;
+	float burstLife_ = 1.2f;
+
+	float ringSpeed_ = 4.0f;
+	float burstSpeed_ = 10.0f; 
+
+
+	float ringShrink_ = 0.0018f;
+	float burstShrink_ = 0.0040f;
 };
