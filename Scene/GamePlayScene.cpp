@@ -198,7 +198,7 @@ void GamePlayScene::Initialize() {
 		gates_[i].gate = stage.gates[i];
 
 		// 見た目モデル（今は cube 固定でOK）
-		gates_[i].Initialize(Object3dManager::GetInstance(), "cube.obj", camera_);
+		gates_[i].Initialize(Object3dManager::GetInstance(), "Gate.obj", camera_);
 	}
 
 	nextGate_ = 0;
