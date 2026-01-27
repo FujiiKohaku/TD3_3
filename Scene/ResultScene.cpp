@@ -1,6 +1,7 @@
 #include "ResultScene.h"
 #include "ModelManager.h"
 #include "Object3dManager.h"
+#include "ImGuiManager.h"
 
 ResultScene::ResultScene (int perfectCount, int goodCount) {
 	camera_ = std::make_unique<Camera> ();
@@ -32,4 +33,6 @@ void ResultScene::Draw3D () {
 }
 
 void ResultScene::DrawImGui () {
+	ImGui::Text ("Perfect : %d", perfectCount_);
+	ImGui::Text ("Good : %d", goodCount_);
 }
