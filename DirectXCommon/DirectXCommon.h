@@ -53,6 +53,16 @@ public:
 
     void WaitForGPU();
 
+    // 今表示しているバックバッファを PNG に保存（必要なら縮小してサムネ化）
+    bool SaveBackBufferToPng(const std::wstring& outPngPath,
+        uint32_t thumbW = 0, uint32_t thumbH = 0);
+
+    // ついでに（外から参照したいなら）
+    ID3D12Resource* GetCurrentBackBuffer() const;
+    UINT GetCurrentBackBufferIndex() const;
+
+    void RequestBackBufferCapture(const std::wstring& path, uint32_t w = 0, uint32_t h = 0);
+
 private:
     // ===== Singleton化の基本 =====
     DirectXCommon() = default;
@@ -106,4 +116,10 @@ private:
     Microsoft::WRL::ComPtr<IDxcUtils> dxcUtils;
     Microsoft::WRL::ComPtr<IDxcCompiler3> dxcCompiler;
     Microsoft::WRL::ComPtr<IDxcIncludeHandler> includeHandler;
+
+    bool capturePending_ = false;
+    std::wstring capturePath_;
+    uint32_t captureW_ = 0;
+    uint32_t captureH_ = 0;
+
 };

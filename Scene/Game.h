@@ -157,4 +157,8 @@ private:
     };
 
     bool endRequest_ = false;
+
+    bool requestCapture_ = false;
+    bool hideUIThisFrame_ = false;
+
 };
