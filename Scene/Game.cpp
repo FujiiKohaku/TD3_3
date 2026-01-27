@@ -32,10 +32,12 @@ void Game::Initialize()
     ModelManager::GetInstance()->LoadModel("fence.obj");
     ModelManager::GetInstance()->LoadModel("terrain.obj");
     ModelManager::GetInstance()->LoadModel("cube.obj");
+    ModelManager::GetInstance()->LoadModel("Gate.obj");
     TextureManager::GetInstance()->LoadTexture("resources/uvChecker.png");
     TextureManager::GetInstance()->LoadTexture("resources/uvChecker.png");
     TextureManager::GetInstance()->LoadTexture("resources/fence.png");
     TextureManager::GetInstance()->LoadTexture("resources/ui/bitMap.png");
+    TextureManager::GetInstance()->LoadTexture("resources/white.png");
     TextureManager::GetInstance()->LoadTexture("resources/ui/ascii_font_16x6_cell32_first32.png");
 
     BaseScene* scene = new TitleScene();
