@@ -87,8 +87,8 @@ private:
 	//ゲート(リング)
 
 	std::vector<GateVisual> gates_;
-	int nextGate_ = 0;
-	int perfectCount_ = 0;
+	int nextGate_ = 0;    
+	int perfectCount_ = 0;           
 	int goodCount_ = 0;
 
 	//壁
@@ -106,4 +106,7 @@ private:
 	std::unique_ptr<Object3d> skydome_ = nullptr;
 
 	LandingEffect landingEffect_;
+
+	bool isPaused_ = false;
+	bool requestBackToTitle_ = false;
 };

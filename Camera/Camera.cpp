@@ -65,7 +65,7 @@ void Camera::DebugUpdate() {
 void Camera::FollowDroneRigid(const Drone& drone, float backDist, float height, float pitchRad, float yawOffset) {
     const Vector3 target{ drone.GetPos().x, drone.GetPos().y, drone.GetPos().z };
 
-    const float yawBase = -drone.GetYaw() + yawOffset; // ★ここがポイント
+    const float yawBase = -drone.GetYaw() + yawOffset; // ここがポイント
     const float s = std::sinf(yawBase);
     const float c = std::cosf(yawBase);
     const Vector3 forward{ s, 0.0f, c };
