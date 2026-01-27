@@ -112,4 +112,5 @@ private:
 	//gateのフラグ
 	bool isPaused_ = false;
 	bool requestBackToTitle_ = false;
+	void	UpdateDronePointLight();
 };

@@ -258,12 +258,15 @@ void GamePlayScene::Update() {
 
 	float dt = 1.0f / 60.0f;
 
+	//入出力取得
 	Input& input = *Input::GetInstance();
 
+	//TABキーを押したらポーズ画面になる
 	if (input.IsKeyTrigger(DIK_TAB)) {
 		isPaused_ = !isPaused_;
 
 	}
+	//ポーズ画面のUI
 	if (isPaused_) {
 
 		ImGui::Begin("Pause Menu");
@@ -293,6 +296,7 @@ void GamePlayScene::Update() {
 		return;
 	}
 
+	UpdateDronePointLight();
 
 	// ドローン更新（※これが無いとカメラも動かない）
 	if (isDebug_) {
@@ -339,7 +343,7 @@ void GamePlayScene::Update() {
 	skydome_->Update();
 	ground_->Update();
 
-	// ★最後に一回
+	// 最後に一回
 
 	if (input.IsKeyTrigger(DIK_O)) {
 
@@ -374,7 +378,7 @@ void GamePlayScene::Update() {
 		GateResult res;
 		const Vector3 dronePos = drone_.GetPos(); // ★ここはあなたのドローン取得に合わせる
 
-	   
+
 		if (gates_[nextGate_].TryPass(dronePos, res)) {
 			if (res == GateResult::Perfect) {
 				perfectCount_++;
@@ -393,7 +397,7 @@ void GamePlayScene::Update() {
 		// ---- GoalSystem update ----
 		goalSys_.Update(gates_, nextGate_, drone_.GetPos());
 
-		
+
 		if (goalSys_.IsCleared()) {
 			stageCleared_ = true;
 
@@ -460,8 +464,8 @@ void GamePlayScene::Update() {
 	static Vector4 pointColor = { 1.0f, 1.0f, 1.0f, 1.0f };
 	ImGui::ColorEdit3("Point Color", (float*)&pointColor);
 
-	static Vector3 pointPos = { 0.0f, 2.0f, 0.0f };
-	ImGui::SliderFloat3("Point Position", &pointPos.x, -10.0f, 10.0f);
+	//atic Vector3 pointPos = { 0.0f, 2.0f, 0.0f };
+	//Gui::SliderFloat3("Point Position", &pointPos.x, -10.0f, 10.0f);
 
 	static float pointIntensity = 1.0f;
 	ImGui::SliderFloat("Point Intensity", &pointIntensity, 0.0f, 5.0f);
@@ -475,31 +479,31 @@ void GamePlayScene::Update() {
 
 	LightManager::GetInstance()->SetPointRadius(pointRadius);
 	LightManager::GetInstance()->SetPointDecay(pointDecay);
-	LightManager::GetInstance()->SetPointLight(pointColor, pointPos, pI);
+	//ghtManager::GetInstance()->SetPointLight(pointColor, pointPos, pI);
 
 	ImGui::End();
 
-	// ==================================
-	// Sphere Control
-	// ==================================
-	ImGui::Begin("Sphere Control");
+	//// ==================================
+	//// Sphere Control
+	//// ==================================
+	//ImGui::Begin("Sphere Control");
 
-	// ---- このオブジェクトだけ ライティングする？ ----
-	// OFF にすると「フラット表示」になる
-	ImGui::Checkbox("Enable Lighting", &sphereLighting);
+	//// ---- このオブジェクトだけ ライティングする？ ----
+	//// OFF にすると「フラット表示」になる
+	//ImGui::Checkbox("Enable Lighting", &sphereLighting);
 
-	// ---- 位置 ----
-	ImGui::SliderFloat3("Position", &spherePos.x, -10.0f, 10.0f);
+	//// ---- 位置 ----
+	//ImGui::SliderFloat3("Position", &spherePos.x, -10.0f, 10.0f);
 
-	// ---- 回転 ----
-	ImGui::SliderFloat3("Rotate", &sphereRotate.x, -3.14f, 3.14f);
+	//// ---- 回転 ----
+	//ImGui::SliderFloat3("Rotate", &sphereRotate.x, -3.14f, 3.14f);
 
-	ImGui::SliderFloat3("Scale", &sphereScale.x, 1.0f, 10.0f);
-	// ---- テカり具合（鏡面反射の鋭さ） ----
-	static float shininess = 32.0f;
-	ImGui::SliderFloat("Shininess", &shininess, 1.0f, 128.0f);
+	//ImGui::SliderFloat3("Scale", &sphereScale.x, 1.0f, 10.0f);
+	//// ---- テカり具合（鏡面反射の鋭さ） ----
+	//static float shininess = 32.0f;
+	//ImGui::SliderFloat("Shininess", &shininess, 1.0f, 128.0f);
 
-	ImGui::End();
+	//ImGui::End();
 
 	ImGui::Begin("Camera Debug");
 
@@ -639,7 +643,7 @@ void GamePlayScene::Update() {
 	sphere_->SetTranslate(spherePos);
 	sphere_->SetRotate(sphereRotate);
 	sphere_->SetScale(sphereScale);
-	sphere_->SetShininess(shininess);
+	//here_->SetShininess(shininess);
 
 	if (drawWallDebug_) {
 		wallSys_.UpdateDebug();
@@ -715,4 +719,23 @@ void GamePlayScene::Finalize() {
 	goalSys_.Finalize();
 
 	SoundManager::GetInstance()->SoundUnload(&bgm);
+}
+void GamePlayScene::UpdateDronePointLight()
+{
+	float yaw = drone_.GetYaw();
+	float pitch = drone_.GetPitch();
+
+	Vector3 forward;
+	forward.x = std::sinf(yaw) * std::cosf(pitch);
+	forward.y = std::sinf(pitch);
+	forward.z = std::cosf(yaw) * std::cosf(pitch);
+
+	const float offset = 1.2f;
+
+	Vector3 pos = drone_.GetPos();
+	pos.x += forward.x * offset;
+	pos.y += forward.y * offset;
+	pos.z += forward.z * offset;
+
+	LightManager::GetInstance()->SetPointPosition(pos);
 }
