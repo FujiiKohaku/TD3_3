@@ -98,7 +98,7 @@ private:
 
 	//ゴール
 	GoalSystem goalSys_;
-	bool stageCleared_ = false; // クリア後の演出用（任意）
+	bool stageCleared_ = false; // クリア後の演出用
 
 	bool requestBackToSelect_ = false;
 
