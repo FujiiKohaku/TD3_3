@@ -7,7 +7,7 @@
 #include "../externals/nlohmann/json.hpp"
 #include <fstream>
 #include <string>
-
+#include"TitleScene.h"
 using json = nlohmann::json;
 
 static inline json ToJsonVec3(const Vector3& v) {
@@ -237,15 +237,48 @@ void GamePlayScene::Initialize() {
 	skydome_->SetEnableLighting(false);
 
 	landingEffect_.Initialize(Object3dManager::GetInstance(),camera_);
+	
+
+
 }
 
 void GamePlayScene::Update() {
 
 	float dt = 1.0f / 60.0f;
 
-
-
 	Input& input = *Input::GetInstance();
+
+	if (input.IsKeyTrigger(DIK_TAB)) {
+		isPaused_ = !isPaused_;
+	}
+	if (isPaused_) {
+
+		ImGui::Begin("Pause Menu");
+
+		ImGui::Text("PAUSE");
+
+		ImGui::Separator();
+
+		if (ImGui::Button("Continue")) {
+			isPaused_ = false;
+		}
+
+		if (ImGui::Button("Back to Title")) {
+			requestBackToTitle_ = true;
+		}
+
+		ImGui::End();
+
+		// タイトルへ戻る要求が出たらシーン切り替え
+		if (requestBackToTitle_) {
+			requestBackToTitle_ = false;
+			SceneManager::GetInstance()->SetNextScene(new TitleScene());
+			return;
+		}
+
+		// ゲーム本体はここで完全停止
+		return;
+	}
 
 	// ドローン更新（※これが無いとカメラも動かない）
 	if (isDebug_) {
