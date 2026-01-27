@@ -249,11 +249,11 @@ void GamePlayScene::Initialize() {
 	landingEffect_.Initialize(Object3dManager::GetInstance(),camera_);
 	
 
-
+	skydome_->SetTranslate({0.0f,0.01f,0.0f});
 }
 
 void GamePlayScene::Update() {
-
+	
 	float dt = 1.0f / 60.0f;
 
 	Input& input = *Input::GetInstance();
@@ -343,6 +343,8 @@ void GamePlayScene::Update() {
 	}
 
 	//  camera_->DebugUpdate();
+
+
 
 
 	camera_->Update();
