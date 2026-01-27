@@ -69,7 +69,7 @@ private:
                 m->color = { flash.r, flash.g, flash.b, 0.9f };
             } else {
                 // 薄緑（常時）
-                m->color = { 0.2f, 1.0f, 0.3f, 0.35f };
+                m->color = { 0.2f, 1.0f, 0.3f, 1.0f };
             }
         }
 
@@ -79,7 +79,7 @@ private:
                 m->color = { flash.r, flash.g, flash.b, 0.9f };
             } else {
                 // 薄青（常時）
-                m->color = { 0.2f, 0.7f, 1.0f, 0.35f };
+                m->color = { 0.2f, 0.7f, 1.0f, 1.0f };
             }
         }
     }
