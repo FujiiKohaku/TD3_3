@@ -144,24 +144,6 @@ void LightManager::SetSpotLightCosFalloffStart(float cosFalloffStart)
 {
     spotLightData_->cosFalloffStart = cosFalloffStart;
 }
-// LightManager.cpp
-void LightManager::SetSpotLightRotate(const Vector3& rotate)
-{
-    // エンジン基準：+Z が前
-    Matrix4x4 rotX = MatrixMath::MakeRotateXMatrix(rotate.x);
-    Matrix4x4 rotY = MatrixMath::MakeRotateYMatrix(rotate.y);
-    Matrix4x4 rotZ = MatrixMath::MakeRotateZMatrix(rotate.z);
-
-    Matrix4x4 rot = MatrixMath::Multiply(rotX, rotY);
-    rot = MatrixMath::Multiply(rot, rotZ);
-
-    Vector3 forward;
-    forward.x = rot.m[2][0];
-    forward.y = rot.m[2][1];
-    forward.z = rot.m[2][2];
-
-    spotLightData_->direction = Normalize(forward);
-}
 
 void LightManager::Bind(ID3D12GraphicsCommandList* cmd)
 {

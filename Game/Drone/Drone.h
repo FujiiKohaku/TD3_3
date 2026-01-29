@@ -47,7 +47,7 @@ public:
     void SetYaw(float y) { yaw_ = y; }
 
     bool HasJustLanded() const;
-    Vector3 GetForwardWithVisual(float yawOffset) const;
+  
 
 private:
     Vector3 pos_ { 0, 0, 0 };

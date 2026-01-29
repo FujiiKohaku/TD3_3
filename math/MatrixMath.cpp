@@ -249,4 +249,20 @@ Matrix4x4 MatrixMath::MakeLookAtMatrix(const Vector3& eye, const Vector3& target
 
     return m;
 }
+
+Matrix4x4 MatrixMath::MakeRotateMatrix(const Vector3& rotate)
+{
+    // 各軸の回転行列を生成
+    Matrix4x4 rotateX = MakeRotateXMatrix(rotate.x);
+    Matrix4x4 rotateY = MakeRotateYMatrix(rotate.y);
+    Matrix4x4 rotateZ = MakeRotateZMatrix(rotate.z);
+
+    // 回転の合成 (Z * X * Y の順で掛けるのが一般的です)
+    // ※プロジェクトの行列計算（行優先/列優先）に合わせて順序は調整してください
+    Matrix4x4 result = Multiply(rotateZ, rotateX);
+    result = Multiply(result, rotateY);
+
+    return result;
+}
+
 #pragma endregion

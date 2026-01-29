@@ -345,8 +345,7 @@ void GamePlayScene::Update()
     skydome_->Update();
     ground_->Update();
     terraranan_->Update();
-    // 最後に一回
-    UpdateDronePointLight();
+
     if (input.IsKeyTrigger(DIK_O)) {
 
         isDebug_ = !isDebug_;
@@ -479,7 +478,7 @@ void GamePlayScene::Update()
     }
     LightManager::GetInstance()->SetPointIntensity(pI);
 
-ImGui::Separator();
+    ImGui::Separator();
     ImGui::Text("Spot Light Control");
 
     // --------------------
@@ -492,7 +491,7 @@ ImGui::Separator();
     // Color
     // --------------------
     static Vector4 spotColor = { 1.0f, 1.0f, 1.0f, 1.0f };
-    ImGui::ColorEdit3("Spot Color", (float*)&spotColor);
+    ImGui::ColorEdit3("Spot Color", &spotColor.x);
 
     // --------------------
     // Intensity
@@ -501,7 +500,7 @@ ImGui::Separator();
     ImGui::SliderFloat("Spot Intensity", &spotIntensity, 0.0f, 20.0f);
 
     // --------------------
-    // Distance & Decay
+    // Distance / Decay
     // --------------------
     static float spotDistance = 7.0f;
     static float spotDecay = 2.0f;
@@ -509,7 +508,7 @@ ImGui::Separator();
     ImGui::SliderFloat("Spot Decay", &spotDecay, 0.1f, 10.0f);
 
     // --------------------
-    // Position（固定でもいい）
+    // Position
     // --------------------
     static Vector3 spotPos = { 0.0f, 2.0f, 0.0f };
     ImGui::SliderFloat3("Spot Position", &spotPos.x, -20.0f, 20.0f);
@@ -531,43 +530,45 @@ ImGui::Separator();
     float cosFalloffStart = std::cos(spotFalloffDeg * std::numbers::pi_v<float> / 180.0f);
 
     // --------------------
-    // ★ 方向（ここが今まで無かった）
-    // --------------------
+// Direction（直接ベクトル）
+// --------------------
     static float spotYawDeg = 0.0f;
-    static float spotPitchDeg = -30.0f;
+    static float spotPitchDeg = 0.0f;
 
-    ImGui::SliderFloat("Spot Yaw (deg)", &spotYawDeg, -360.0f, 360.0f);
-    ImGui::SliderFloat("Spot Pitch (deg)", &spotPitchDeg, -89.0f, 89.0f);
+    ImGui::SliderFloat("Spot Yaw", &spotYawDeg, -180.0f, 180.0f);
+    ImGui::SliderFloat("Spot Pitch", &spotPitchDeg, -89.0f, 89.0f);
 
-    // deg → rad
-    float yawRad = spotYawDeg * std::numbers::pi_v<float> / 180.0f;
-    float pitchRad = spotPitchDeg * std::numbers::pi_v<float> / 180.0f;
+    float yaw = spotYawDeg * std::numbers::pi_v<float> / 180.0f;
+    float pitch = spotPitchDeg * std::numbers::pi_v<float> / 180.0f;
 
-    // エンジン基準：-Z forward
     Vector3 spotDir;
-    spotDir.x = -std::sinf(yawRad) * std::cosf(pitchRad);
-    spotDir.y = std::sinf(pitchRad);
-    spotDir.z = -std::cosf(yawRad) * std::cosf(pitchRad);
+    spotDir.x = std::cos(pitch) * std::sin(yaw);
+    spotDir.y = std::sin(pitch);
+    spotDir.z = -std::cos(pitch) * std::cos(yaw); // ★マイナス
+
+
     spotDir = Normalize(spotDir);
 
-    // --------------------
-    // Apply
-    // --------------------
-    float sI = spotEnabled ? spotIntensity : 0.0f;
-
-    LightManager* lm = LightManager::GetInstance();
-    lm->SetSpotLightColor(spotColor);
-    lm->SetSpotLightPosition(spotPos);
-    lm->SetSpotLightDirection(spotDir);
-    lm->SetSpotLightIntensity(sI);
-    lm->SetSpotLightDistance(spotDistance);
-    lm->SetSpotLightDecay(spotDecay);
-    lm->SetSpotLightCosAngle(cosAngle);
-    lm->SetSpotLightCosFalloffStart(cosFalloffStart);
-
-    ImGui::End();
+  
 
 
+
+// --------------------
+// Apply
+// --------------------
+float finalIntensity = spotEnabled ? spotIntensity : 0.0f;
+
+LightManager* lm = LightManager::GetInstance();
+lm->SetSpotLightColor(spotColor);
+lm->SetSpotLightPosition(spotPos);
+lm->SetSpotLightDirection(spotDir);
+lm->SetSpotLightIntensity(finalIntensity);
+lm->SetSpotLightDistance(spotDistance);
+lm->SetSpotLightDecay(spotDecay);
+lm->SetSpotLightCosAngle(cosAngle);
+lm->SetSpotLightCosFalloffStart(cosFalloffStart);
+
+ImGui::End();
     ImGui::Begin("Camera Debug");
 
     const Vector3& camPos = camera_->GetTranslate();
@@ -594,7 +595,7 @@ ImGui::Separator();
 
     ImGui::Text("nextGate=%d / %d", nextGate_, (int)gates_.size());
     ImGui::Text("Perfect=%d Good=%d", perfectCount_, goodCount_);
-
+    ImGui::End();
     // ===== ゲート番号（画面上にオーバーレイ表示）=====
     {
         // 画面サイズ（あなたのWinApp定数があるならそれを使う）
@@ -699,8 +700,6 @@ ImGui::Separator();
 
     ImGui::End();
 
-    ImGui::End();
-
     // 反映
     sphere_->SetEnableLighting(sphereLighting);
     sphere_->SetTranslate(spherePos);
@@ -788,36 +787,4 @@ void GamePlayScene::Finalize()
     goalSys_.Finalize();
 
     SoundManager::GetInstance()->SoundUnload(&bgm);
-}
-
-void GamePlayScene::UpdateDronePointLight()
-{
-    // 見た目と完全に同じ forward
-    Vector3 forward = drone_.GetForwardWithVisual(droneYawOffset);
-
-    // ローカルオフセット（ドローン基準）
-    Vector3 localOffset;
-    localOffset.x = 0.0f;
-    localOffset.y = 0.3f;
-    localOffset.z = -1.2f; // 後ろ
-
-    // yaw 回転
-    float yaw = drone_.GetYaw() + droneYawOffset;
-    float s = std::sinf(yaw);
-    float c = std::cosf(yaw);
-
-    Vector3 worldOffset;
-    worldOffset.x = localOffset.x * c + localOffset.z * s;
-    worldOffset.y = localOffset.y;
-    worldOffset.z = -localOffset.x * s + localOffset.z * c;
-
-    Vector3 pos = drone_.GetPos();
-    pos.x += worldOffset.x;
-    pos.y += worldOffset.y;
-    pos.z += worldOffset.z;
-
-    LightManager* lm = LightManager::GetInstance();
-    lm->SetSpotLightPosition(pos);
-    lm->SetSpotLightDirection(forward);
-  
 }
