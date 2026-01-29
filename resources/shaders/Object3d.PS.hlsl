@@ -38,19 +38,11 @@ PixelShaderOutput main(VertexShaderOutput input)
     float3 Ld = normalize(-gDirectionalLight.direction);
 
     float NdotLd = saturate(dot(N, Ld));
-    float3 dirDiffuse =
-        gMaterial.color.rgb *
-        textureColor.rgb *
-        gDirectionalLight.color.rgb *
-        gDirectionalLight.intensity *
-        NdotLd;
+    float3 dirDiffuse =gMaterial.color.rgb *textureColor.rgb *gDirectionalLight.color.rgb *gDirectionalLight.intensity *NdotLd;
 
     float3 Hd = normalize(Ld + V);
     float NdotHd = saturate(dot(N, Hd));
-    float3 dirSpec =
-        gDirectionalLight.color.rgb *
-        gDirectionalLight.intensity *
-        pow(NdotHd, gMaterial.shininess);
+    float3 dirSpec =gDirectionalLight.color.rgb *gDirectionalLight.intensity *pow(NdotHd, gMaterial.shininess);
 
     resultColor += dirDiffuse + dirSpec;
 
@@ -63,23 +55,14 @@ PixelShaderOutput main(VertexShaderOutput input)
     float attenuationP =
         pow(saturate(-distP / gPointLight.radius + 1.0f), gPointLight.decay);
 
-    float3 pointLightColor =
-        gPointLight.color.rgb *
-        gPointLight.intensity *
-        attenuationP;
+    float3 pointLightColor =gPointLight.color.rgb *gPointLight.intensity *attenuationP;
 
     float NdotLp = saturate(dot(N, Lp));
-    float3 pointDiffuse =
-        gMaterial.color.rgb *
-        textureColor.rgb *
-        pointLightColor *
-        NdotLp;
+    float3 pointDiffuse =gMaterial.color.rgb *textureColor.rgb *pointLightColor *NdotLp;
 
     float3 Hp = normalize(Lp + V);
     float NdotHp = saturate(dot(N, Hp));
-    float3 pointSpec =
-        pointLightColor *
-        pow(NdotHp, gMaterial.shininess);
+    float3 pointSpec =pointLightColor *pow(NdotHp, gMaterial.shininess);
 
     resultColor += pointDiffuse + pointSpec;
 
@@ -93,10 +76,6 @@ PixelShaderOutput main(VertexShaderOutput input)
     // 表面 → ライト（拡散・鏡面用）
     float3 Ls = -S;
 
-    // NOTE:
-    // アプリ側で gSpotLight.direction を「ライトが向いている方向 (light -> target)」として渡す場合、
-    // 方向ベクトルの符号の取り扱いが Directional と一致するようにここで反転して使う。
-    // （Directional はシェーダー内で -gDirectionalLight.direction を使っているため合わせる）
 
     float cosAngle = dot(S, gSpotLight.direction);
 

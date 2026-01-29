@@ -39,7 +39,7 @@ void LightManager::Initialize(DirectXCommon* dxCommon)
     spotLightData_->intensity = 4.0f;
     spotLightData_->distance = 7.0f;
     spotLightData_->decay = 2.0f;
-    spotLightData_->cosAngle = std::cos(std::numbers::pi_v<float> / 3.0f);
+    spotLightData_->cosAngle = -1.0f;
 }
 
 void LightManager::Update()
