@@ -1,7 +1,10 @@
 #pragma once
+#include "../3D/SkinCluster.h"
+#include "../Animation/PlayAnimation.h"
 #include "Camera.h"
 #include "DebugCamera.h"
 #include "MatrixMath.h"
+#include "Object3DStruct.h"
 #include "TextureManager.h"
 #include <assimp/Importer.hpp>
 #include <assimp/postprocess.h>
@@ -10,37 +13,70 @@
 #include <string>
 #include <vector>
 #include <wrl.h>
-
-#include "Object3DStruct.h"
-#include"../Animation/PlayAnimation.h"
-class Object3dManager;
+#include"Model.h"
+class SkinningObject3dManager;
 class Model;
-class Object3d {
+class SkinningObject3d {
 public:
     // ===============================
     // メンバ関数
     // ===============================
-    void Initialize(Object3dManager* object3DManager);
+    void Initialize(SkinningObject3dManager* skinningObject3DManager);
     void Update();
     void Draw();
 
-    static ModelData LoadModeFile(const std::string& directoryPath, const std::string filename);
-    //static MaterialData LoadMaterialTemplateFile(const std::string& directoryPath, const std::string& filename);
 
     // setter
     void SetModel(Model* model) { model_ = model; }
-    // === setter ===
-    void SetScale(const Vector3& scale) { transform.scale = scale; }
-    void SetRotate(const Vector3& rotate) { transform.rotate = rotate; }
-    void SetTranslate(const Vector3& translate) { transform.translate = translate; }
-    void SetModel(const std::string& filePath);
+   
+
     void SetCamera(Camera* camera) { camera_ = camera; }
+    // === setter ===
+    void SetScale(const Vector3& scale) {
+        baseTransform_.scale = scale;
+    }
+
+    void SetRotate(const Vector3& rotate) {
+        baseTransform_.rotate = rotate;
+    }
+
+    void SetTranslate(const Vector3& translate) {
+        baseTransform_.translate = translate;
+    }
+
     // === getter ===
-    const Vector3& GetScale() const { return transform.scale; }
-    const Vector3& GetRotate() const { return transform.rotate; }
-    const Vector3& GetTranslate() const { return transform.translate; }
+    const Vector3& GetScale() const {
+        return baseTransform_.scale;
+    }
+
+    const Vector3& GetRotate() const {
+        return baseTransform_.rotate;
+    }
+
+    const Vector3& GetTranslate() const {
+        return baseTransform_.translate;
+    }
+
     // DirectionalLight* GetLight() { return directionalLightData; }
     Material* GetMaterial() { return materialData_; }
+    SkinCluster::SkinClusterData& GetSkinCluster()
+    {
+        return skinClusterData_;
+    }
+    void SetAnimation(PlayAnimation* animation)
+    {
+        playAnimation_ = animation;
+    }
+
+    PlayAnimation* GetAnimation() const
+    {
+        return playAnimation_;
+    }
+    const Node& GetRootNode() const
+    {
+        assert(model_);
+        return model_->GetModelData().rootNode;
+    }
     // ----------------
     // Material 操作
     // ----------------
@@ -61,20 +97,18 @@ public:
             }
         }
     }
-    void SetAnimation(PlayAnimation* anim);
-    const Node& GetRootNode() const;
+  
     const Matrix4x4& GetWorldMatrix() const
     {
         return worldMatrix_;
     }
 
 private:
-   
     // ===============================
     // メンバ変数
     // ===============================
-    Object3dManager* object3dManager_= nullptr;
-    static Node ReadNode(aiNode* node);
+    SkinningObject3dManager* skinningObject3dManager_ = nullptr;
+ 
     Model* model_ = nullptr;
     // バッファ系
     /*  Microsoft::WRL::ComPtr<ID3D12Resource> vertexResource;*/
@@ -88,9 +122,9 @@ private:
     //  DirectionalLight* directionalLightData = nullptr;
     Material* materialData_ = nullptr;
     // Transform
-    EulerTransform transform;
     EulerTransform cameraTransform;
-   
+    EulerTransform baseTransform_;
+    EulerTransform animTransform_;
     // カメラ
     Camera* camera_ = nullptr;
     // モデル
@@ -99,4 +133,8 @@ private:
 
     // World
     Matrix4x4 worldMatrix_;
+
+    SkinCluster skinCluster_;
+    SkinCluster::SkinClusterData skinClusterData_;
+    PlayAnimation* playAnimation_;
 };

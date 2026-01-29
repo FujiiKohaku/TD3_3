@@ -6,7 +6,7 @@
 #include <cassert>
 #include <fstream>
 #include <sstream>
-
+#include <filesystem>
 #pragma region 初期化処理
 void Object3d::Initialize(Object3dManager* object3DManager)
 {
@@ -22,7 +22,6 @@ void Object3d::Initialize(Object3dManager* object3DManager)
     transformationMatrixResource->Map(0, nullptr, reinterpret_cast<void**>(&transformationMatrixData));
     transformationMatrixData->WVP = MatrixMath::MakeIdentity4x4();
     transformationMatrixData->World = MatrixMath::MakeIdentity4x4();
-
 
     // マテリアルリソース作成
     materialResource = object3dManager_->GetDxCommon()->CreateBufferResource(sizeof(Material));
@@ -48,38 +47,36 @@ void Object3d::Initialize(Object3dManager* object3DManager)
 
 #pragma region 更新処理
 
-void Object3d::Update()
-{
-    // ================================
-    // 各種行列を作成
-    // ================================
+void Object3d::Update() {
+    Matrix4x4 localMatrix = MatrixMath::MakeIdentity4x4();
 
-    //  モデル自身のワールド行列（スケール・回転・移動）
-    Matrix4x4 worldMatrix = MatrixMath::Multiply(
-        model_->GetModelData().rootNode.localMatrix,
-        MatrixMath::MakeAffineMatrix(transform.scale, transform.rotate, transform.translate));
+    if (model_) {
+        localMatrix = model_->GetModelData().rootNode.localMatrix;
+    }
+
+    if (animation_ && model_) {
+        localMatrix =animation_->GetLocalMatrix(model_->GetModelData().rootNode.name);
+    }
+
+    worldMatrix_ =MatrixMath::Multiply(localMatrix,MatrixMath::MakeAffineMatrix(transform.scale,transform.rotate,transform.translate));
 
     Matrix4x4 worldViewProjectionMatrix;
 
     if (camera_) {
-        const Matrix4x4& viewProjectionMatrix = camera_->GetViewProjectionMatrix();
-        worldViewProjectionMatrix = MatrixMath::Multiply(worldMatrix, viewProjectionMatrix);
-    } else {
-        worldViewProjectionMatrix = worldMatrix;
+        worldViewProjectionMatrix =
+            MatrixMath::Multiply(worldMatrix_, camera_->GetViewProjectionMatrix());
+    }
+    else {
+        worldViewProjectionMatrix = worldMatrix_;
     }
 
-    // ================================
-    // WVP行列を計算して転送
-    // ================================
     transformationMatrixData->WVP = worldViewProjectionMatrix;
-
-    // ワールド行列も送る（ライティングなどで使用）
-    transformationMatrixData->World = worldMatrix;
+    transformationMatrixData->World = worldMatrix_;
 
     Matrix4x4 inv = MatrixMath::Inverse(worldViewProjectionMatrix);
-    transformationMatrixData->WorldInverseTranspose = MatrixMath::Transpose(inv);
+    transformationMatrixData->WorldInverseTranspose =
+        MatrixMath::Transpose(inv);
 }
-
 #pragma endregion
 
 #pragma region 描画処理
@@ -91,8 +88,6 @@ void Object3d::Draw()
     // Transform定数バッファをセット
     commandList->SetGraphicsRootConstantBufferView(1, transformationMatrixResource->GetGPUVirtualAddress());
 
-    // ライト情報をセット
-    // commandList->SetGraphicsRootConstantBufferView(3, directionalLightResource->GetGPUVirtualAddress());
     commandList->SetGraphicsRootConstantBufferView(4, camera_->GetGPUAddress());
 
     // モデルが設定されていれば描画
@@ -106,70 +101,152 @@ void Object3d::Draw()
 // ===============================================
 // OBJファイルの読み込み
 // ===============================================
-ModelData Object3d::LoadModeFile(const std::string& directoryPath, const std::string filename)
+ModelData Object3d::LoadModeFile(const std::string& directoryPath,
+    const std::string filename)
 {
-    // 1.中で必要となる変数の宣言
-    ModelData modelData; // 構築するModelData
-    // ファイルから読んだ一行を格納するもの
+    ModelData modelData;
 
     Assimp::Importer importer;
     std::string filePath = directoryPath + "/" + filename;
+
+    std::filesystem::path p(filePath);
+    if (!std::filesystem::exists(p)) {
+        OutputDebugStringA("FILE NOT FOUND: ");
+        OutputDebugStringA(filePath.c_str());
+        OutputDebugStringA("\n");
+        assert(false);
+    }
+    char cwd[MAX_PATH];
+    GetCurrentDirectoryA(MAX_PATH, cwd);
+    OutputDebugStringA("CWD: ");
+    OutputDebugStringA(cwd);
+    OutputDebugStringA("\n");
 
     const aiScene* scene = importer.ReadFile(
         filePath.c_str(),
         aiProcess_Triangulate | aiProcess_FlipWindingOrder | aiProcess_FlipUVs);
 
+    assert(scene);
     assert(scene->HasMeshes());
-    // 3.実際にファイルを読み、ModelDataを構築していく
+
+    // -------------------------
+    // Mesh -> MeshPrimitive
+    // -------------------------
     for (uint32_t meshIndex = 0; meshIndex < scene->mNumMeshes; ++meshIndex) {
         aiMesh* mesh = scene->mMeshes[meshIndex];
 
-        assert(mesh->HasNormals());
-        assert(mesh->HasTextureCoords(0));
+        MeshPrimitive primitive;
+        primitive.mode = PrimitiveMode::Triangles; // 今は固定でOK
 
-        for (uint32_t faceIndex = 0; faceIndex < mesh->mNumFaces; ++faceIndex) {
-            aiFace& face = mesh->mFaces[faceIndex];
-            assert(face.mNumIndices == 3); // 三角形のみサポート
-            for (uint32_t element = 0; element < face.mNumIndices; ++element) {
+        // ---- vertices ----
+        for (uint32_t v = 0; v < mesh->mNumVertices; ++v) {
+            VertexData vertex {};
 
-                uint32_t vertexIndex = face.mIndices[element];
+            aiVector3D pos = mesh->mVertices[v];
+            aiVector3D nrm = mesh->HasNormals()
+                ? mesh->mNormals[v]
+                : aiVector3D(0, 1, 0);
 
-                aiVector3D position = mesh->mVertices[vertexIndex];
-                aiVector3D normal = mesh->mNormals[vertexIndex];
-                aiVector3D texcoord = mesh->mTextureCoords[0][vertexIndex];
+            aiVector3D uv = mesh->HasTextureCoords(0)
+                ? mesh->mTextureCoords[0][v]
+                : aiVector3D(0, 0, 0);
 
-                VertexData vertex {};
+            // 右手 → 左手（X反転）
+            vertex.position = { -pos.x, pos.y, pos.z, 1.0f };
+            vertex.normal = { -nrm.x, nrm.y, nrm.z };
+            vertex.texcoord = { uv.x, uv.y };
 
-                vertex.position = { position.x, position.y, position.z, 1.0f };
-                vertex.normal = { normal.x, normal.y, normal.z };
-                vertex.texcoord = { texcoord.x, texcoord.y };
+            primitive.vertices.push_back(vertex);
+        }
 
-                // aiProcess_MakeLeftHanded は z を -1 で反転するが、
-                // 右手→左手変換をするので手動で対応
-                vertex.position.x *= -1.0f;
-                vertex.normal.x *= -1.0f;
-
-                modelData.vertices.push_back(vertex);
+        // ---- indices ----
+        if (mesh->HasFaces()) {
+            for (uint32_t f = 0; f < mesh->mNumFaces; ++f) {
+                aiFace& face = mesh->mFaces[f];
+                // Triangulate してるので 3 のはず
+                for (uint32_t i = 0; i < face.mNumIndices; ++i) {
+                    primitive.indices.push_back(face.mIndices[i]);
+                }
             }
         }
-    }
-    for (uint32_t materialIndex = 0; materialIndex < scene->mNumMaterials; ++materialIndex) {
+        // indices が空なら drawArrays 扱いでOK
 
+
+        for (uint32_t boneIndex = 0; boneIndex < mesh->mNumBones; ++boneIndex) {
+            aiBone* bone = mesh->mBones[boneIndex];
+
+            std::string jointName = bone->mName.C_Str();
+            JointWeightData& jointWeightData =modelData.skinClusterData[jointName];
+
+            aiMatrix4x4 bindPoseMatrixAssimp = bone->mOffsetMatrix.Inverse();
+            aiVector3D scale, translate;
+            aiQuaternion rotate;
+            bindPoseMatrixAssimp.Decompose(scale, rotate, translate);
+
+            Matrix4x4 bindPoseMatrix =MatrixMath::MakeAffineMatrix(
+                { scale.x, scale.y, scale.z },
+                { rotate.x, -rotate.y, -rotate.z, rotate.w },
+                { -translate.x, translate.y, translate.z }
+            );
+
+            jointWeightData.inverseBindPoseMatrix =MatrixMath::Inverse(bindPoseMatrix);
+
+            for (uint32_t weightIndex = 0;
+                weightIndex < bone->mNumWeights;
+                ++weightIndex) {
+
+                jointWeightData.vertexWeights.push_back({
+                    bone->mWeights[weightIndex].mWeight,
+                    bone->mWeights[weightIndex].mVertexId
+                    });
+            }
+        }
+
+
+        modelData.primitives.push_back(primitive);
+    }
+    bool hasTexture = false;
+
+    for (uint32_t materialIndex = 0; materialIndex < scene->mNumMaterials; ++materialIndex) {
         aiMaterial* material = scene->mMaterials[materialIndex];
 
-        if (material->GetTextureCount(aiTextureType_DIFFUSE) != 0) {
-
+        if (material->GetTextureCount(aiTextureType_DIFFUSE) > 0) {
             aiString textureFilePath;
             material->GetTexture(aiTextureType_DIFFUSE, 0, &textureFilePath);
 
-            modelData.material.textureFilePath = directoryPath + "/" + textureFilePath.C_Str();
+            std::string tex = textureFilePath.C_Str();
+
+            // "*0" みたいな埋め込み表記はファイルじゃない
+            if (!tex.empty() && tex[0] != '*') {
+
+                std::filesystem::path fullPath = std::filesystem::path(directoryPath) / tex;
+
+                if (std::filesystem::exists(fullPath)) {
+                    modelData.material.textureFilePath = fullPath.string();
+                    hasTexture = true;
+                    break;
+                }
+            }
         }
     }
+   
+
+    // ここで分岐する
+    if (hasTexture) {
+        TextureManager::GetInstance()->LoadTexture(modelData.material.textureFilePath);
+    }
+    else {
+        TextureManager::GetInstance()->LoadTexture("resources/BaseColor_Cube.png");
+        modelData.material.textureFilePath = "resources/BaseColor_Cube.png";
+    }
+    // -------------------------
+    // Node（既存の処理）
+    // -------------------------
     modelData.rootNode = ReadNode(scene->mRootNode);
 
-    // 4.ModelDataを返す
     return modelData;
 }
+
 #pragma endregion
 
 void Object3d::SetModel(const std::string& filePath)
@@ -181,28 +258,34 @@ Node Object3d::ReadNode(aiNode* node)
 {
     Node result;
 
-    aiMatrix4x4 aiLocal = node->mTransformation;
-    aiLocal.Transpose();
+    aiVector3D scale, translate;
+    aiQuaternion rotate;
 
-    result.localMatrix.m[0][0] = aiLocal[0][0];
-    result.localMatrix.m[0][1] = aiLocal[0][1];
-    result.localMatrix.m[0][2] = aiLocal[0][2];
-    result.localMatrix.m[0][3] = aiLocal[0][3];
+    node->mTransformation.Decompose(scale, rotate, translate);
 
-    result.localMatrix.m[1][0] = aiLocal[1][0];
-    result.localMatrix.m[1][1] = aiLocal[1][1];
-    result.localMatrix.m[1][2] = aiLocal[1][2];
-    result.localMatrix.m[1][3] = aiLocal[1][3];
+    // scale（
+    result.transform.scale = { scale.x, scale.y, scale.z };
 
-    result.localMatrix.m[2][0] = aiLocal[2][0];
-    result.localMatrix.m[2][1] = aiLocal[2][1];
-    result.localMatrix.m[2][2] = aiLocal[2][2];
-    result.localMatrix.m[2][3] = aiLocal[2][3];
+    // 回転：右手 → 左手
+    result.transform.rotate = {
+        rotate.x,
+        -rotate.y,
+        -rotate.z,
+        rotate.w
+    };
 
-    result.localMatrix.m[3][0] = aiLocal[3][0];
-    result.localMatrix.m[3][1] = aiLocal[3][1];
-    result.localMatrix.m[3][2] = aiLocal[3][2];
-    result.localMatrix.m[3][3] = aiLocal[3][3];
+    // 平行移動：X反転
+    result.transform.translate = {
+        -translate.x,
+        translate.y,
+        translate.z
+    };
+
+    // SRTから localMatrix を再構築
+    result.localMatrix = MatrixMath::MakeAffineMatrix(
+        result.transform.scale,
+        result.transform.rotate,
+        result.transform.translate);
 
     result.name = node->mName.C_Str();
 
@@ -212,4 +295,14 @@ Node Object3d::ReadNode(aiNode* node)
     }
 
     return result;
+}
+const Node& Object3d::GetRootNode() const
+{
+    assert(model_);
+    return model_->GetModelData().rootNode;
+}
+
+void Object3d::SetAnimation(PlayAnimation* anim)
+{
+    animation_ = anim;
 }

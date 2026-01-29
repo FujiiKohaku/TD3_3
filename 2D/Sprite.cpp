@@ -2,6 +2,8 @@
 #include "MatrixMath.h"
 #include "SpriteManager.h"
 
+
+
 #pragma region 初期化処理
 // ================================
 // スプライトの初期化
@@ -22,10 +24,8 @@ void Sprite::Initialize(SpriteManager* spriteManager, std::string textureFilePat
 
     
 
-    // 既にTextureManagerに登録済み（= 動的テクスチャ等）なら LoadTexture しない
-    if (!TextureManager::GetInstance()->GetTextureData(textureFilePath)) {
-        TextureManager::GetInstance()->LoadTexture(textureFilePath);
-    }
+     //  テクスチャを読み込み（TextureManagerに登録される）
+    TextureManager::GetInstance()->LoadTexture(textureFilePath);
 
     //  ファイルパスをメンバーに保持
     textureFilePath_ = textureFilePath;
