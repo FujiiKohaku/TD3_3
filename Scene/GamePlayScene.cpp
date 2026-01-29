@@ -566,7 +566,7 @@ lm->SetSpotLightIntensity(finalIntensity);
 lm->SetSpotLightDistance(spotDistance);
 lm->SetSpotLightDecay(spotDecay);
 lm->SetSpotLightCosAngle(cosAngle);
-lm->SetSpotLightCosFalloffStart(cosFalloffStart);
+
 
 ImGui::End();
     ImGui::Begin("Camera Debug");

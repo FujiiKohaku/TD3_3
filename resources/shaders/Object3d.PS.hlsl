@@ -1,4 +1,4 @@
-#include "object3d.hlsli"
+#include "Object3d.hlsli"
 
 ConstantBuffer<Material> gMaterial : register(b0);
 ConstantBuffer<DirectionalLight> gDirectionalLight : register(b1);
@@ -93,7 +93,14 @@ PixelShaderOutput main(VertexShaderOutput input)
     // 表面 → ライト（拡散・鏡面用）
     float3 Ls = -S;
 
+    // NOTE:
+    // アプリ側で gSpotLight.direction を「ライトが向いている方向 (light -> target)」として渡す場合、
+    // 方向ベクトルの符号の取り扱いが Directional と一致するようにここで反転して使う。
+    // （Directional はシェーダー内で -gDirectionalLight.direction を使っているため合わせる）
+
     float cosAngle = dot(S, gSpotLight.direction);
+
+
     float falloffFactor =
         saturate((cosAngle - gSpotLight.cosAngle) / (1.0f - gSpotLight.cosAngle));
 
@@ -121,7 +128,10 @@ PixelShaderOutput main(VertexShaderOutput input)
         pow(NdotHs, gMaterial.shininess);
 
     resultColor += spotDiffuse + spotSpec;
-
+    
+    
+    
+    //---------------------------------------------------------
     output.color.rgb = resultColor;
     output.color.a = gMaterial.color.a * textureColor.a;
 

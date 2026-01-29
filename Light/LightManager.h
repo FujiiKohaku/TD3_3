@@ -32,6 +32,7 @@ public:
     void SetSpotLightDecay(float decay);
     void SetSpotLightCosAngle(float cosAngle);
     void SetSpotLightCosFalloffStart(float cosFalloffStart);
+    void SetSpotLightRotate(const Vector3& rotate);
     // ================================
     // インスタンス取得
     // ================================

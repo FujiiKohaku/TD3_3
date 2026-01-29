@@ -30,16 +30,16 @@ void LightManager::Initialize(DirectXCommon* dxCommon)
     pointLightData_->radius = 10.0f;
     pointLightData_->decay = 1.0f;
     // spot light default
+    // spot light default
     spotLightResource_ = dxCommon_->CreateBufferResource(sizeof(SpotLight));
     spotLightResource_->Map(0, nullptr, (void**)&spotLightData_);
     spotLightData_->color = { 1.0f, 1.0f, 1.0f, 1.0f };
     spotLightData_->position = { 2.0f, 1.25f, 0.0f };
-    spotLightData_->distance = 7.0f;
-    spotLightData_->direction = Normalize({ -1.0f, -1.0f, 0.0f });
+    spotLightData_->direction = Normalize(Vector3 { -1.0f, -1.0f, 0.0f });
     spotLightData_->intensity = 4.0f;
+    spotLightData_->distance = 7.0f;
     spotLightData_->decay = 2.0f;
     spotLightData_->cosAngle = std::cos(std::numbers::pi_v<float> / 3.0f);
-    spotLightData_->cosFalloffStart = std::cos(std::numbers::pi_v<float> / 6.0f);
 }
 
 void LightManager::Update()
@@ -140,10 +140,7 @@ void LightManager::SetSpotLightCosAngle(float cosAngle)
     spotLightData_->cosAngle = cosAngle;
 }
 
-void LightManager::SetSpotLightCosFalloffStart(float cosFalloffStart)
-{
-    spotLightData_->cosFalloffStart = cosFalloffStart;
-}
+
 
 void LightManager::Bind(ID3D12GraphicsCommandList* cmd)
 {
