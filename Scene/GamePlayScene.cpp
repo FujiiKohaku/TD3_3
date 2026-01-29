@@ -673,6 +673,12 @@ void GamePlayScene::Draw3D()
     landingEffect_.Draw();
 
     particleGate_.Draw();
+
+
+
+   
+
+
     // sphere_->Draw(DirectXCommon::GetInstance()->GetCommandList());
     ParticleManager::GetInstance()->PreDraw();
     ParticleManager::GetInstance()->Draw();
