@@ -259,7 +259,14 @@ Matrix4x4 MatrixMath::Transpose(const Matrix4x4& m)
 
     return result;
 }
-
+static float Dot3(const Vector3& a, const Vector3& b)
+{
+    return a.x * b.x + a.y * b.y + a.z * b.z;
+}
+static Vector3 Cross3(const Vector3& a, const Vector3& b)
+{
+    return { a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x };
+}
 Matrix4x4 MatrixMath::MakeLookAtMatrix(const Vector3& eye, const Vector3& target, const Vector3& up)
 {
     // LH想定：前方向 = target - eye
