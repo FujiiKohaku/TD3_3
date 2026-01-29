@@ -26,9 +26,7 @@ public:
 
     void SetColor(const Vector4& c) {
         color_ = c;
-        for (auto& s : sprites_) {
-            if (s) s->SetColor(c);
-        }
+       
     }
 
     void DrawString(float x, float y, const std::string& text, float scale = 1.0f)
