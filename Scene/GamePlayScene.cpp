@@ -544,15 +544,10 @@ void GamePlayScene::Update()
     Vector3 spotDir;
     spotDir.x = std::cos(pitch) * std::sin(yaw);
     spotDir.y = std::sin(pitch);
-    spotDir.z = -std::cos(pitch) * std::cos(yaw); // ★マイナス
+    spotDir.z = -std::cos(pitch) * std::cos(yaw); 
 
 
     spotDir = Normalize(spotDir);
-
-  
-
-
-
 // --------------------
 // Apply
 // --------------------
