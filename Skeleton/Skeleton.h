@@ -8,6 +8,7 @@
 #include <Object3DStruct.h>
 
 struct Skeleton {
+public:
     int32_t root; // rootJointのインデックス
     std::map<std::string, int32_t> jointMap; // Joint名 → index
     std::vector<Joint> joints; // 所属しているジョイント
