@@ -256,3 +256,14 @@ void Drone::UpdateDebugNoInertia(const Input& input, float dt) {
 bool Drone::HasJustLanded() const {
 	return justLanded_;
 }
+Vector3 Drone::GetForwardWithVisual(float yawOffset) const
+{
+    float yaw = yaw_ + yawOffset;
+
+    Vector3 forward;
+    forward.x = std::sinf(yaw);
+    forward.y = 0.0f;
+    forward.z = std::cosf(yaw);
+
+    return Normalize(forward);
+}
