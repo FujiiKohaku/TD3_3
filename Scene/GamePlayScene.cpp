@@ -530,40 +530,31 @@ void GamePlayScene::Update()
     float cosFalloffStart = std::cos(spotFalloffDeg * std::numbers::pi_v<float> / 180.0f);
 
     // --------------------
-// Direction（直接ベクトル）
-// --------------------
-    static float spotYawDeg = 0.0f;
-    static float spotPitchDeg = 0.0f;
+    // Direction（直接ベクトル）
+    // --------------------
 
-    ImGui::SliderFloat("Spot Yaw", &spotYawDeg, -180.0f, 180.0f);
-    ImGui::SliderFloat("Spot Pitch", &spotPitchDeg, -89.0f, 89.0f);
+    static Vector3 spotDir = {};
 
-    float yaw = spotYawDeg * std::numbers::pi_v<float> / 180.0f;
-    float pitch = spotPitchDeg * std::numbers::pi_v<float> / 180.0f;
-
-    Vector3 spotDir;
-    spotDir.x = std::cos(pitch) * std::sin(yaw);
-    spotDir.y = std::sin(pitch);
-    spotDir.z = -std::cos(pitch) * std::cos(yaw); 
-
+    ImGui::SliderFloat3("SpotDir", &spotDir.x, -1.0f, 1.0f);
+    ImGui::Text("SpotDir = %.2f %.2f %.2f", spotDir.x, spotDir.y, spotDir.z);
 
     spotDir = Normalize(spotDir);
-// --------------------
-// Apply
-// --------------------
-float finalIntensity = spotEnabled ? spotIntensity : 0.0f;
 
-LightManager* lm = LightManager::GetInstance();
-lm->SetSpotLightColor(spotColor);
-lm->SetSpotLightPosition(spotPos);
-lm->SetSpotLightDirection(spotDir);
-lm->SetSpotLightIntensity(finalIntensity);
-lm->SetSpotLightDistance(spotDistance);
-lm->SetSpotLightDecay(spotDecay);
-lm->SetSpotLightCosAngle(cosAngle);
+    // --------------------
+    // Apply
+    // --------------------
+    float finalIntensity = spotEnabled ? spotIntensity : 0.0f;
 
+    LightManager* lm = LightManager::GetInstance();
+    lm->SetSpotLightColor(spotColor);
+    lm->SetSpotLightPosition(spotPos);
+    lm->SetSpotLightDirection(spotDir);
+    lm->SetSpotLightIntensity(finalIntensity);
+    lm->SetSpotLightDistance(spotDistance);
+    lm->SetSpotLightDecay(spotDecay);
+    lm->SetSpotLightCosAngle(cosAngle);
 
-ImGui::End();
+    ImGui::End();
     ImGui::Begin("Camera Debug");
 
     const Vector3& camPos = camera_->GetTranslate();
