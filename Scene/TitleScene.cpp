@@ -18,7 +18,7 @@ void TitleScene::Initialize() {
 	Object3dManager::GetInstance()->SetDefaultCamera(camera_);
 
 	// モデル読み込み
-	ModelManager::GetInstance()->LoadModel("terrain.obj");
+	ModelManager::GetInstance()->Load("terrain.obj");
 	LightManager::GetInstance()->Initialize(DirectXCommon::GetInstance());
 	// Object3d 生成 & 初期化
 
@@ -30,7 +30,7 @@ void TitleScene::Initialize() {
 
 
 	// ホーム外殻
-	ModelManager::GetInstance()->LoadModel("outShell.obj");
+	ModelManager::GetInstance()->Load("outShell.obj");
 	outShellModel_ = new Object3d();
 	outShellModel_->Initialize(Object3dManager::GetInstance());
 	outShellModel_->SetModel("outShell.obj");
@@ -38,7 +38,7 @@ void TitleScene::Initialize() {
 	outShellModel_->Update();
 
 	// ホーム
-	ModelManager::GetInstance()->LoadModel("home.obj");
+	ModelManager::GetInstance()->Load("home.obj");
 	homeModel_ = new Object3d();
 	homeModel_->Initialize(Object3dManager::GetInstance());
 	homeModel_->SetModel("home.obj");
@@ -46,7 +46,7 @@ void TitleScene::Initialize() {
 	homeModel_->Update();
 
 	// 線路
-	ModelManager::GetInstance()->LoadModel("rail.obj");
+	ModelManager::GetInstance()->Load("rail.obj");
 	railModel_ = new Object3d();
 	railModel_->Initialize(Object3dManager::GetInstance());
 	railModel_->SetModel("rail.obj");

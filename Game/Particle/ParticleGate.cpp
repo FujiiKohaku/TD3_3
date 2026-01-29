@@ -26,7 +26,7 @@ void ParticleGate::Initialize(Object3dManager* objManager, Camera* camera)
 	const int pieceCount = 32;
 	pieces_.resize(pieceCount);
 
-	ModelManager::GetInstance()->LoadModel("star.obj");
+	ModelManager::GetInstance()->Load("star.obj");
 
 	for (Piece& piece : pieces_) {
 		piece.obj = new Object3d();

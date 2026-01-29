@@ -15,7 +15,8 @@ MainCamera::~MainCamera () {
 
 }
 
-void MainCamera::Initialize (const Transform& transform) {
+void MainCamera::Initialize(const EulerTransform& transform)
+{
 	camera_.transform = transform;
 	camera_.proj = MatrixMath::MakePerspectiveFovMatrix (0.45f, (float)WinApp::kClientWidth / (float)WinApp::kClientHeight, 0.1f, 1000.0f);
 }

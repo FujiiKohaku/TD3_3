@@ -9,7 +9,7 @@ ResultScene::ResultScene (int perfectCount, int goodCount) {
 }
 
 void ResultScene::Initialize () {
-	ModelManager::GetInstance ()->LoadModel ("skydome.obj");
+	ModelManager::GetInstance ()->Load("skydome.obj");
 	TextureManager::GetInstance ()->LoadTexture ("resources/skydome.png");
 	skydome_->Initialize (Object3dManager::GetInstance ());
 	skydome_->SetModel ("skydome.obj");

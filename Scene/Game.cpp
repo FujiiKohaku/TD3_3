@@ -26,13 +26,13 @@ void Game::Initialize()
     Input::GetInstance()->Initialize(winApp_);
     // パーティクル関連
     // ParticleManager::GetInstance()->Initialize(DirectXCommon::GetInstance(), SrvManager::GetInstance(), camera_);
-    ModelManager::GetInstance()->LoadModel("plane.obj");
-    ModelManager::GetInstance()->LoadModel("axis.obj");
-    ModelManager::GetInstance()->LoadModel("titleTex.obj");
-    ModelManager::GetInstance()->LoadModel("fence.obj");
-    ModelManager::GetInstance()->LoadModel("terrain.obj");
-    ModelManager::GetInstance()->LoadModel("cube.obj");
-    ModelManager::GetInstance()->LoadModel("Gate.obj");
+    ModelManager::GetInstance()->Load("plane.obj");
+    ModelManager::GetInstance()->Load("axis.obj");
+    ModelManager::GetInstance()->Load("titleTex.obj");
+    ModelManager::GetInstance()->Load("fence.obj");
+    ModelManager::GetInstance()->Load("terrain.obj");
+    ModelManager::GetInstance()->Load("cube.obj");
+    ModelManager::GetInstance()->Load("Gate.obj");
     TextureManager::GetInstance()->LoadTexture("resources/uvChecker.png");
     TextureManager::GetInstance()->LoadTexture("resources/uvChecker.png");
     TextureManager::GetInstance()->LoadTexture("resources/fence.png");

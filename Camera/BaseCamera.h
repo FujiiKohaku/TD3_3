@@ -2,7 +2,7 @@
 #include "MathStruct.h"
 
 struct CameraData {
-	Transform transform;
+	EulerTransform transform;
 	Matrix4x4 world;
 	Matrix4x4 view;
 	Matrix4x4 proj;
@@ -15,7 +15,7 @@ public:
 	virtual ~BaseCamera () = default;
 
 	//初期化処理 (純粋仮想関数)
-	virtual void Initialize (const Transform& transform) = 0;
+	virtual void Initialize (const EulerTransform& transform) = 0;
 	//更新処理 (純粋仮想関数)
 	virtual void Update () = 0;
 	//ImGui (純粋仮想関数)
@@ -24,7 +24,7 @@ public:
 	//CameraData取得
 	CameraData& GetCameraData () { return camera_; }
 	//transform取得
-	const Transform& GetTransform () { return camera_.transform; }
+        const EulerTransform& GetTransform() { return camera_.transform; }
 	//scale設定
 	Vector3 GetScale () { return camera_.transform.scale; }
 	void SetScale (const Vector3& scale) { camera_.transform.scale = scale; }
