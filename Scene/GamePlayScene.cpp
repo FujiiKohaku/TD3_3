@@ -100,6 +100,28 @@ static bool WorldToScreen_RowVector(
 	return true;
 }
 
+static bool WorldToScreen_RowVector(
+	const Vector3& worldPos,
+	const Matrix4x4& viewProj,
+	float screenW, float screenH,
+	Vector2& outScreen) {
+	Vector4 clip = MulRowVec4Mat4({ worldPos.x, worldPos.y, worldPos.z, 1.0f }, viewProj);
+
+	// カメラ後ろ(またはwが小さい)は描かない
+	if (clip.w <= 1e-6f)
+		return false;
+
+	// NDC化
+	const float ndcX = clip.x / clip.w;
+	const float ndcY = clip.y / clip.w;
+
+	// 画面座標へ（左上原点）
+	outScreen.x = (ndcX * 0.5f + 0.5f) * screenW;
+	outScreen.y = (-ndcY * 0.5f + 0.5f) * screenH;
+
+	return true;
+}
+
 void GamePlayScene::Initialize() {
 	camera_ = new Camera();
 	camera_->Initialize();
@@ -110,6 +132,11 @@ void GamePlayScene::Initialize() {
 	ParticleManager::GetInstance()->Initialize(DirectXCommon::GetInstance(), SrvManager::GetInstance(), camera_);
 
 	Object3dManager::GetInstance()->SetDefaultCamera(camera_);
+
+	TextureManager::GetInstance()->LoadTexture(compassPath_);
+	InitCompass_();
+
+	InitAltimeter_();
 
 	sprite_ = new Sprite();
 	sprite_->Initialize(SpriteManager::GetInstance(), "resources/uvChecker.png");
@@ -206,6 +233,13 @@ void GamePlayScene::Initialize() {
 	perfectCount_ = 0;
 	goodCount_ = 0;
 
+	gateNum_.Initialize(SpriteManager::GetInstance(),
+		"resources/ui/ascii_font_16x6_cell32_first32.png",
+		16, 6, 32, 32, 32);
+
+	gateNum_.SetColor({ 1,1,1,1 }); // 見やすい色（好きでOK）
+
+
 	// ---- walls build ----
 	wallSys_.Clear(); // ★無いなら追加（後述）
 	wallSys_.BuildDebug(Object3dManager::GetInstance(), "cube.obj");
@@ -252,6 +286,30 @@ void GamePlayScene::Initialize() {
 	skydome_->SetTranslate({ 0.0f,0.01f,0.0f });
 
 	particleGate_.Initialize(Object3dManager::GetInstance(), camera_);
+	//===========
+	//マーカー
+	//===========
+
+	TextureManager::GetInstance()->LoadTexture(compassMarkerPath_);
+
+	compassMarker_ = new Sprite();
+	compassMarker_->Initialize(SpriteManager::GetInstance(), compassMarkerPath_);
+
+	// 位置合わせが楽なので中心基準にする
+	compassMarker_->SetAnchorPoint({ 0.5f, 0.5f });
+
+	compassMarker_->SetPosition(compassMarkerPos_);
+	compassMarker_->SetSize(compassMarkerSize_);
+	compassMarker_->SetRotation(0.0f);
+
+	TextureManager::GetInstance()->LoadTexture(altMarkerPath_);
+
+	altMarker_ = new Sprite();
+	altMarker_->Initialize(SpriteManager::GetInstance(), altMarkerPath_);
+	altMarker_->SetAnchorPoint({ 0.5f, 0.5f });
+	altMarker_->SetSize(altMarkerSize_);
+	altMarker_->SetRotation(0.0f);
+
 }
 
 void GamePlayScene::Update() {
@@ -338,6 +396,7 @@ void GamePlayScene::Update() {
 	ParticleManager::GetInstance()->Update();
 	player2_->Update();
 	sprite_->Update();
+	UpdateCompass_();
 	sphere_->Update(camera_);
 	droneObj_->Update();
 	skydome_->Update();
@@ -532,42 +591,42 @@ void GamePlayScene::Update() {
 	ImGui::Text("nextGate=%d / %d", nextGate_, (int)gates_.size());
 	ImGui::Text("Perfect=%d Good=%d", perfectCount_, goodCount_);
 
-	// ===== ゲート番号（画面上にオーバーレイ表示）=====
-	{
-		// 画面サイズ（あなたのWinApp定数があるならそれを使う）
-		// 例：WinApp::kClientWidth / kClientHeight がある想定
-		const float W = (float)WinApp::kClientWidth;
-		const float H = (float)WinApp::kClientHeight;
+	//// ===== ゲート番号（画面上にオーバーレイ表示）=====
+	//{
+	//	// 画面サイズ（あなたのWinApp定数があるならそれを使う）
+	//	// 例：WinApp::kClientWidth / kClientHeight がある想定
+	//	const float W = (float)WinApp::kClientWidth;
+	//	const float H = (float)WinApp::kClientHeight;
 
-		// カメラの ViewProjection を取得（あなたのCameraにある想定）
-		const Matrix4x4& vp = camera_->GetViewProjectionMatrix();
+	//	// カメラの ViewProjection を取得（あなたのCameraにある想定）
+	//	const Matrix4x4& vp = camera_->GetViewProjectionMatrix();
 
-		auto* dl = ImGui::GetForegroundDrawList();
+	//	auto* dl = ImGui::GetForegroundDrawList();
 
-		for (int i = 0; i < (int)gates_.size(); ++i) {
+	//	for (int i = 0; i < (int)gates_.size(); ++i) {
 
-			// 「ゲート中心」 = gate.pos（真ん中）
-			ImVec2 p;
-			if (!WorldToScreen_RowVector(gates_[i].gate.pos, vp, W, H, p)) {
-				continue;
-			}
+	//		// 「ゲート中心」 = gate.pos（真ん中）
+	//		ImVec2 p;
+	//		if (!WorldToScreen_RowVector(gates_[i].gate.pos, vp, W, H, p)) {
+	//			continue;
+	//		}
 
-			// 次のゲートだけ目立たせる
-			const bool isNext = (i == nextGate_);
-			const ImU32 col = isNext
-				? IM_COL32(255, 255, 0, 255) // 黄色
-				: IM_COL32(255, 255, 255, 200); // 白薄め
+	//		// 次のゲートだけ目立たせる
+	//		const bool isNext = (i == nextGate_);
+	//		const ImU32 col = isNext
+	//			? IM_COL32(255, 255, 0, 255) // 黄色
+	//			: IM_COL32(255, 255, 255, 200); // 白薄め
 
-			// 文字を中心に寄せる（だいたい）
-			const std::string s = std::to_string(i + 1);
-			ImVec2 size = ImGui::CalcTextSize(s.c_str());
+	//		// 文字を中心に寄せる（だいたい）
+	//		const std::string s = std::to_string(i + 1);
+	//		ImVec2 size = ImGui::CalcTextSize(s.c_str());
 
-			// 少し上にずらす（ゲート中心に重なると見づらいので）
-			p.y -= 12.0f;
+	//		// 少し上にずらす（ゲート中心に重なると見づらいので）
+	//		p.y -= 12.0f;
 
-			dl->AddText(ImVec2(p.x - size.x * 0.5f, p.y - size.y * 0.5f), col, s.c_str());
-		}
-	}
+	//		dl->AddText(ImVec2(p.x - size.x * 0.5f, p.y - size.y * 0.5f), col, s.c_str());
+	//	}
+	//}
 
 	// ================================
 	// GOAL overlay (ImGui)
@@ -656,6 +715,13 @@ void GamePlayScene::Update() {
 		return;
 	}
 
+	//マーカー
+	// 例：コンパス中心 = compassCenter_ を持ってるならそれに合わせる
+	compassMarker_->SetPosition(Vector2{ compassPos_ .x,compassPos_ .y+35.0f});
+	compassMarker_->SetSize(compassMarkerSize_);
+	compassMarker_->Update();
+
+
 }
 
 void GamePlayScene::Draw3D() {
@@ -686,6 +752,26 @@ void GamePlayScene::Draw3D() {
 
 void GamePlayScene::Draw2D() {
 	SpriteManager::GetInstance()->PreDraw();
+
+	//フォント使うときこれしないとすっごい固まる
+	font_.BeginFrame();
+	gateNum_.BeginFrame();
+
+	DrawAltimeter_();
+	DrawSpeedSimple_();
+
+	if (compassA_) compassA_->Draw();
+	if (compassB_) compassB_->Draw();
+	if (compassMarker_) {
+		compassMarker_->Draw();
+	}
+
+
+	// Altimeter
+
+	DrawGateIndices2D_();
+
+	//sprite_->SetColor(Vector4{ 0, 1, 0, 1.0f});
 
 	// sprite_->Draw();
 }
@@ -718,6 +804,15 @@ void GamePlayScene::Finalize() {
 
 	goalSys_.Finalize();
 
+	delete altMarker_;
+	altMarker_ = nullptr;
+
+	delete compassMarker_;
+	compassMarker_ = nullptr;
+
+	if (compassA_) { delete compassA_; compassA_ = nullptr; }
+	if (compassB_) { delete compassB_; compassB_ = nullptr; }
+
 	SoundManager::GetInstance()->SoundUnload(&bgm);
 }
 void GamePlayScene::UpdateDronePointLight()
@@ -738,4 +833,283 @@ void GamePlayScene::UpdateDronePointLight()
 	pos.z += forward.z * offset;
 
 	LightManager::GetInstance()->SetPointPosition(pos);
+}
+
+static float Wrap01(float t) {
+	t = std::fmod(t, 1.0f);
+	if (t < 0.0f) t += 1.0f;
+	return t;
+}
+
+void GamePlayScene::InitCompass_()
+{
+	if (compassInit_) return;
+
+	auto* sm = SpriteManager::GetInstance();
+
+	compassA_ = new Sprite();
+	compassB_ = new Sprite();
+	compassA_->Initialize(sm, compassPath_);
+	compassB_->Initialize(sm, compassPath_);
+
+	compassA_->SetAnchorPoint({ 0.5f, 0.5f });
+	compassB_->SetAnchorPoint({ 0.5f, 0.5f });
+
+	compassA_->SetPosition(compassPos_);
+	compassB_->SetPosition(compassPos_);
+
+	compassA_->SetSize(compassSize_);
+	compassB_->SetSize(compassSize_);
+
+	compassA_->SetRotation(0.0f);
+	compassB_->SetRotation(0.0f);
+
+	compassInit_ = true;
+}
+
+
+void GamePlayScene::UpdateCompass_()
+{
+	if (!compassInit_) InitCompass_();
+
+	const float texW = 4096.0f;
+	const float texH = 64.0f;
+
+	const float viewW = compassSize_.x;   // 画面に見せたい幅(px)
+	const float viewH = compassSize_.y;   // 画面に見せたい高さ(px)
+
+	// yaw(rad) -> deg
+	float yawDeg = drone_.GetYaw() * 180.0f / 3.1415926535f;
+
+	// 0..360
+	yawDeg = std::fmod(yawDeg, 360.0f);
+	if (yawDeg < 0.0f) yawDeg += 360.0f;
+
+	// yaw をテクスチャの x に変換（0..texW）
+	float xCenter = (yawDeg / 360.0f) * texW;
+
+	// “中心に来てほしい”ので、表示窓の左端を求める
+	float xLeft = xCenter - viewW * 0.5f;
+
+	// 0..texW に畳み込み
+	xLeft = std::fmod(xLeft, texW);
+	if (xLeft < 0.0f) xLeft += texW;
+
+	// 1枚目が表示する幅
+	float wA = std::min(viewW, texW - xLeft);
+	float wB = viewW - wA;
+
+	// A: [xLeft .. xLeft+wA]
+	compassA_->SetTextureLeftTop({ xLeft, 0.0f });
+	compassA_->SetTextureSize({ wA, texH });
+	compassA_->SetSize({ wA, viewH });
+	compassA_->SetPosition({ compassPos_.x - (viewW * 0.5f) + (wA * 0.5f), compassPos_.y });
+
+	// B: 残りを [0 .. wB]
+	if (wB > 0.0f) {
+		compassB_->SetTextureLeftTop({ 0.0f, 0.0f });
+		compassB_->SetTextureSize({ wB, texH });
+		compassB_->SetSize({ wB, viewH });
+		compassB_->SetPosition({ compassPos_.x - (viewW * 0.5f) + wA + (wB * 0.5f), compassPos_.y });
+		compassB_->SetColor({ 1,1,1,1 });
+	} else {
+		// 使わないフレームは見えなく
+		compassB_->SetColor({ 1,1,1,0 });
+	}
+
+	compassA_->SetColor({ 1,1,1,1 });
+
+	compassA_->Update();
+	compassB_->Update();
+}
+
+///===================================
+/// 高さ表示
+///===================================
+
+
+void GamePlayScene::InitAltimeter_()
+{
+	if (altInit_) return;
+
+	auto* sm = SpriteManager::GetInstance();
+
+	// 1x1白PNGが一番楽（線・矩形をスプライトで作れる）
+	altBarBg_.Initialize(sm, altTickTex_);
+	altBarFill_.Initialize(sm, altTickTex_);
+	altTick_.Initialize(sm, altTickTex_);
+	altPointer_.Initialize(sm, altTickTex_);
+
+	// アンカーは左上
+	altBarBg_.SetAnchorPoint({ 0.0f, 0.0f });
+	altBarFill_.SetAnchorPoint({ 0.0f, 0.0f });
+	altTick_.SetAnchorPoint({ 0.0f, 0.0f });
+	altPointer_.SetAnchorPoint({ 0.0f, 0.0f });
+
+	// フォント
+	font_.Initialize(sm, altFontTex_, 16, 6, 32, 32, 32);
+	font_.SetColor({ 1,1,1,1 });
+
+	altInit_ = true;
+}
+
+void GamePlayScene::DrawAltimeter_()
+{
+	InitAltimeter_();
+
+	// 地面からの相対高度
+	const float alt = std::max<float>(0.0f, drone_.GetPos().y - (-5.0f)); // minY_ を使ってね
+	// ↑minY_がDrone側なら drone_から取得できるようにするか、GamePlaySceneのminY_と同じ値を使う
+
+	const float x = altPos_.x;
+	const float y = altPos_.y;
+	const float w = altSize_.x;
+	const float h = altSize_.y;
+
+	const float centerY = y + h * 0.5f;
+
+	// 背景
+	altBarBg_.SetPosition({ x, y });
+	altBarBg_.SetSize({ w, h });
+	altBarBg_.SetColor({ 0,0,0,0.35f });
+	altBarBg_.Update();
+	altBarBg_.Draw();
+
+	// レンジのpixel変換： altHalfRange_ が画面で h の半分に相当
+	const float pxPerUnit = (h * 0.5f) / altHalfRange_;
+
+	// ポインタ（中央の水平線）
+	altPointer_.SetPosition({ x, centerY - 1.0f });
+	altPointer_.SetSize({ w, 2.0f });
+	altPointer_.SetColor({ 1,1,1,0.9f });
+	altPointer_.Update();
+	altPointer_.Draw();
+
+	// マーカー（高度メーターの横）
+	if (altMarker_) {
+		const float mx = x + w + altMarkerOffsetX_; // バーの右に出す
+		const float my = centerY;                   // 現在高度＝中央固定
+
+		altMarker_->SetPosition({ mx+10.0f, my-2.0f });
+		altMarker_->SetRotation(-0.5f);
+		altMarker_->SetSize(altMarkerSize_);
+		altMarker_->Update();
+		altMarker_->Draw();
+	}
+
+
+	// 目盛り描画範囲（表示する高度）
+	const float minAlt = std::max<float>(0.0f, alt - altHalfRange_);
+	const float maxAlt = alt + altHalfRange_;
+
+	// 小目盛り（minor）
+	for (float a = std::floor(minAlt / altMinorStep_) * altMinorStep_;
+		a <= maxAlt + 0.0001f; a += altMinorStep_)
+	{
+		if (a < 0.0f) continue;
+
+		const float dy = (a - alt) * pxPerUnit;           // +なら上
+		const float yy = centerY - dy;                    // 上が小さいのでマイナス
+
+		// 範囲外はスキップ
+		if (yy < y || yy > y + h) continue;
+
+		const bool major = (std::fmod(a, altStep_) < 0.0001f);
+
+		const float tickLen = major ? (w * 0.55f) : (w * 0.30f);
+		const float tickX = x + (w - tickLen);
+
+		altTick_.SetPosition({ tickX, yy });
+		altTick_.SetSize({ tickLen, major ? 2.0f : 1.0f });
+		altTick_.SetColor(major ? Vector4{ 1,1,1,0.85f } : Vector4{ 1,1,1,0.35f });
+		altTick_.Update();
+		altTick_.Draw();
+
+		// 数字（majorのみ）
+		if (major) {
+			font_.BeginFrame(); // ★フォントはそのフレーム最初に1回でOK（後でまとめる）
+			// ここだけだと毎回BeginFrameしちゃうので、実際はDraw2Dの先頭で1回呼ぶのが良い
+		}
+	}
+
+	// 数字は「major刻みだけ」別ループで描く（BeginFrameを1回にするため）
+	font_.BeginFrame();
+	for (float a = std::floor(minAlt / altStep_) * altStep_;
+		a <= maxAlt + 0.0001f; a += altStep_)
+	{
+		if (a < 0.0f) continue;
+
+		const float dy = (a - alt) * pxPerUnit;
+		const float yy = centerY - dy;
+		if (yy < y || yy > y + h) continue;
+
+		// 左に数字
+		char buf[32];
+		std::snprintf(buf, sizeof(buf), "%.0f", a);
+
+		// 少し左寄せ & 中央揃え
+		font_.DrawString(x + 6.0f, yy - 10.0f, buf, 0.6f);
+	}
+
+	// “現在高度” を太字っぽく（同じ文字を2回描いて影）
+	{
+		char buf[32];
+		std::snprintf(buf, sizeof(buf), "HEIGHT%.1f", alt);
+		font_.DrawString(x, y - 24.0f, buf, 0.7f);
+	}
+}
+
+void GamePlayScene::DrawSpeedSimple_()
+{
+	const Vector3 v = drone_.GetVel();
+
+	const float spd = std::sqrt(v.x * v.x + v.z * v.z); // 水平速度
+	const float vspd = v.y;                              // 上下速度
+
+	const float x = WinApp::kClientWidth - 180.0f;
+	float y = 160.0f;
+
+	// ---- SPD ----
+	font_.DrawString(x, y, "SPD", 0.6f);
+	font_.DrawString(x, y + 20.0f,
+		std::format("{:.1f}", spd), 1.0f);
+
+	y += 70.0f;
+
+	// ---- VSPD ----
+	font_.DrawString(x, y, "VSPD", 0.6f);
+	font_.DrawString(x, y + 20.0f,
+		std::format("{:+.1f}", vspd), 1.0f);
+}
+
+
+void GamePlayScene::DrawGateIndices2D_()
+{
+	const float W = (float)WinApp::kClientWidth;
+	const float H = (float)WinApp::kClientHeight;
+	const Matrix4x4& vp = camera_->GetViewProjectionMatrix();
+
+	// デバッグ：ここは赤で出るはず
+	gateNum_.SetColor({ 1,0,0,1 });
+	gateNum_.DrawString(100, 100, "TEST", 2.0f);
+
+	for (int i = 0; i < (int)gates_.size(); ++i) {
+
+		Vector3 labelPos = gates_[i].gate.pos;
+
+		Vector2 screen{};
+		if (!WorldToScreen_RowVector(labelPos, vp, W, H, screen)) {
+			continue;
+		}
+
+		// ★ここで「そのゲートの色」を決めて
+		if (i == nextGate_) gateNum_.SetColor({ 1,1,0,1 });
+		else               gateNum_.SetColor({ 1,1,1,0.8f });
+
+		const std::string txt = std::to_string(i + 1);
+		float offsetX = (txt.size() == 1) ? 8.0f : 16.0f;
+
+		// ★その直後に描く
+		gateNum_.DrawString(screen.x - offsetX, screen.y - 10.0f, txt, 0.8f);
+	}
 }

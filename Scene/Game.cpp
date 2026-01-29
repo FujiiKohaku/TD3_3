@@ -36,7 +36,6 @@ void Game::Initialize()
     TextureManager::GetInstance()->LoadTexture("resources/uvChecker.png");
     TextureManager::GetInstance()->LoadTexture("resources/uvChecker.png");
     TextureManager::GetInstance()->LoadTexture("resources/fence.png");
-    TextureManager::GetInstance()->LoadTexture("resources/ui/bitMap.png");
     TextureManager::GetInstance()->LoadTexture("resources/white.png");
     TextureManager::GetInstance()->LoadTexture("resources/ui/ascii_font_16x6_cell32_first32.png");
     TextureManager::GetInstance()->LoadTexture("resources/ui/no_thumb.png");
