@@ -3,6 +3,7 @@
 #include "SpriteManager.h"
 #include "Object3dManager.h"
 #include "ImGuiManager.h"
+#include "../Light/LightManager.h"
 
 ResultScene::ResultScene(int perfectCount, int goodCount) {
 	perfectCount_ = perfectCount;
@@ -12,7 +13,6 @@ ResultScene::ResultScene(int perfectCount, int goodCount) {
 	good_ = std::make_unique<Sprite>();
 
 	camera_ = std::make_unique<Camera>();
-	skydome_ = std::make_unique<Object3d>();
 }
 
 void ResultScene::Initialize() {
@@ -30,13 +30,18 @@ void ResultScene::Initialize() {
 	camera_->SetTranslate({});
 	camera_->SetRotate({});
 
+	skydome_ = std::make_unique<Object3d>();
 	skydome_->Initialize(Object3dManager::GetInstance());
 	skydome_->SetModel("skydome.obj");
 	skydome_->SetCamera(camera_.get());
 	skydome_->SetEnableLighting(false);
+
+	LightManager::GetInstance()->Initialize(DirectXCommon::GetInstance());
+	LightManager::GetInstance()->SetDirectional({ 1, 1, 1, 1 }, { 0, -1, 0 }, 1.0f);
 }
 
 void ResultScene::Finalize() {
+	LightManager::GetInstance()->Finalize();
 }
 
 void ResultScene::Update() {
@@ -56,6 +61,8 @@ void ResultScene::Draw2D() {
 }
 
 void ResultScene::Draw3D() {
+	Object3dManager::GetInstance()->PreDraw();
+	LightManager::GetInstance()->Bind(DirectXCommon::GetInstance()->GetCommandList());
 	skydome_->Draw();
 }
 
