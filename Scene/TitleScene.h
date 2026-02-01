@@ -1,6 +1,6 @@
 #pragma once
 #include "BaseScene.h"
-
+#include <memory>
 #include "../3D/Object3d.h"
 #include "SceneManager.h"
 #include "Camera.h"
@@ -22,4 +22,5 @@ private:
     Object3d* outShellModel_ = nullptr;
     Object3d* homeModel_ = nullptr;
     Object3d* railModel_ = nullptr;
+    std::unique_ptr<Object3d> doroso_ = nullptr;
 };

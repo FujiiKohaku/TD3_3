@@ -52,6 +52,14 @@ void TitleScene::Initialize() {
 	railModel_->SetModel("rail.obj");
 	railModel_->SetTranslate({ 0.0f, 0.0f, 0.0f });
 	railModel_->Update();
+
+	//ドローソ
+	ModelManager::GetInstance()->LoadModel("doroso.obj");
+	doroso_ = std::make_unique<Object3d>();
+	doroso_->Initialize(Object3dManager::GetInstance());
+	doroso_->SetModel("doroso.obj");
+	doroso_->SetTranslate({-1.2f, 4.2f, -5.2});
+	doroso_->SetRotate({ 0.05f, -0.57f, 0.0f });
 }
 
 void TitleScene::Update() {
@@ -79,6 +87,7 @@ void TitleScene::Update() {
 	outShellModel_->Update();
 	homeModel_->Update();
 	railModel_->Update();
+	doroso_->Update();
 }
 
 void TitleScene::Draw2D() {
@@ -97,6 +106,7 @@ void TitleScene::Draw3D() {
 	if (railModel_) {
 		railModel_->Draw();
 	}
+	doroso_->Draw();
 }
 
 void TitleScene::DrawImGui() {
@@ -138,6 +148,16 @@ void TitleScene::DrawImGui() {
 
 	ImGui::End();
 
+	Vector3 pos1 = doroso_->GetTranslate();
+	Vector3 rotate1 = doroso_->GetRotate();
+
+	if (ImGui::DragFloat3("Position", &pos1.x, 0.1f)) {
+		doroso_->SetTranslate(pos1);
+	}
+
+	if (ImGui::DragFloat3("Rotate", &rotate1.x, 0.01f)) {
+		doroso_->SetRotate(rotate1);
+	}
 }
 
 
