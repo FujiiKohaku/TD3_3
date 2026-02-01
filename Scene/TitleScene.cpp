@@ -60,6 +60,11 @@ void TitleScene::Initialize()
     railModel_->SetModel("rail.obj");
     railModel_->SetTranslate({ 0.0f, 0.0f, 0.0f });
     railModel_->Update();
+
+    ModelManager::GetInstance()->LoadModel("Drone/dolone.obj");
+    drone_ = new Object3d();
+    drone_->Initialize(Object3dManager::GetInstance());
+    drone_->SetModel("Drone/dolone.obj");
 }
 
 void TitleScene::Update()
@@ -72,14 +77,6 @@ void TitleScene::Update()
         SceneManager::GetInstance()->SetNextScene(new StageEditorScene());
     }
 
-    // ★Sキーでステージセレクトへ
-    if (Input::GetInstance()->IsKeyPressed(DIK_S)) {
-    }
-
-    // Rキーでリザルトシーン
-    if (Input::GetInstance()->IsKeyTrigger(DIK_R)) {
-        SceneManager::GetInstance()->SetNextScene(new ResultScene(20, 5));
-    }
     // titleModel->Update();
     camera_->Update();
 
@@ -87,6 +84,9 @@ void TitleScene::Update()
     outShellModel_->Update();
     homeModel_->Update();
     railModel_->Update();
+
+    // drone
+    drone_->Update();
 }
 
 void TitleScene::Draw2D()
@@ -107,6 +107,9 @@ void TitleScene::Draw3D()
     if (railModel_) {
         railModel_->Draw();
     }
+    if (drone_) {
+        drone_->Draw();
+    }
 }
 
 void TitleScene::DrawImGui()
@@ -125,6 +128,22 @@ void TitleScene::DrawImGui()
     }
 
     camera_->Update();
+    ImGui::End();
+
+    ImGui::Begin("Drone Control");
+
+    ImGui::DragFloat3("Position", &dronePos.x, 0.1f);
+    ImGui::DragFloat3("Rotate", &droneRot.x, 0.01f);
+    ImGui::DragFloat3("Scale", &droneScale.x, 0.1f, 0.01f, 10.0f);
+
+    if (drone_) {
+        drone_->SetTranslate(dronePos);
+        drone_->SetRotate(droneRot);
+        drone_->SetScale(droneScale);
+    }
+
+    
+
     ImGui::End();
 
     //// ============================
@@ -216,5 +235,6 @@ void TitleScene::Finalize()
     delete outShellModel_;
     delete homeModel_;
     delete railModel_;
+    delete drone_;
     LightManager::GetInstance()->Finalize();
 }
