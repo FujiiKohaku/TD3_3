@@ -118,7 +118,7 @@ void LightManager::SetSpotLightPosition(const Vector3& pos)
 void LightManager::SetSpotLightDirection(const Vector3& dir)
 {
     spotLightData_->direction = Normalize(dir);
-}
+} 
 
 void LightManager::SetSpotLightIntensity(float intensity)
 {
