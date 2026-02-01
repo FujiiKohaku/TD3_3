@@ -23,7 +23,6 @@ void Object3d::Initialize(Object3dManager* object3DManager)
     transformationMatrixData->WVP = MatrixMath::MakeIdentity4x4();
     transformationMatrixData->World = MatrixMath::MakeIdentity4x4();
 
-
     // マテリアルリソース作成
     materialResource = object3dManager_->GetDxCommon()->CreateBufferResource(sizeof(Material));
     materialResource->SetName(L"Object3d::MaterialCB");
@@ -76,8 +75,8 @@ void Object3d::Update()
     // ワールド行列も送る（ライティングなどで使用）
     transformationMatrixData->World = worldMatrix;
 
-    Matrix4x4 inv = MatrixMath::Inverse(worldViewProjectionMatrix);
-    transformationMatrixData->WorldInverseTranspose = MatrixMath::Transpose(inv);
+    Matrix4x4 invWorld = MatrixMath::Inverse(worldMatrix);
+    transformationMatrixData->WorldInverseTranspose = MatrixMath::Transpose(invWorld);
 }
 
 #pragma endregion
