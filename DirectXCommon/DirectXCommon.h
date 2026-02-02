@@ -55,7 +55,7 @@ public:
 
     // 今表示しているバックバッファを PNG に保存（必要なら縮小してサムネ化）
     bool SaveBackBufferToPng(const std::wstring& outPngPath,
-        uint32_t thumbW = 0, uint32_t thumbH = 0);
+                             uint32_t thumbW = 0, uint32_t thumbH = 0);
 
     // ついでに（外から参照したいなら）
     ID3D12Resource* GetCurrentBackBuffer() const;
@@ -121,5 +121,4 @@ private:
     std::wstring capturePath_;
     uint32_t captureW_ = 0;
     uint32_t captureH_ = 0;
-
 };
