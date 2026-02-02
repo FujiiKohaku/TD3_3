@@ -775,6 +775,8 @@ void GamePlayScene::Draw3D()
     Object3dManager::GetInstance()->PreDraw();
     LightManager::GetInstance()->Bind(DirectXCommon::GetInstance()->GetCommandList());
     //	player2_->Draw();
+
+    Object3dManager::GetInstance()->SetBlendMode(kBlendModeNone);
     Object3dManager::GetInstance()->SetNormalPSO();
     if (droneObj_)
         droneObj_->Draw();
@@ -789,7 +791,7 @@ void GamePlayScene::Draw3D()
 
     landingEffect_.Draw();
    
-   
+   Object3dManager::GetInstance()->SetBlendMode(kBlendModeAdd);
     Object3dManager::GetInstance()->SetGlowPSO();
     goalSys_.Draw();
 

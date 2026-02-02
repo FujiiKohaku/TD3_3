@@ -17,18 +17,22 @@ PixelShaderOutput main(VertexShaderOutput input)
 {
     PixelShaderOutput output;
 
-    // =========================
-    // 青ネオン（発光色）
-    // =========================
-    float3 neonColor = float3(0.0f, 0.6f, 1.0f);
+    float3 baseColor = gMaterial.color.rgb;
 
-    // 発光強度（ここだけ調整すればOK）
-    float intensity = 3.0f;
+    // 強めのネオン強度
+    float intensity = 2.5f;
 
-    output.color.rgb = neonColor * intensity;
+    // 疑似発光（常に乗せる）
+    float3 glow = baseColor * 1.0f;
 
-    // 加算ブレンド前提なので 1.0 固定
-    output.color.a = 1.0f;
+    float3 color = baseColor * intensity + glow;
 
+    // トーンマップ
+    color = color / (color + 1.0f);
+
+    output.color = float4(color, gMaterial.color.a);
     return output;
 }
+
+
+

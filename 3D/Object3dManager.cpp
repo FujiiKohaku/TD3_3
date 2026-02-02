@@ -191,7 +191,7 @@ void Object3dManager::CreateGraphicsPipeline()
     D3D12_GRAPHICS_PIPELINE_STATE_DESC baseDesc {};
     baseDesc.pRootSignature = rootSignature.Get();
     baseDesc.InputLayout = inputLayoutDesc;
-    //baseDescPSはFor文の中に移動しました
+    // baseDescPSはFor文の中に移動しました
     baseDesc.VS = { vertexShaderBlob->GetBufferPointer(), vertexShaderBlob->GetBufferSize() };
     baseDesc.RasterizerState = rasterizerDesc;
     baseDesc.DepthStencilState = depthStencilDesc;
@@ -211,7 +211,7 @@ void Object3dManager::CreateGraphicsPipeline()
         {
             D3D12_GRAPHICS_PIPELINE_STATE_DESC desc = baseDesc;
 
-            desc.PS = {pixelShaderBlob->GetBufferPointer(),pixelShaderBlob->GetBufferSize()};
+            desc.PS = { pixelShaderBlob->GetBufferPointer(), pixelShaderBlob->GetBufferSize() };
 
             desc.BlendState = CreateBlendDesc(static_cast<BlendMode>(i));
 
@@ -224,9 +224,14 @@ void Object3dManager::CreateGraphicsPipeline()
 
             glowDesc.PS = { glowPixelShaderBlob->GetBufferPointer(), glowPixelShaderBlob->GetBufferSize() };
 
+            // ★ ここが超重要
+            D3D12_DEPTH_STENCIL_DESC depthStencilDescGlow = depthStencilDesc;
+            depthStencilDescGlow.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
+            glowDesc.DepthStencilState = depthStencilDescGlow;
+
             glowDesc.BlendState = CreateBlendDesc(static_cast<BlendMode>(i));
 
-            dxCommon_->GetDevice()->CreateGraphicsPipelineState(&glowDesc, IID_PPV_ARGS(&glowPipelineStates[i]));
+            dxCommon_->GetDevice()->CreateGraphicsPipelineState(&glowDesc,IID_PPV_ARGS(&glowPipelineStates[i]));
         }
     }
 }
