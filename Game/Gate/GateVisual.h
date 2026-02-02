@@ -80,17 +80,18 @@ private:
         // ネオン脈動（やさしめ）
         // -----------------------------
         // 0.75 ～ 1.0 を往復
-        float pulse = 0.875f + 0.125f * std::sin(neonTime * 4.0f);
+        float pulse = 0.875f + 0.125f * std::sin(neonTime * 7.0f);
 
         // -----------------------------
         // ベース色
         // -----------------------------
         Color4 normalGood {
-            0.2f * pulse,
-            1.0f * pulse,
-            0.3f * pulse,
+            0.05f * pulse, // 赤をかなり抑える
+            0.65f * pulse, // 緑を少し落として深く
+            0.08f * pulse, // 青をほぼ切る
             1.0f
         };
+
 
         Color4 normalPerfect {
             0.2f * pulse,

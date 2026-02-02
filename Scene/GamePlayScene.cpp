@@ -233,6 +233,8 @@ void GamePlayScene::Initialize()
     gates_.clear();
     gates_.resize((int)stage.gates.size());
 
+    ModelManager::GetInstance()->LoadModel("ro.obj");
+
     for (int i = 0; i < (int)stage.gates.size(); ++i) {
 
         // StageData::gates は Gate 型（あなたの StageIO と同じ Gate）
@@ -240,7 +242,7 @@ void GamePlayScene::Initialize()
         gates_[i].gate = stage.gates[i];
 
         // 見た目モデル（今は cube 固定でOK）
-        gates_[i].Initialize(Object3dManager::GetInstance(), "Gate.obj", camera_);
+        gates_[i].Initialize(Object3dManager::GetInstance(), "ro.obj", camera_);
     }
 
     nextGate_ = 0;
