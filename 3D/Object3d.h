@@ -23,7 +23,7 @@ public:
     void Draw();
 
     static ModelData LoadModeFile(const std::string& directoryPath, const std::string filename);
-    static MaterialData LoadMaterialTemplateFile(const std::string& directoryPath, const std::string& filename);
+   // static MaterialData LoadMaterialTemplateFile(const std::string& directoryPath, const std::string& filename);
 
     // setter
     void SetModel(Model* model) { model_ = model; }

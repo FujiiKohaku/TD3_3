@@ -64,7 +64,7 @@ private:
         const bool flashing = (gate.feedbackTimer > 0.0f);
         const Color4 flash = gate.GetDrawColor();
 
-        // ★選択時の色（目立つやつ）
+        // 選択時の色（目立つやつ）
         const Color4 selGood{ 1.0f, 0.9f, 0.1f, 0.95f }; // 黄色
         const Color4 selPerfect{ 1.0f, 0.5f, 0.1f, 0.95f }; // オレンジ寄り（内側）
 
