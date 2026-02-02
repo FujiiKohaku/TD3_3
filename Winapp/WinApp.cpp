@@ -64,7 +64,7 @@ void WinApp::initialize()
 
     // ウィンドウクラス設定
     wc_.lpfnWndProc = WindowProc; // ウィンドウプロシージャ
-    wc_.lpszClassName = L"CG2WindowClass"; // クラス名
+    wc_.lpszClassName = L"ド回ーン"; // クラス名
     wc_.hInstance = GetModuleHandle(nullptr); // インスタンスハンドル
     wc_.hCursor = LoadCursor(nullptr, IDC_ARROW); // カーソル設定
 

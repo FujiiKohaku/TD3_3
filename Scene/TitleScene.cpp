@@ -26,9 +26,11 @@ void TitleScene::Initialize()
     // Light
     LightManager::GetInstance()->SetIntensity(0.1f);
     // pointLight
-    LightManager::GetInstance()->SetPointPosition({ -2.20f, 5.300f, 5.400f });
+    LightManager::GetInstance()->SetPointPosition({ -22.40f, 3.100f, 11.400f });
     LightManager::GetInstance()->SetPointIntensity(1.5f);
     LightManager::GetInstance()->SetPointRadius(14.600f);
+    LightManager::GetInstance()->SetPointRadius(33.0f);
+    LightManager::GetInstance()->SetPointIntensity(1.0f);
     // spotLight
     LightManager::GetInstance()->SetSpotLightPosition({ 0.1f, 12.6f, -4.6f });
     LightManager::GetInstance()->SetSpotLightDirection({ 0.0f, -1.0f, 0.0f });
@@ -53,21 +55,30 @@ void TitleScene::Initialize()
     homeModel_->SetTranslate({ 0.0f, 0.0f, 0.0f });
     homeModel_->Update();
 
-	// 線路
-	ModelManager::GetInstance()->LoadModel("rail.obj");
-	railModel_ = new Object3d();
-	railModel_->Initialize(Object3dManager::GetInstance());
-	railModel_->SetModel("rail.obj");
-	railModel_->SetTranslate({ 0.0f, 0.0f, 0.0f });
-	railModel_->Update();
+    // ドローソ
+    ModelManager::GetInstance()->LoadModel("doroso.obj");
+    doroso_ = std::make_unique<Object3d>();
+    doroso_->Initialize(Object3dManager::GetInstance());
+    doroso_->SetModel("doroso.obj");
+    scale1 = { 0.6f, 0.6f, 0.5f };
+    rotate1 = { 0.0f, -0.54f, 0.0f };
+    pos1 = { -11.0f, 4.0f, 1.5f };
+    
+    doroso_->SetTranslate(pos1);
+    doroso_->SetRotate(rotate1);
+    doroso_->SetScale(scale1);
+    // 線路
+    ModelManager::GetInstance()->LoadModel("rail.obj");
+    railModel_ = new Object3d();
+    railModel_->Initialize(Object3dManager::GetInstance());
+    railModel_->SetModel("rail.obj");
+    railModel_->SetTranslate({ 0.0f, 0.0f, 0.0f });
+    railModel_->Update();
 
-	//ドローソ
-	ModelManager::GetInstance()->LoadModel("doroso.obj");
-	doroso_ = std::make_unique<Object3d>();
-	doroso_->Initialize(Object3dManager::GetInstance());
-	doroso_->SetModel("doroso.obj");
-	doroso_->SetTranslate({-1.2f, 4.2f, -5.2});
-	doroso_->SetRotate({ 0.05f, -0.57f, 0.0f });
+    ModelManager::GetInstance()->LoadModel("Drone/dolone.obj");
+    drone_ = new Object3d();
+    drone_->Initialize(Object3dManager::GetInstance());
+    drone_->SetModel("Drone/dolone.obj");
 }
 
 void TitleScene::Update()
@@ -80,22 +91,26 @@ void TitleScene::Update()
         SceneManager::GetInstance()->SetNextScene(new StageEditorScene());
     }
 
-    // ★Sキーでステージセレクトへ
-    if (Input::GetInstance()->IsKeyPressed(DIK_S)) {
-    }
-
-    // Rキーでリザルトシーン
-    if (Input::GetInstance()->IsKeyTrigger(DIK_R)) {
-        SceneManager::GetInstance()->SetNextScene(new ResultScene(20, 5));
-    }
     // titleModel->Update();
     camera_->Update();
 
-	// 外殻
-	outShellModel_->Update();
-	homeModel_->Update();
-	railModel_->Update();
-	doroso_->Update();
+    // 外殻
+    outShellModel_->Update();
+    homeModel_->Update();
+    railModel_->Update();
+    doroso_->Update();
+    // 外殻
+    outShellModel_->Update();
+    homeModel_->Update();
+    railModel_->Update();
+
+    // drone
+    drone_->Update();
+    if (drone_) {
+        drone_->SetTranslate(dronePos);
+        drone_->SetRotate(droneRot);
+        drone_->SetScale(droneScale);
+    }
 }
 
 void TitleScene::Draw2D()
@@ -107,21 +122,33 @@ void TitleScene::Draw3D()
     Object3dManager::GetInstance()->PreDraw();
     LightManager::GetInstance()->Bind(DirectXCommon::GetInstance()->GetCommandList());
 
-	if (outShellModel_) {
-		outShellModel_->Draw();
-	}
-	if (homeModel_) {
-		homeModel_->Draw();
-	}
-	if (railModel_) {
-		railModel_->Draw();
-	}
-	doroso_->Draw();
+    if (outShellModel_) {
+        outShellModel_->Draw();
+    }
+    if (homeModel_) {
+        homeModel_->Draw();
+    }
+    if (railModel_) {
+        railModel_->Draw();
+    }
+    doroso_->Draw();
+    if (outShellModel_) {
+        outShellModel_->Draw();
+    }
+    if (homeModel_) {
+        homeModel_->Draw();
+    }
+    if (railModel_) {
+        railModel_->Draw();
+    }
+    if (drone_) {
+        drone_->Draw();
+    }
 }
 
 void TitleScene::DrawImGui()
 {
-    ImGui::Begin("Camera");
+    /*ImGui::Begin("Camera");
 
     Vector3 pos = camera_->GetTranslate();
     Vector3 rot = camera_->GetRotate();
@@ -137,6 +164,26 @@ void TitleScene::DrawImGui()
     camera_->Update();
     ImGui::End();
 
+    ImGui::Begin("Drone Control");
+
+    ImGui::DragFloat3("Position", &dronePos.x, 0.1f);
+    ImGui::DragFloat3("Rotate", &droneRot.x, 0.01f);
+    ImGui::DragFloat3("Scale", &droneScale.x, 0.1f, 0.01f, 10.0f);
+
+ 
+
+    ImGui::End();
+
+    if (ImGui::DragFloat3("Position", &pos1.x, 0.1f)) {
+        doroso_->SetTranslate(pos1);
+    }
+
+    if (ImGui::DragFloat3("Rotate", &rotate1.x, 0.01f)) {
+        doroso_->SetRotate(rotate1);
+    }
+    if (ImGui::DragFloat3("scale", &scale1.x, 0.01f)) {
+        doroso_->SetScale(scale1);
+    }*/
     //// ============================
     //// Light
     //// ============================
@@ -200,33 +247,22 @@ void TitleScene::DrawImGui()
     // ImGui::DragFloat("Distance", &spotDistance, 0.1f, 0.1f, 50.0f);
     // ImGui::DragFloat("Decay", &spotDecay, 0.1f, 0.1f, 5.0f);
     // ImGui::SliderFloat("Angle (deg)", &spotAngleDeg, 1.0f, 90.0f);
-
+    // ImGui::End();
     //// 正規化 & cos 変換
     // Vector3 normalizedDir = Normalize(spotDir);
     // float cosAngle = std::cos(spotAngleDeg * std::numbers::pi_v<float> / 180.0f);
     // float sI = spotEnabled ? spotIntensity : 0.0f;
 
-    // auto* lm = LightManager::GetInstance();
-    // lm->SetSpotLightColor(spotColor);
-    // lm->SetSpotLightPosition(spotPos);
-    // lm->SetSpotLightDirection(normalizedDir);
-    // lm->SetSpotLightIntensity(sI);
-    // lm->SetSpotLightDistance(spotDistance);
-    // lm->SetSpotLightDecay(spotDecay);
-    // lm->SetSpotLightCosAngle(cosAngle);
+     //auto* lm = LightManager::GetInstance();
+     //lm->SetSpotLightColor(spotColor);
+     //lm->SetSpotLightPosition(spotPos);
+     //lm->SetSpotLightDirection(normalizedDir);
+     //lm->SetSpotLightIntensity(sI);
+     //lm->SetSpotLightDistance(spotDistance);
+     //lm->SetSpotLightDecay(spotDecay);
+     //lm->SetSpotLightCosAngle(cosAngle);
 
-    // ImGui::End();
-
-	Vector3 pos1 = doroso_->GetTranslate();
-	Vector3 rotate1 = doroso_->GetRotate();
-
-	if (ImGui::DragFloat3("Position", &pos1.x, 0.1f)) {
-		doroso_->SetTranslate(pos1);
-	}
-
-	if (ImGui::DragFloat3("Rotate", &rotate1.x, 0.01f)) {
-		doroso_->SetRotate(rotate1);
-	}
+    /* ImGui::End();*/
 }
 
 void TitleScene::Finalize()
@@ -235,5 +271,6 @@ void TitleScene::Finalize()
     delete outShellModel_;
     delete homeModel_;
     delete railModel_;
+    delete drone_;
     LightManager::GetInstance()->Finalize();
 }
