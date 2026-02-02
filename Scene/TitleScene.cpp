@@ -53,6 +53,21 @@ void TitleScene::Initialize()
     homeModel_->SetTranslate({ 0.0f, 0.0f, 0.0f });
     homeModel_->Update();
 
+	// 線路
+	ModelManager::GetInstance()->LoadModel("rail.obj");
+	railModel_ = new Object3d();
+	railModel_->Initialize(Object3dManager::GetInstance());
+	railModel_->SetModel("rail.obj");
+	railModel_->SetTranslate({ 0.0f, 0.0f, 0.0f });
+	railModel_->Update();
+
+	//ドローソ
+	ModelManager::GetInstance()->LoadModel("doroso.obj");
+	doroso_ = std::make_unique<Object3d>();
+	doroso_->Initialize(Object3dManager::GetInstance());
+	doroso_->SetModel("doroso.obj");
+	doroso_->SetTranslate({-1.2f, 4.2f, -5.2});
+	doroso_->SetRotate({ 0.05f, -0.57f, 0.0f });
     // 線路
     ModelManager::GetInstance()->LoadModel("rail.obj");
     railModel_ = new Object3d();
@@ -80,6 +95,11 @@ void TitleScene::Update()
     // titleModel->Update();
     camera_->Update();
 
+	// 外殻
+	outShellModel_->Update();
+	homeModel_->Update();
+	railModel_->Update();
+	doroso_->Update();
     // 外殻
     outShellModel_->Update();
     homeModel_->Update();
@@ -98,6 +118,16 @@ void TitleScene::Draw3D()
     Object3dManager::GetInstance()->PreDraw();
     LightManager::GetInstance()->Bind(DirectXCommon::GetInstance()->GetCommandList());
 
+	if (outShellModel_) {
+		outShellModel_->Draw();
+	}
+	if (homeModel_) {
+		homeModel_->Draw();
+	}
+	if (railModel_) {
+		railModel_->Draw();
+	}
+	doroso_->Draw();
     if (outShellModel_) {
         outShellModel_->Draw();
     }
@@ -226,7 +256,16 @@ void TitleScene::DrawImGui()
 
     // ImGui::End();
 
-    // ImGui::End();
+	Vector3 pos1 = doroso_->GetTranslate();
+	Vector3 rotate1 = doroso_->GetRotate();
+
+	if (ImGui::DragFloat3("Position", &pos1.x, 0.1f)) {
+		doroso_->SetTranslate(pos1);
+	}
+
+	if (ImGui::DragFloat3("Rotate", &rotate1.x, 0.01f)) {
+		doroso_->SetRotate(rotate1);
+	}
 }
 
 void TitleScene::Finalize()
