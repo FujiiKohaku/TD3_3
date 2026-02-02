@@ -256,3 +256,4 @@ void Drone::UpdateDebugNoInertia(const Input& input, float dt) {
 bool Drone::HasJustLanded() const {
 	return justLanded_;
 }
+

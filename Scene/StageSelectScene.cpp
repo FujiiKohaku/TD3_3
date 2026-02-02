@@ -265,11 +265,11 @@ void StageSelectScene::Update() {
 		UpdateStageNameTexture_();
 	}
 
-	if (input.IsKeyTrigger(DIK_RETURN)) {
+	if (input.IsKeyTrigger(DIK_SPACE)) {
 		Decide_();
 	}
 
-	if (input.IsKeyTrigger(DIK_ESCAPE)) {
+	if (input.IsKeyTrigger(DIK_BACKSPACE)) {
 		SceneManager::GetInstance()->SetNextScene(new TitleScene());
 	}
 

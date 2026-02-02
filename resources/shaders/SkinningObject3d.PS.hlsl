@@ -61,52 +61,53 @@ PixelShaderOutput main(VertexShaderOutput input)
         float NdotHd = saturate(dot(N, Hd));
         float3 dirSpec = gDirectionalLight.color.rgb * gDirectionalLight.intensity * pow(NdotHd, gMaterial.shininess);
 
-//
-// ---- point Light ----
-//
 
-        float3 Lp = normalize(gPointLight.position - input.worldPosition);
+//
+// ---- Point Light ----
+//
+        float3 Lp = normalize(input.worldPosition - gPointLight.position);
 
+// ãóó£å∏êä
         float dist = length(gPointLight.position - input.worldPosition);
         float decayF = pow(saturate(-dist / gPointLight.radius + 1.0), gPointLight.decay);
         float3 pointColor = gPointLight.color.rgb * gPointLight.intensity * decayF;
 
+// Diffuse
         float NdotLp = saturate(dot(N, Lp));
         float3 pointDiffuse = gMaterial.color.rgb * textureColor.rgb * pointColor * NdotLp;
 
+// Specular
         float3 Hp = normalize(Lp + V);
         float NdotHp = saturate(dot(N, Hp));
         float3 pointSpec = pointColor * pow(NdotHp, gMaterial.shininess);
 
-        
 //
-//--------spotLight----
+// ---- Spot Light ----
 //
         
         float3 spotLightDirectionOnSurface = normalize(input.worldPosition - gSpotLight.position);
-
         float3 spotLightColor = gSpotLight.color.rgb * gSpotLight.intensity;
 
         float32_t cosAngle = dot(spotLightDirectionOnSurface, gSpotLight.direction);
-
+        
         float32_t falloffFactor = saturate((cosAngle - gSpotLight.cosAngle) / (1.0 - gSpotLight.cosAngle));
+    
 
         float distS = length(gSpotLight.position - input.worldPosition);
-        float attenuationFactor = pow(saturate(-distS / gSpotLight.distance + 1.0), gSpotLight.decay);
-
+        float attenuationFactor =pow(saturate(-distS / gSpotLight.distance + 1.0),gSpotLight.decay);
+        
         spotLightColor *= attenuationFactor * falloffFactor;
 
-        float NdotS = saturate(dot(N, -spotLightDirectionOnSurface));
-        float3 spotDiffuse = gMaterial.color.rgb * textureColor.rgb * spotLightColor * NdotS;
+        float NdotS = saturate(dot(N, spotLightDirectionOnSurface));
+        float3 spotDiffuse =gMaterial.color.rgb * textureColor.rgb *spotLightColor *NdotS;
 
-        float3 Hs = normalize(-spotLightDirectionOnSurface + V);
+        float3 Hs = normalize(spotLightDirectionOnSurface + V);
         float NdotHs = saturate(dot(N, Hs));
-        float3 spotSpec = spotLightColor * pow(NdotHs, gMaterial.shininess);
-
+        float3 spotSpec =spotLightColor *pow(NdotHs, gMaterial.shininess);
 
 // ---- çáê¨ ----
 //
-        output.color.rgb = dirDiffuse + dirSpec + pointDiffuse + pointSpec + spotDiffuse + spotSpec;
+        output.color.rgb =dirDiffuse + dirSpec +pointDiffuse + pointSpec +spotDiffuse + spotSpec;
         output.color.a = gMaterial.color.a * textureColor.a;
 
     }
