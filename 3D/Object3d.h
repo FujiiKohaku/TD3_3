@@ -11,6 +11,7 @@
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
 #include "Object3DStruct.h"
+
 class Object3dManager;
 class Model;
 class Object3d {

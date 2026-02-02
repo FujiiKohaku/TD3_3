@@ -562,8 +562,6 @@ void GamePlayScene::Update()
     // Intensity
     // --------------------
 
-  
-
     // --------------------
     // Distance / Decay
     // --------------------
@@ -608,12 +606,9 @@ void GamePlayScene::Update()
     // --------------------
     // Apply
     // --------------------
-   
 
     LightManager* lm = LightManager::GetInstance();
     lm->SetSpotLightColor(spotColor);
-
-   
 
     lm->SetSpotLightDecay(spotDecay);
     lm->SetSpotLightCosAngle(cosAngle);
@@ -780,6 +775,7 @@ void GamePlayScene::Draw3D()
     Object3dManager::GetInstance()->PreDraw();
     LightManager::GetInstance()->Bind(DirectXCommon::GetInstance()->GetCommandList());
     //	player2_->Draw();
+    Object3dManager::GetInstance()->SetNormalPSO();
     if (droneObj_)
         droneObj_->Draw();
     if (skydome_)
@@ -791,13 +787,15 @@ void GamePlayScene::Draw3D()
         g.Draw();
     }
 
+    landingEffect_.Draw();
+   
+   
+    Object3dManager::GetInstance()->SetGlowPSO();
     goalSys_.Draw();
 
     if (drawWallDebug_) {
         wallSys_.DrawDebug();
     }
-    landingEffect_.Draw();
-    // terraranan_->Draw();
     particleGate_.Draw();
     // sphere_->Draw(DirectXCommon::GetInstance()->GetCommandList());
     ParticleManager::GetInstance()->PreDraw();

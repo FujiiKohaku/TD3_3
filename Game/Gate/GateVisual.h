@@ -1,7 +1,7 @@
 ﻿#pragma once
-#include <algorithm>
 #include "Gate.h"
 #include "Object3d.h"
+#include <algorithm>
 
 struct GateVisual {
     Gate gate;
@@ -17,17 +17,21 @@ struct GateVisual {
     bool selected = false;
     void SetSelected(bool v) { selected = v; }
 
-    void Initialize(Object3dManager* mgr, const std::string& modelPath, Camera* cam) {
+    void Initialize(Object3dManager* mgr, const std::string& modelPath, Camera* cam)
+    {
         objGood.Initialize(mgr);
         objGood.SetModel(modelPath);
         objGood.SetCamera(cam);
 
+        objGood.SetEnableLighting(false);
         objPerfect.Initialize(mgr);
         objPerfect.SetModel(modelPath);
         objPerfect.SetCamera(cam);
+        objPerfect.SetEnableLighting(false);
     }
 
-    void Tick(float dt) {
+    void Tick(float dt)
+    {
         gate.UpdateMatrices();
         gate.Tick(dt);
 
@@ -50,23 +54,26 @@ struct GateVisual {
         objPerfect.Update();
     }
 
-    bool TryPass(const Vector3& dronePos, GateResult& res) {
+    bool TryPass(const Vector3& dronePos, GateResult& res)
+    {
         return gate.TryPass(dronePos, res);
     }
 
-    void Draw() {
+    void Draw()
+    {
         objGood.Draw();
         objPerfect.Draw();
     }
 
 private:
-    void ApplyColor_() {
+    void ApplyColor_()
+    {
         const bool flashing = (gate.feedbackTimer > 0.0f);
         const Color4 flash = gate.GetDrawColor();
 
         // 選択時の色（目立つやつ）
-        const Color4 selGood{ 1.0f, 0.9f, 0.1f, 0.95f }; // 黄色
-        const Color4 selPerfect{ 1.0f, 0.5f, 0.1f, 0.95f }; // オレンジ寄り（内側）
+        const Color4 selGood { 1.0f, 0.9f, 0.1f, 0.95f }; // 黄色
+        const Color4 selPerfect { 1.0f, 0.5f, 0.1f, 0.95f }; // オレンジ寄り（内側）
 
         // Good（外側）
         if (Material* m = objGood.GetMaterial()) {
@@ -90,5 +97,4 @@ private:
             }
         }
     }
-
 };
