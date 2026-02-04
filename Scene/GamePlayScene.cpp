@@ -158,7 +158,8 @@ void GamePlayScene::Initialize()
 
     // ドローンのプロペラ音
     DronePropellerSound_ = SoundManager::GetInstance()->SoundLoadFile("Resources/DroneBGM.mp3");
-
+    //ゲート通過時キラキラ
+    gateSound_ = SoundManager::GetInstance()->SoundLoadFile("Resources/GateCollision.mp3");
     //==========================================
     player2_ = new Object3d();
     player2_->Initialize(Object3dManager::GetInstance());
@@ -349,7 +350,7 @@ void GamePlayScene::Update()
     }
 
     if (drone_.isMove()) {
-        SoundManager::GetInstance()->PlayBGM(DronePropellerSound_, 0.8f);
+        SoundManager::GetInstance()->PlayBGM(DronePropellerSound_, 0.4f);
     }
 
     // ポーズ画面のUI
@@ -463,6 +464,8 @@ void GamePlayScene::Update()
 
         if (g.gate.GetIsHitGate() && !g.gate.playedEffect) {
             particleGate_.Play(drone_.GetPos());
+
+           
             g.gate.playedEffect = true;
         }
 
@@ -478,9 +481,11 @@ void GamePlayScene::Update()
 
         if (gates_[nextGate_].TryPass(dronePos, res)) {
             if (res == GateResult::Perfect) {
+                SoundManager::GetInstance()->PlaySE(gateSound_, 1.0f);
                 perfectCount_++;
                 nextGate_++;
             } else if (res == GateResult::Good) {
+                SoundManager::GetInstance()->PlaySE(gateSound_, 1.0f);
                 goodCount_++;
                 nextGate_++;
             } else {
