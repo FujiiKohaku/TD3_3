@@ -581,12 +581,18 @@ void GamePlayScene::Update()
     // ドローン実体 → 描画Object3dへ反映（毎フレーム必須）
     if (droneObj_) {
         droneObj_->SetTranslate(drone_.GetPos());
-        droneObj_->SetRotate({ -drone_.GetRoll(), // ←マイナスをつけてみる
-            drone_.GetYaw() + droneYawOffset,
-            drone_.GetPitch() });
+
+        // ★傾きだけ修正：roll と pitch を交換
+        droneObj_->SetRotate({
+            -drone_.GetPitch(),                 // X = pitch
+            drone_.GetYaw() + droneYawOffset,  // Y = yaw
+            drone_.GetRoll()                   // Z = roll
+            });
+
         droneObj_->Update();
         UpdateDroneSpotLight();
     }
+
 
     // これを毎フレーム呼ぶ
     camera_->FollowDroneRigid(drone_, 7.5f, 1.8f, -0.18f, droneYawOffset);
