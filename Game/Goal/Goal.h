@@ -11,7 +11,7 @@
 // 今回は「球判定」で実装（軽い＆回転関係ない）
 class Goal {
 public:
-    void Initialize(Object3dManager* objMgr, Camera* camera, const char* modelName = "cube.obj");
+    void Initialize(Object3dManager* objMgr, Camera* camera, const char* modelName = "goal.obj");
     void Finalize();
 
     void Spawn(const Vector3& pos);

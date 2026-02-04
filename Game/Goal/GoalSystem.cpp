@@ -125,6 +125,10 @@ void GoalSystem::Update(const std::vector<GateVisual>& gates, int nextGate, cons
             // active_ = false;
         }
     }
+
+    //回転
+    rotate_ += 0.03f;
+    goalObj_->SetRotate({ 0.0f, rotate_, rotate_ });
 }
 
 void GoalSystem::Draw() {
