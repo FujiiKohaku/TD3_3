@@ -479,7 +479,7 @@ void GamePlayScene::Update()
     // 2) 次ゲートだけ判定
     if (nextGate_ < (int)gates_.size()) {
         GateResult res;
-        const Vector3 dronePos = drone_.GetPos(); // ★ここはあなたのドローン取得に合わせる
+        const Vector3 dronePos = drone_.GetPos(); 
 
         if (gates_[nextGate_].TryPass(dronePos, res)) {
             if (res == GateResult::Perfect) {
