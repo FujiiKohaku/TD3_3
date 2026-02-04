@@ -9,9 +9,10 @@
 #include <fstream>
 #include <string>
 
-#include "TitleScene.h"
 #include "FadeManager.h"
-
+#include "TitleScene.h"
+static SoundData DronePropellerSound_;
+static SoundData gateSound_;
 #pragma region 関数
 using json = nlohmann::json;
 
@@ -150,18 +151,18 @@ void GamePlayScene::Initialize() {
 	sprite_->SetPosition({ 100.0f, 100.0f });
 	// サウンド関連===============================
 
-   //  SoundManager::GetInstance()->ResetSE(gateSound_);
-	// ドローンのプロペラ音
-	DronePropellerSound_ = SoundManager::GetInstance()->SoundLoadFile("Resources/DroneBGM.mp3");
-	//ゲート通過時キラキラ
-	gateSound_ = SoundManager::GetInstance()->SoundLoadFile("Resources/GateCollision.mp3");
-	//==========================================
-	player2_ = new Object3d();
-	player2_->Initialize(Object3dManager::GetInstance());
-	player2_->SetModel("cube.obj");
-	// player2_->SetModel("terrain.obj");
-	player2_->SetTranslate({ 3.0f, 0.0f, 0.0f });
-	// player2_->SetRotate({ std::numbers::pi_v<float> / 2.0f, std::numbers::pi_v<float>, 0.0f });
+    //  SoundManager::GetInstance()->ResetSE(gateSound_);
+    // ドローンのプロペラ音
+    DronePropellerSound_ = SoundManager::GetInstance()->SoundLoadFile("Resources/DroneBGM.mp3");
+    // ゲート通過時キラキラ
+    gateSound_ = SoundManager::GetInstance()->SoundLoadFile("Resources/GateCollision.mp3");
+    //==========================================
+    player2_ = new Object3d();
+    player2_->Initialize(Object3dManager::GetInstance());
+    player2_->SetModel("cube.obj");
+    // player2_->SetModel("terrain.obj");
+    player2_->SetTranslate({ 3.0f, 0.0f, 0.0f });
+    // player2_->SetRotate({ std::numbers::pi_v<float> / 2.0f, std::numbers::pi_v<float>, 0.0f });
 
 	// 床―
 	terraranan_ = new Object3d();
@@ -325,18 +326,35 @@ void GamePlayScene::Initialize() {
 	altMarker_->SetSize({ 22.0f, 22.0f }); // 好みで
 	altMarker_->SetRotation(0.0f);
 
+    // ===================
+    // Gate/Goal marker (NEW)
+    // ===================
+    TextureManager::GetInstance()->LoadTexture(gateMarkerCompassPath_);
+    gateMarkerCompass_ = new Sprite();
+    gateMarkerCompass_->Initialize(SpriteManager::GetInstance(), gateMarkerCompassPath_);
+    gateMarkerCompass_->SetAnchorPoint({ 0.5f, 0.5f });
+    gateMarkerCompass_->SetSize({ 24.0f, 24.0f }); // 好みで
+    gateMarkerCompass_->SetRotation(0.0f);
+
+	TextureManager::GetInstance()->LoadTexture(gateMarkerAltPath_);
+	gateMarkerAlt_ = new Sprite();
+	gateMarkerAlt_->Initialize(SpriteManager::GetInstance(), gateMarkerAltPath_);
+	gateMarkerAlt_->SetAnchorPoint({ 0.5f, 0.5f });
+	gateMarkerAlt_->SetSize({ 22.0f, 22.0f }); // 好みで
+	gateMarkerAlt_->SetRotation(0.0f);
+	// ボタンは中心基準にしておくと計算が楽でやんす
+
 	// Initializeの末尾付近に追加
 	pauseBg_ = std::make_unique<Sprite>();
 	pauseBg_->Initialize(SpriteManager::GetInstance(), "resources/white.png"); // 白塗り画像
 	pauseBg_->SetSize({ 1280.0f, 720.0f });
 	pauseBg_->SetColor({ 0.7f, 0.7f, 0.7f, 0.5f }); // 半透明
-
 	btnToSelect_ = std::make_unique<Sprite>();
 	btnToSelect_->Initialize(SpriteManager::GetInstance(), "resources/select.png");
 	btnClose_ = std::make_unique<Sprite>();
 	btnClose_->Initialize(SpriteManager::GetInstance(), "resources/tojiru.png");
 
-	// ボタンは中心基準にしておくと計算が楽でやんす
+   
 	btnToSelect_->SetAnchorPoint({ 0.5f, 0.5f });
 	btnClose_->SetAnchorPoint({ 0.5f, 0.5f });
 
@@ -961,6 +979,9 @@ void GamePlayScene::Finalize() {
 
 	delete droneObj_;
 	droneObj_ = nullptr;
+    SoundManager::GetInstance()->StopBGMAll();
+    delete droneObj_;
+    droneObj_ = nullptr;
 
 	delete sprite_;
 	sprite_ = nullptr;
@@ -1016,7 +1037,7 @@ void GamePlayScene::UpdateDronePointLight() {
 }
 
 //================================
-//位置表示
+// 位置表示
 //================================
 
 Vector3 GamePlayScene::GetNavTargetPos_() const {

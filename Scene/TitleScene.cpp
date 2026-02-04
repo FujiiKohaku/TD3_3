@@ -1,13 +1,15 @@
 #include "TitleScene.h"
 #include "../Light/LightManager.h"
 #include "../input/Input.h"
+#include "FadeManager.h"
 #include "GamePlayScene.h"
 #include "ResultScene.h"
 #include "StageEditorScene.h"
 #include "StageSelectScene.h"
 #include <numbers>
-#include "FadeManager.h"
+static SoundData bgmTitle_;
 
+static SoundData se_;
 void TitleScene::Initialize()
 {
     float deltaTime;
@@ -84,7 +86,7 @@ void TitleScene::Initialize()
     drone_->SetModel("Drone/dolone.obj");
 
     bgmTitle_ = SoundManager::GetInstance()->SoundLoadFile("resources/titleSceneBGM.mp3");
-
+    se_ = SoundManager::GetInstance()->SoundLoadFile("resources/maou_se_system49.mp3");
     SoundManager::GetInstance()->PlayBGM(bgmTitle_, 0.5f);
 }
 
@@ -92,7 +94,9 @@ void TitleScene::Update()
 {
     if (Input::GetInstance()->IsKeyTrigger(DIK_SPACE)) {
         // まずはフェードアウト開始！
-        FadeManager::GetInstance()->StartFadeOut(1.0f); 
+        FadeManager::GetInstance()->StartFadeOut(1.0f);
+
+        SoundManager::GetInstance()->PlaySE(se_, 1.0f);
     }
 
     FadeManager::GetInstance()->Update();

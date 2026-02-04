@@ -26,13 +26,19 @@ void SoundManager::Update()
         voice->GetState(&state);
 
         if (state.BuffersQueued == 0) {
+
+           
+            voice->Stop();
+            voice->FlushSourceBuffers();
             voice->DestroyVoice();
+
             it = activeVoices_.erase(it);
         } else {
             ++it;
         }
     }
 }
+
 
 void SoundManager::Finalize()
 {
