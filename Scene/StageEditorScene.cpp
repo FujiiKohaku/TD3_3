@@ -329,7 +329,7 @@ void StageEditorScene::Initialize()
     // -------------------------
     // Walls
     // -------------------------
-    wallSys_.BuildDebug(Object3dManager::GetInstance(), "cube.obj");
+    wallSys_.BuildDebug(Object3dManager::GetInstance(), "cube2.obj");
 
     wallSys_.AddAABB({ 0.0f, 2.0f, 12.0f }, { 6.0f, 2.0f, 0.5f });
     wallSys_.AddAABB({ 8.0f, 2.0f, 10.0f }, { 0.5f, 2.0f, 6.0f });
@@ -410,6 +410,22 @@ void StageEditorScene::Initialize()
     // ★必ず stageFile_ をロード
     LoadStageJson(stageFile_);
 
+    ModelManager::GetInstance()->LoadModel("skydome.obj");
+    TextureManager::GetInstance()->LoadTexture("resources/skydome.png");
+    skydome_ = std::make_unique<Object3d>();
+    skydome_->Initialize(Object3dManager::GetInstance());
+    skydome_->SetModel("skydome.obj");
+    skydome_->SetCamera(camera_);
+    skydome_->SetEnableLighting(false);
+
+    ModelManager::GetInstance()->LoadModel("ground.obj");
+    ground_ = std::make_unique<Object3d>();
+    ground_->Initialize(Object3dManager::GetInstance());
+    ground_->SetModel("ground.obj");
+    ground_->SetCamera(camera_);
+    ground_->SetEnableLighting(false);
+    ground_->SetTranslate({ 0.0f, -5.5f, 0.0f });
+
 }
 
 void StageEditorScene::Finalize()
@@ -434,6 +450,9 @@ void StageEditorScene::Update()
 {
     float dt = 1.0f / 60.0f;
     Input& input = *Input::GetInstance();
+
+    skydome_->Update();
+    ground_->Update();
 
     // =========================
     // ★命名入力は Update の最優先で処理する
@@ -665,6 +684,11 @@ void StageEditorScene::Draw3D()
 {
     Object3dManager::GetInstance()->PreDraw();
     LightManager::GetInstance()->Bind(DirectXCommon::GetInstance()->GetCommandList());
+
+    if (skydome_)
+        skydome_->Draw();
+    if (ground_)
+        ground_->Draw();
 
     if (droneObj_) droneObj_->Draw();
     for (auto& g : gates_) g.Draw();
@@ -1035,7 +1059,7 @@ bool StageEditorScene::LoadStageJson(const std::string& fileName) {
     for (const auto& g : data.gates) {
         GateVisual gv;
         gv.gate = g;
-        gv.Initialize(Object3dManager::GetInstance(), "cube.obj", camera_);
+        gv.Initialize(Object3dManager::GetInstance(), "Gate.obj", camera_);
         gates_.push_back(std::move(gv));
     }
 
@@ -1046,7 +1070,7 @@ bool StageEditorScene::LoadStageJson(const std::string& fileName) {
     if (data.hasGoalSpawnOffset) goalSys_.SetSpawnOffset(data.goalSpawnOffset);
     if (data.hasGoalPos)         goalSys_.SetGoalPos(data.goalPos);
 
-    wallSys_.BuildDebug(Object3dManager::GetInstance(), "cube.obj");
+    wallSys_.BuildDebug(Object3dManager::GetInstance(), "cube2.obj");
     nextGate_ = 0;
     return true;
 }
@@ -1302,7 +1326,33 @@ void StageEditorScene::UpdateEditorInput(float dt)
     // ========== Gate編集 ==========
     if (editMode_ == EditMode::Gate)
     {
-        if (!gates_.empty()) {
+
+        // ★ 0個のときは N で1個作れるようにする
+        if (gates_.empty()) {
+            selectedGate_ = 0;
+            nextGate_ = 0;
+
+            if (input.IsKeyTrigger(DIK_N) || input.IsKeyTrigger(DIK_C)) {
+                GateVisual gv;
+                gv.gate.pos = drone_.GetPos();
+                gv.gate.pos.z += 10.0f;
+                gv.gate.rot = { 0,0,0 };
+                gv.gate.scale = { 2,2,2 };
+                gv.gate.perfectRadius = 1.0f;
+                gv.gate.gateRadius = 2.5f;
+                gv.gate.thickness = 0.8f;
+
+                gv.Initialize(Object3dManager::GetInstance(), "Gate.obj", camera_);
+                gates_.push_back(std::move(gv));
+
+                // goal状態も戻す（任意だけど安全）
+                goalSys_.Reset();
+                stageCleared_ = false;
+            }
+            return; // ★0個時はここで終わり（下で gates_[0] を触らない）
+        }
+
+       // if (!gates_.empty()) {
             selectedGate_ = std::clamp(selectedGate_, 0, (int)gates_.size() - 1);
 
             // 選択（[ / ]）
@@ -1316,7 +1366,7 @@ void StageEditorScene::UpdateEditorInput(float dt)
                 GateVisual gv;
                 gv.gate = g;                 // 現在のをベース
                 gv.gate.pos.z += 3.0f;
-                gv.Initialize(Object3dManager::GetInstance(), "cube.obj", camera_);
+                gv.Initialize(Object3dManager::GetInstance(), "Gate.obj", camera_);
                 gates_.insert(gates_.begin() + (selectedGate_ + 1), std::move(gv));
                 selectedGate_++;
             }
@@ -1324,7 +1374,7 @@ void StageEditorScene::UpdateEditorInput(float dt)
                 GateVisual gv;
                 gv.gate = g;
                 gv.gate.pos.z += 3.0f;
-                gv.Initialize(Object3dManager::GetInstance(), "cube.obj", camera_);
+                gv.Initialize(Object3dManager::GetInstance(), "Gate.obj", camera_);
                 gates_.insert(gates_.begin() + (selectedGate_ + 1), std::move(gv));
                 selectedGate_++;
             }
@@ -1382,7 +1432,7 @@ void StageEditorScene::UpdateEditorInput(float dt)
 
             if (input.IsKeyPressed(DIK_8)) g.thickness = std::max<float>(0.05f, g.thickness - 0.05f);
             if (input.IsKeyPressed(DIK_9)) g.thickness = g.thickness + 0.05f;
-        }
+        //}
     }
 
     // ========== Wall編集 ==========
@@ -1394,7 +1444,25 @@ void StageEditorScene::UpdateEditorInput(float dt)
         if (walls.empty()) {
             selectedWall_ = 0;
             wallSys_.SetSelectedIndex(-1);
-        } else
+
+            // ★ 0個のときは N/C で1個作れるようにする
+            if (input.IsKeyTrigger(DIK_N) || input.IsKeyTrigger(DIK_C)) {
+                WallSystem::Wall w;
+                w.type = WallSystem::Type::AABB;
+                w.center = drone_.GetPos();
+                w.center.y = 2.0f;
+                w.center.z += 8.0f;
+                w.half = { 2.0f, 2.0f, 0.5f };
+                w.rot = { 0,0,0 };
+
+                walls.push_back(w);
+                selectedWall_ = 0;
+                wallSys_.SetSelectedIndex(0);
+                wallSys_.BuildDebug(Object3dManager::GetInstance(), "cube2.obj");
+            }
+            return; // ★0個時はここで終わり（下で walls[selectedWall_] を触らない）
+        }
+
         {
             // まず同期（クリック選択後も確実に反映）
             selectedWall_ = std::clamp(selectedWall_, 0, (int)walls.size() - 1);
@@ -1417,7 +1485,7 @@ void StageEditorScene::UpdateEditorInput(float dt)
                 selectedWall_++;
 
                 wallSys_.SetSelectedIndex(selectedWall_); // ★追加後も同期
-                wallSys_.BuildDebug(Object3dManager::GetInstance(), "cube.obj");
+                wallSys_.BuildDebug(Object3dManager::GetInstance(), "cube2.obj");
             }
 
             // 削除（Delete）
@@ -1433,7 +1501,7 @@ void StageEditorScene::UpdateEditorInput(float dt)
                         wallSys_.SetSelectedIndex(selectedWall_);
                     }
 
-                    wallSys_.BuildDebug(Object3dManager::GetInstance(), "cube.obj");
+                    wallSys_.BuildDebug(Object3dManager::GetInstance(), "cube2.obj");
                 }
             }
 
@@ -1447,7 +1515,7 @@ void StageEditorScene::UpdateEditorInput(float dt)
                 // タイプ切替（T）
                 if (input.IsKeyTrigger(DIK_T)) {
                     w2.type = (w2.type == WallSystem::Type::AABB) ? WallSystem::Type::OBB : WallSystem::Type::AABB;
-                    wallSys_.BuildDebug(Object3dManager::GetInstance(), "cube.obj");
+                    wallSys_.BuildDebug(Object3dManager::GetInstance(), "cube2.obj");
                 }
 
                 // マウス配置（P押しながら）
