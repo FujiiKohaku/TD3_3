@@ -63,6 +63,10 @@ void ResultScene::Finalize()
 
 void ResultScene::Update()
 {
+
+    // タイマー加算
+    t_ += 0.01f;
+
     // 入出力取得
     Input& input = *Input::GetInstance();
     if (input.IsKeyTrigger(DIK_F1)) {
