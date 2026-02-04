@@ -16,9 +16,27 @@ void SoundManager::Initialize()
 
 void SoundManager::Finalize()
 {
+    if (seVoice_) {
+        seVoice_->Stop();
+        seVoice_->DestroyVoice();
+        seVoice_ = nullptr;
+    }
+
+    if (bgmVoice_) {
+        bgmVoice_->Stop();
+        bgmVoice_->DestroyVoice();
+        bgmVoice_ = nullptr;
+    }
+
+    if (masterVoice) {
+        masterVoice->DestroyVoice();
+        masterVoice = nullptr;
+    }
+
     xAudio2.Reset();
-    MFShutdown();
 }
+
+
 
 // チャンクヘッダ
 struct ChunkHeader {
@@ -232,8 +250,18 @@ void SoundManager::PlayBGM(const SoundData& soundData, float volume)
 
     bgmVoice_->Start();
 
-    // ★ どのBGMを再生しているか記録
+    // どのBGMを再生しているか記録
     currentBgm_ = &soundData;
+}
+void SoundManager::StopBGMAll()
+{
+    if (!bgmVoice_) {
+        return;
+    }
+
+    bgmVoice_->Stop();
+    bgmVoice_->FlushSourceBuffers();
+    currentBgm_ = nullptr;
 }
 
 

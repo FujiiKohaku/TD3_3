@@ -25,6 +25,18 @@ static std::wstring Utf8ToWide_(const std::string& s)
     return out;
 }
 
+static std::string WideToUtf8_(const std::wstring& ws)
+{
+    if (ws.empty()) return {};
+    int size = WideCharToMultiByte(CP_UTF8, 0, ws.data(), (int)ws.size(),
+        nullptr, 0, nullptr, nullptr);
+    std::string out(size, '\0');
+    WideCharToMultiByte(CP_UTF8, 0, ws.data(), (int)ws.size(),
+        out.data(), size, nullptr, nullptr);
+    return out;
+}
+
+
 static std::string SanitizeFileNameUtf8_(std::string s)
 {
     const char* bad = "\\/:*?\"<>|";
@@ -38,18 +50,49 @@ static std::string SanitizeFileNameUtf8_(std::string s)
 }
 
 static std::filesystem::path MakeStagePath_(const std::string& fileNameUtf8) {
-    std::string safe = SanitizeFileNameUtf8_(fileNameUtf8);
 
-    // 拡張子が無ければ付ける
-    if (safe.find(".json") == std::string::npos) {
-        safe += ".json";
+    // ベースディレクトリ
+    const std::filesystem::path baseDir = std::filesystem::path(L"resources") / L"stage";
+    std::filesystem::create_directories(baseDir);
+
+    // 入力を path として解釈（例: "_test/__test_play.json"）
+    std::filesystem::path in = Utf8ToWide_(fileNameUtf8);
+
+    // ★絶対パス禁止
+    if (in.is_absolute()) {
+        in = in.filename(); // 念のためファイル名だけに落とす
     }
 
-    std::filesystem::path dir = std::filesystem::path(L"resources") / L"stage";
-    std::filesystem::create_directories(dir); // LoadでもあってOK（害なし）
+    // ★危険な ".." を禁止（親ディレクトリへ抜けるのを防ぐ）
+    for (const auto& part : in) {
+        if (part == L"..") {
+            in = L"stage.json"; // 強制的に安全名へ
+            break;
+        }
+    }
 
-    return dir / Utf8ToWide_(safe);
+    // 拡張子が無ければ .json を付ける（入力末尾に対して）
+    if (!in.has_extension()) {
+        in += L".json";
+    }
+
+    // ★パスの各要素をサニタイズ（フォルダ名もファイル名も）
+    std::filesystem::path safeRel;
+    for (const auto& part : in) {
+        std::string utf8 = WideToUtf8_(part.wstring());
+        utf8 = SanitizeFileNameUtf8_(utf8);   // 既存関数を流用
+        safeRel /= Utf8ToWide_(utf8);
+    }
+
+    // 最終パス：resources/stage/<safeRel>
+    std::filesystem::path out = baseDir / safeRel;
+
+    // ★保存時に必要なディレクトリを作れるようにしておく
+    std::filesystem::create_directories(out.parent_path());
+
+    return out;
 }
+
 
 
 namespace StageIO

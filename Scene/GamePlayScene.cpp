@@ -394,10 +394,13 @@ void GamePlayScene::Update()
     // BackSpace : エディターへ戻る（テスト時のみ）
     // =========================
     if (sm->IsTestPlay() && input.IsKeyTrigger(DIK_BACKSPACE)) {
-        sm->SetTestPlay(false);                // ★戻るので解除
+        sm->SetTestPlay(false);
+
+        sm->RequestOpenEditorFile("_test/__test_play.json"); // ★戻ったらテストファイルを開く
         sm->SetNextScene(new StageEditorScene());
         return;
     }
+
 
 
     // ドローン更新（※これが無いとカメラも動かない）
@@ -834,14 +837,15 @@ void GamePlayScene::Draw3D()
     }
 
     landingEffect_.Draw();
-
+ 
+    if (drawWallDebug_) {
+        wallSys_.DrawDebug();
+    }
     Object3dManager::GetInstance()->SetBlendMode(kBlendModeAdd);
     Object3dManager::GetInstance()->SetGlowPSO();
     goalSys_.Draw();
 
-    if (drawWallDebug_) {
-        wallSys_.DrawDebug();
-    }
+  
     particleGate_.Draw();
     // sphere_->Draw(DirectXCommon::GetInstance()->GetCommandList());
     Object3dManager::GetInstance()->SetBlendMode(kBlendModeNone);
@@ -922,11 +926,8 @@ void GamePlayScene::Finalize()
         delete compassB_;
         compassB_ = nullptr;
     }
+    SoundManager::GetInstance()->StopBGMAll();
 
-    // テストBGM
-    SoundManager::GetInstance()->SoundUnload(&bgm);
-    // ドローンの音声
-    SoundManager::GetInstance()->SoundUnload(&DronePropellerSound_);
 }
 void GamePlayScene::UpdateDronePointLight()
 {
@@ -1176,6 +1177,14 @@ void GamePlayScene::DrawAltimeter_()
         std::snprintf(buf, sizeof(buf), "HEIGHT%.1f", alt);
         font_.DrawString(x, y - 24.0f, buf, 0.7f);
     }
+
+    //次の場所
+    {
+
+
+
+    }
+
 }
 
 void GamePlayScene::DrawSpeedSimple_()

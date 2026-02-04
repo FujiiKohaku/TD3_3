@@ -4,6 +4,8 @@
 #include "Camera.h"
 #include "SceneManager.h"
 #include <memory>
+
+#include "../audio/SoundManager.h"  
 class TitleScene : public BaseScene {
 public:
     void Initialize() override;
@@ -31,4 +33,7 @@ private:
     Vector3 pos1 = {};
     Vector3 rotate1 = {};
     Vector3 scale1 = {};
+
+    SoundData bgmTitle_;
+
 };

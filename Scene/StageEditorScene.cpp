@@ -399,6 +399,16 @@ void StageEditorScene::Initialize()
         }
     }
 
+    {
+        auto* sm = SceneManager::GetInstance();
+        std::string openFile;
+        if (sm->ConsumeOpenEditorFile(openFile)) {
+            stageFile_ = openFile;          // ★ここで切り替え
+        }
+    }
+
+    // ★必ず stageFile_ をロード
+    LoadStageJson(stageFile_);
 
 }
 
@@ -1211,15 +1221,19 @@ void StageEditorScene::UpdateEditorInput(float dt)
 // =========================
     if (input.IsKeyTrigger(DIK_F7)) {
 
-        SaveStageJson(stageFile_);
+        const std::string testFile = "_test/__test_play.json";
+
+        // ★いまの編集内容を「テスト用ファイル」に保存
+        SaveStageJson(testFile);
 
         auto* sm = SceneManager::GetInstance();
-        sm->SetSelectedStageFile(stageFile_);
-        sm->SetTestPlay(true);                 // ★テスト開始
-
+        sm->SetSelectedStageFile(testFile);
+        sm->SetTestPlay(true);
         sm->SetNextScene(new GamePlayScene());
+
         return;
     }
+
 
 
 
@@ -1323,11 +1337,19 @@ void StageEditorScene::UpdateEditorInput(float dt)
             }*/
 
             if (input.IsKeyTrigger(DIK_DELETE)) {
-                if ((int)gates_.size() > 1) {
+                if (!gates_.empty()) {
                     gates_.erase(gates_.begin() + selectedGate_);
-                    selectedGate_ = std::clamp(selectedGate_, 0, (int)gates_.size() - 1);
+
+                    if (gates_.empty()) {
+                        selectedGate_ = 0;
+                        nextGate_ = 0;
+                        goalSys_.Reset();       // ★ゲート0ならゴール未達扱い
+                        stageCleared_ = false;
+                    } else {
+                        selectedGate_ = std::clamp(selectedGate_, 0, (int)gates_.size() - 1);
+                        nextGate_ = std::clamp(nextGate_, 0, (int)gates_.size() - 1);
+                    }
                 }
-                // else: 1個しかないので消さない
             }
 
 
@@ -1400,14 +1422,21 @@ void StageEditorScene::UpdateEditorInput(float dt)
 
             // 削除（Delete）
             if (input.IsKeyTrigger(DIK_DELETE)) {
-                if ((int)walls.size() > 1) {
+                if (!walls.empty()) {
                     walls.erase(walls.begin() + selectedWall_);
-                    selectedWall_ = std::clamp(selectedWall_, 0, (int)walls.size() - 1);
-                    wallSys_.SetSelectedIndex(selectedWall_);
+
+                    if (walls.empty()) {
+                        selectedWall_ = 0;
+                        wallSys_.SetSelectedIndex(-1); // ★未選択状態
+                    } else {
+                        selectedWall_ = std::clamp(selectedWall_, 0, (int)walls.size() - 1);
+                        wallSys_.SetSelectedIndex(selectedWall_);
+                    }
+
                     wallSys_.BuildDebug(Object3dManager::GetInstance(), "cube.obj");
                 }
-                // else: 1個しかないので消さない
             }
+
 
 
             // （削除で walls が空になった可能性があるのでガード）
