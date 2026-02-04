@@ -298,8 +298,8 @@ void SoundManager::StopBGMAll()
     bgmVoice_->Stop();
     bgmVoice_->FlushSourceBuffers();
     currentBgm_ = nullptr;
-    playedSE_.clear();
 }
+
 
 
 

@@ -35,5 +35,7 @@ private:
     Vector3 scale1 = {};
 
     SoundData bgmTitle_;
+    bool isSceneChanging_ = false;
 
+    SoundData se_;
 };

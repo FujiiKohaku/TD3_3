@@ -83,15 +83,22 @@ void TitleScene::Initialize()
     drone_->Initialize(Object3dManager::GetInstance());
     drone_->SetModel("Drone/dolone.obj");
 
+
+    se_ = SoundManager::GetInstance()->SoundLoadFile("resources/selectTitle.mp3");
+
+
     bgmTitle_ = SoundManager::GetInstance()->SoundLoadFile("resources/titleSceneBGM.mp3");
 
     SoundManager::GetInstance()->PlayBGM(bgmTitle_, 0.5f);
+
+    
 }
 
 void TitleScene::Update()
 {
     if (Input::GetInstance()->IsKeyTrigger(DIK_SPACE)) {
         // まずはフェードアウト開始！
+        SoundManager::GetInstance()->PlaySE(se_, 1.0f);
         FadeManager::GetInstance()->StartFadeOut(1.0f); 
     }
 
@@ -281,10 +288,11 @@ void TitleScene::DrawImGui()
 
 void TitleScene::Finalize()
 {
+    SoundManager::GetInstance()->StopBGM(bgmTitle_);
     delete camera_;
     delete outShellModel_;
     delete homeModel_;
     delete railModel_;
     delete drone_;
-    SoundManager::GetInstance()->StopBGMAll();
+  
 }
