@@ -123,8 +123,14 @@ void Sprite::Update()
 // ================================
 void Sprite::Draw()
 {
-    ID3D12GraphicsCommandList* commandList = spriteManager_->GetDxCommon()->GetCommandList();
+    assert(spriteManager_);
+    auto* dx = spriteManager_->GetDxCommon();
+    assert(dx);
+    ID3D12GraphicsCommandList* commandList = dx->GetCommandList();
+    assert(commandList);
 
+    assert(transformationMatrixResource);   // ★ここが落ちるなら未作成/解放済み
+    assert(materialResource);
     commandList->IASetVertexBuffers(0, 1, &vertexBufferView);
     commandList->IASetIndexBuffer(&indexBufferView);
 

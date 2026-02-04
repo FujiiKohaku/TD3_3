@@ -6,14 +6,23 @@ static float LengthSq3(const Vector3& v) {
     return v.x * v.x + v.y * v.y + v.z * v.z;
 }
 
+#include "ModelManager.h"
+
 void GoalSystem::Initialize(Object3dManager* objMgr, Camera* camera, const char* modelName) {
     objMgr_ = objMgr;
     camera_ = camera;
+
+    // ★これを追加
+    ModelManager::GetInstance()->LoadModel(modelName);
 
     if (!goalObj_) {
         goalObj_ = new Object3d();
         goalObj_->Initialize(objMgr_);
         goalObj_->SetModel(modelName);
+
+        // ★FindModel失敗を検出したいなら（Object3dにGetModelが無ければ後述②）
+        // assert(goalObj_->HasModel());
+
         goalObj_->SetScale(goalScale_);
         goalObj_->SetTranslate(goalPos_);
         goalObj_->Update();
@@ -61,6 +70,11 @@ void GoalSystem::Update(const std::vector<GateVisual>& gates, int nextGate, cons
     //    // 消したいなら：active_=false;
     //    return;
     //}
+
+    if (!goalObj_) {
+        // モデル未設定なら何もしない
+        return;
+    }
 
      // ★エディタでは常に表示：ゲート全通過条件を無視
     if (editorAlwaysVisible_) {
