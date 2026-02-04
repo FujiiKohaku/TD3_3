@@ -382,7 +382,8 @@ void GamePlayScene::Update()
         // タイトルへ戻る要求が出たらシーン切り替え
         if (requestBackToTitle_) {
             // ここも「まだ始まっていないなら」というガードを入れるのが無難でやんす
-            if (FadeManager::GetInstance()->GetStatus() != FadeManager::Status::FadeOut) {
+            if (FadeManager::GetInstance()->GetStatus() == FadeManager::Status::FadeInFinished ||
+                FadeManager::GetInstance()->GetStatus() == FadeManager::Status::None) {
                 FadeManager::GetInstance()->StartFadeOut(1.0f);
             }
         }
