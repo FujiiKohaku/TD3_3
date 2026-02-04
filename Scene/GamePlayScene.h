@@ -52,7 +52,6 @@ private:
     // ------------------------------
     // サウンド
     // ------------------------------
-    SoundData bgm;
     SoundData DronePropellerSound_;
     SoundData gateSound_;
 
@@ -142,7 +141,9 @@ private:
 
     void InitCompass_();
     void UpdateCompass_();
-    //	void DrawCompass_();
+    Vector3 GetNavTargetPos_() const;
+
+    void UpdateGateMarkerOnCompass_();
 
     // 高さ表示
 

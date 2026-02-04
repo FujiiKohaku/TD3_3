@@ -87,7 +87,10 @@ void Drone::UpdateMode1(const Input& input, float dt) {
 	//    前進したい → 前傾（pitchはマイナス）
 	//    右に移動したい → 右ロール（rollはプラス）
 	// -------------------------
+	// 前(W)を押したときに Pitch をマイナス（前傾）にする
 	const float targetPitch = -inForward * maxTiltRad_;
+
+	// 右(D)を押したときに Roll をプラス（右傾）にする
 	const float targetRoll = inStrafe * maxTiltRad_;
 
 	// -------------------------
@@ -131,8 +134,11 @@ void Drone::UpdateMode1(const Input& input, float dt) {
 	const Vector3 forward{ s, 0.0f, c };
 	const Vector3 right{ c, 0.0f, -s };
 
-	const float aF = gravity_ * std::tanf(-pitch_); // pitchがマイナス(前傾)で前に加速
-	const float aR = gravity_ * std::tanf(roll_);  // rollプラスで右に加速
+	// pitchがマイナス（前傾）のとき、forward方向にプラスの加速をしたいので負をかける
+	const float aF = gravity_ * std::tanf(-pitch_);
+
+	// rollがプラス（右傾）のとき、right方向にプラスの加速をしたいのでそのまま使う
+	const float aR = gravity_ * std::tanf(roll_);
 
 	Vector3 acc{};
 	acc.x = forward.x * aF + right.x * aR;

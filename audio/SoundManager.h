@@ -8,6 +8,7 @@
 #include <wrl.h>
 #include <xaudio2.h>
 #pragma comment(lib, "xaudio2.lib")
+#include <unordered_set>
 
 // ===== Media Foundation =====
 #include <mfapi.h>
@@ -59,6 +60,8 @@ public:
 
     void StopBGM(const SoundData& soundData);
     void StopBGMAll();
+    //void ResetSE(const SoundData& soundData);
+    void Update();
 
 private:
     // シングルトン用
@@ -77,4 +80,8 @@ private:
 
     Microsoft::WRL::ComPtr<IXAudio2> xAudio2;
     IXAudio2MasteringVoice* masterVoice = nullptr;
+
+    std::unordered_set<const SoundData*> playedSE_;
+
+     std::vector<IXAudio2SourceVoice*> activeVoices_;
 };

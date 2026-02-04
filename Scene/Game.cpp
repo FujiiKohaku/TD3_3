@@ -37,6 +37,7 @@ void Game::Initialize()
     ModelManager::GetInstance()->LoadModel("fence.obj");
     ModelManager::GetInstance()->LoadModel("terrain.obj");
     ModelManager::GetInstance()->LoadModel("cube.obj");
+    ModelManager::GetInstance()->LoadModel("cube2.obj");
     ModelManager::GetInstance()->LoadModel("Gate.obj");
     TextureManager::GetInstance()->LoadTexture("resources/uvChecker.png");
     TextureManager::GetInstance()->LoadTexture("resources/uvChecker.png");
@@ -54,6 +55,10 @@ void Game::Update()
 {
     // ======== ImGui begin ========
     ImGuiManager::GetInstance()->Begin();
+    // -------------------------------
+    // サウンド更新
+      
+    SoundManager::GetInstance()->Update();
 
     // --- ゲーム更新 ---
     Input::GetInstance()->Update();

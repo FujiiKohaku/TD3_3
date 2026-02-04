@@ -1,4 +1,4 @@
-# Blender 4.4.1 MTL File: 'dolone.blend'
+# Blender 4.4.1 MTL File: 'None'
 # www.blender.org
 
 newmtl マテリアル
@@ -9,7 +9,7 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.500000
 d 1.000000
 illum 2
-map_Kd Propeller_lf/frameUV.png
+map_Kd frameUV.png
 
 newmtl マテリアル.001
 Ns 250.000000
@@ -59,7 +59,7 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.500000
 d 1.000000
 illum 2
-map_Kd Propeller_rb/frameUV.png
+map_Kd frameUV.png
 
 newmtl マテリアル.006
 Ns 250.000000
@@ -79,7 +79,7 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.500000
 d 1.000000
 illum 2
-map_Kd Propeller_lb/frameUV.png
+map_Kd frameUV.png
 
 newmtl マテリアル.008
 Ns 250.000000
