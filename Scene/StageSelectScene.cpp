@@ -23,6 +23,7 @@
 #include <filesystem>
 #include <vector>
 
+static SoundData se_;
 // -------------------- wide -> utf8 --------------------
 std::string StageSelectScene::WideToUtf8_(const std::wstring& ws)
 {
@@ -194,7 +195,7 @@ void StageSelectScene::Initialize() {
     selectSeData_ = SoundManager::GetInstance()->SoundLoadFile("resources/Select.mp3");
 
     bgm = SoundManager::GetInstance()->SoundLoadFile("Resources/BGM.wav");
-
+    se_ = SoundManager::GetInstance()->SoundLoadFile("resources/maou_se_system49.mp3");
 }
 
 void StageSelectScene::Finalize()
@@ -335,6 +336,7 @@ void StageSelectScene::Update()
     }
 
 	if (input.IsKeyTrigger(DIK_SPACE)) {
+        SoundManager::GetInstance()->PlaySE(se_, 1.0f);
 		FadeManager::GetInstance()->StartFadeOut(1.0f);
 		Decide_();
 	}

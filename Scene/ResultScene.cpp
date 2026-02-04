@@ -8,6 +8,7 @@
 #include "SpriteManager.h"
 #include "StageSelectScene.h"
 
+static SoundData bgmData_;
 ResultScene::ResultScene(int perfectCount, int goodCount)
 {
     perfectCount_ = perfectCount;
@@ -21,6 +22,16 @@ ResultScene::ResultScene(int perfectCount, int goodCount)
 
 void ResultScene::Initialize()
 {
+    SoundManager::GetInstance()->StopSE();
+    fanfareCount_ = 0;
+    fanfareTimer_ = 0.0f;
+
+    bgmData_ = SoundManager::GetInstance()->SoundLoadFile("resources/result.mp3");
+
+ 
+
+    SoundManager::GetInstance()->PlaySE(bgmData_, 1.0f);
+    fanfareCount_ = 1;
     // シーン開始時に、1秒かけて明るくするでやんす！
     FadeManager::GetInstance()->StartFadeIn(1.0f);
     ModelManager::GetInstance()->LoadModel("skydome.obj");
@@ -54,36 +65,35 @@ void ResultScene::Initialize()
     font_->SetColor({ 1, 1, 1, 1 }); // 見やすい色（好きに）
 
     bgmData_ = SoundManager::GetInstance()->SoundLoadFile("resources/result.mp3");
-    SoundManager::GetInstance()->PlaySE(bgmData_, 1.0);
+   
 
-    fanfareCount_ = 1;
-    fanfareTimer_ = 0.0f;
 }
 
 void ResultScene::Finalize()
 {
 
     SoundManager::GetInstance()->StopBGMAll();
-    LightManager::GetInstance()->Finalize();
+  
 }
 
 void ResultScene::Update()
 {
-    // 入出力取得
     Input& input = *Input::GetInstance();
     if (input.IsKeyTrigger(DIK_SPACE)) {
-        // まずはフェードアウト開始！
         FadeManager::GetInstance()->StartFadeOut(1.0f);
     }
-    if (fanfareCount_ <= 2) {
+
+    // ★ここを修正
+    if (fanfareCount_ == 1) {
         fanfareTimer_ += 1.0f / 60.0f;
 
-        if (fanfareTimer_ >= 2.0f) { // 1秒後にもう一回
+        if (fanfareTimer_ >= 2.0f) {
             SoundManager::GetInstance()->PlaySE(bgmData_, 1.0f);
-            fanfareCount_++;
+            fanfareCount_ = 2; // ★ここが重要
         }
     }
-    // タイマーを 0.0 から 1.0 まで進める
+
+    // 以下そのまま
     if (animationTimer_ < 1.0f) {
         animationTimer_ += 1.0f / 60.0f * kAnimSpeed;
         if (animationTimer_ > 1.0f)
@@ -93,10 +103,9 @@ void ResultScene::Update()
     FadeManager::GetInstance()->Update();
     camera_->Update();
     skydome_->Update();
-
     perfect_->Update();
     good_->Update();
-    // フェードアウトが終わったらシーン切り替え
+
     if (FadeManager::GetInstance()->GetStatus() == FadeManager::Status::FadeOutFinished) {
         SceneManager::GetInstance()->SetNextScene(new StageSelectScene());
     }

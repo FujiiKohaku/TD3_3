@@ -536,7 +536,7 @@ void GamePlayScene::Update()
             stageCleared_ = false;
 
             stageCleared_ = true;
-            SoundManager::GetInstance()->PlaySE(gateSound_, 1.0f);
+           // SoundManager::GetInstance()->PlaySE(gateSound_, 1.0f);
             // ここで「リザルトへ遷移」「SE」「フェード」等を入れる
             // 例：次シーンへ
             // SceneManager::GetInstance()->SetNextScene(new ResultScene(perfectCount_, goodCount_));
