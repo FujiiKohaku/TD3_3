@@ -7,6 +7,7 @@
 #include "Sprite.h"
 #include "TitleScene.h"
 #include "StageEditorScene.h"
+#include "FadeManager.h"
 
 #include"../audio/SoundManager.h"
 class StageSelectScene : public BaseScene {

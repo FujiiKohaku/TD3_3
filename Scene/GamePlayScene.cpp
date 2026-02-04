@@ -910,8 +910,8 @@ void GamePlayScene::Draw3D() {
 	particleGate_.Draw();
 	// sphere_->Draw(DirectXCommon::GetInstance()->GetCommandList());
 	Object3dManager::GetInstance()->SetBlendMode(kBlendModeNone);
-	ParticleManager::GetInstance()->PreDraw();
-	ParticleManager::GetInstance()->Draw();
+	//ParticleManager::GetInstance()->PreDraw();
+	//ParticleManager::GetInstance()->Draw();
 }
 
 void GamePlayScene::Draw2D() {
