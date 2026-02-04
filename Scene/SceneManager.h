@@ -48,6 +48,10 @@ public:
 
     void DrawImGui();
 
+    // テストプレイフラグ
+    void SetTestPlay(bool v) { isTestPlay_ = v; }
+    bool IsTestPlay() const { return isTestPlay_; }
+
     void SetSelectedStageFile(const std::string& file) { selectedStageFile_ = file; }
     const std::string& GetSelectedStageFile() const { return selectedStageFile_; }
 
@@ -63,6 +67,9 @@ private:
     BaseScene* scene_ = nullptr;
     BaseScene* nextScene_ = nullptr;
     std::string selectedStageFile_;
+
+    bool isTestPlay_ = false;
+
     ThumbnailRequest thumb_;
 
 };

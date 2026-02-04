@@ -5,6 +5,8 @@
 #include <string>
 #include "Camera.h"
 #include "Sprite.h"
+#include "TitleScene.h"
+#include "StageEditorScene.h"
 
 class StageSelectScene : public BaseScene {
 public:

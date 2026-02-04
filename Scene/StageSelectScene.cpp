@@ -273,6 +273,11 @@ void StageSelectScene::Update() {
 		SceneManager::GetInstance()->SetNextScene(new TitleScene());
 	}
 
+
+	if (Input::GetInstance()->IsKeyPressed(DIK_E)) {
+		SceneManager::GetInstance()->SetNextScene(new StageEditorScene());
+	}
+
 	DrawImGui();
 }
 

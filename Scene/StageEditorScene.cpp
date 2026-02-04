@@ -273,7 +273,7 @@ static void RenderTextToRGBA_GDI(
 void StageEditorScene::Initialize()
 {
 
-    LightManager::GetInstance()->Initialize(DirectXCommon::GetInstance());
+  //  LightManager::GetInstance()->Initialize(DirectXCommon::GetInstance());
 
 
     // -------------------------
@@ -389,6 +389,16 @@ void StageEditorScene::Initialize()
     stageNameSprite_->SetPosition({ 16.0f, 16.0f });
     stageNameSprite_->SetSize({1280, 720.0f }); // 必要なら調整
 
+    {
+        auto* sm = SceneManager::GetInstance();
+        const std::string& sel = sm->GetSelectedStageFile();
+
+        if (!sel.empty()) {
+            stageFile_ = sel;                 // ★エディタが扱うファイルを差し替え
+            LoadStageJson(stageFile_);        // ★自動で開く（失敗してもOK運用）
+        }
+    }
+
 
 }
 
@@ -396,7 +406,7 @@ void StageEditorScene::Finalize()
 {
     ParticleManager::GetInstance()->ClearAllParticles();
 
-    LightManager::GetInstance()->Finalize();
+    //LightManager::GetInstance()->Finalize();
 
     delete droneObj_;  droneObj_ = nullptr;
     delete camera_;    camera_ = nullptr;
@@ -474,6 +484,12 @@ void StageEditorScene::Update()
     // =========================
     // ここから下が通常更新
     // =========================
+
+    if (input.IsKeyTrigger(DIK_BACKSPACE)) {
+
+        SceneManager::GetInstance()->SetNextScene(new StageSelectScene());
+
+    }
 
     UpdateFreeCamera(dt);
 
@@ -1189,6 +1205,22 @@ void StageEditorScene::UpdateEditorInput(float dt)
         // ★ここがポイント：DirectXCommonに即保存させない。予約だけ。
         SceneManager::GetInstance()->RequestThumbnail(out.wstring(), 512, 288);
     }
+
+    // =========================
+// F7 : テストプレイ
+// =========================
+    if (input.IsKeyTrigger(DIK_F7)) {
+
+        SaveStageJson(stageFile_);
+
+        auto* sm = SceneManager::GetInstance();
+        sm->SetSelectedStageFile(stageFile_);
+        sm->SetTestPlay(true);                 // ★テスト開始
+
+        sm->SetNextScene(new GamePlayScene());
+        return;
+    }
+
 
 
     const bool fast = input.IsKeyPressed(DIK_LSHIFT);

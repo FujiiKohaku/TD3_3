@@ -88,10 +88,6 @@ void TitleScene::Update()
         SceneManager::GetInstance()->SetNextScene(new StageSelectScene());
     }
 
-    if (Input::GetInstance()->IsKeyPressed(DIK_E)) {
-        SceneManager::GetInstance()->SetNextScene(new StageEditorScene());
-    }
-
     // titleModel->Update();
     camera_->Update();
 
