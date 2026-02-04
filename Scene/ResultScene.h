@@ -6,6 +6,7 @@
 #include "Sprite.h"
 #include "BitmapFont.h"
 
+#include "../audio/SoundManager.h"
 class ResultScene : public BaseScene {
 public:
 	ResultScene(int perfectCount, int goodCount);
@@ -42,4 +43,6 @@ private:
 	float animationTimer_ = 0.0f;
 	// アニメーション速度（1.0f で 1秒、2.0f で 0.5秒）
 	const float kAnimSpeed = 0.25f;
+
+	SoundData bgmData_;
 };

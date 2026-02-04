@@ -499,7 +499,7 @@ void GamePlayScene::Update()
 
         if (goalSys_.IsCleared()) {
             stageCleared_ = true;
-
+            SoundManager::GetInstance()->PlaySE(gateSound_, 1.0f);
             // ここで「リザルトへ遷移」「SE」「フェード」等を入れる
             // 例：次シーンへ
             SoundManager::GetInstance()->StopBGM(DronePropellerSound_);
