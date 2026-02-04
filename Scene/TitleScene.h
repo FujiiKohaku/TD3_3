@@ -34,6 +34,6 @@ private:
     Vector3 rotate1 = {};
     Vector3 scale1 = {};
 
-    SoundData bgmTitle_;
+   
 
 };

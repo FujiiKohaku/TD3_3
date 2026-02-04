@@ -7,7 +7,7 @@
 #include "StageSelectScene.h"
 #include <numbers>
 #include "FadeManager.h"
-
+static SoundData bgmTitle_;
 void TitleScene::Initialize()
 {
     float deltaTime;
