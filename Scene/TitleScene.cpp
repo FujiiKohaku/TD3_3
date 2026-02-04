@@ -90,7 +90,7 @@ void TitleScene::Update()
 {
     if (Input::GetInstance()->IsKeyPressed(DIK_SPACE)) {
         SceneManager::GetInstance()->SetNextScene(new StageSelectScene());
-        SoundManager::GetInstance()->StopBGM(bgmTitle_);
+        SoundManager::GetInstance()->StopBGMAll();
        
     }
 
@@ -275,5 +275,5 @@ void TitleScene::Finalize()
     delete homeModel_;
     delete railModel_;
     delete drone_;
-
+    SoundManager::GetInstance()->StopBGMAll();
 }

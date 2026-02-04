@@ -253,6 +253,16 @@ void SoundManager::PlayBGM(const SoundData& soundData, float volume)
     // どのBGMを再生しているか記録
     currentBgm_ = &soundData;
 }
+void SoundManager::StopBGMAll()
+{
+    if (!bgmVoice_) {
+        return;
+    }
+
+    bgmVoice_->Stop();
+    bgmVoice_->FlushSourceBuffers();
+    currentBgm_ = nullptr;
+}
 
 
 

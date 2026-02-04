@@ -58,6 +58,7 @@ public:
     void PlayBGM(const SoundData& soundData, float volume);
 
     void StopBGM(const SoundData& soundData);
+    void StopBGMAll();
 
 private:
     // シングルトン用
