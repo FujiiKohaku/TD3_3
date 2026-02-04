@@ -922,10 +922,7 @@ void GamePlayScene::Finalize()
         compassB_ = nullptr;
     }
 
-    // テストBGM
-    SoundManager::GetInstance()->SoundUnload(&bgm);
-    // ドローンの音声
-    SoundManager::GetInstance()->SoundUnload(&DronePropellerSound_);
+
 }
 void GamePlayScene::UpdateDronePointLight()
 {

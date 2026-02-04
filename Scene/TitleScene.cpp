@@ -20,7 +20,7 @@ void TitleScene::Initialize()
 
     // モデル読み込み
     ModelManager::GetInstance()->LoadModel("terrain.obj");
-   
+
     // Object3d 生成 & 初期化
 
     // Light
@@ -64,7 +64,7 @@ void TitleScene::Initialize()
     scale1 = { 0.6f, 0.6f, 0.5f };
     rotate1 = { 0.0f, -0.54f, 0.0f };
     pos1 = { -11.0f, 4.0f, 1.5f };
-    
+
     doroso_->SetTranslate(pos1);
     doroso_->SetRotate(rotate1);
     doroso_->SetScale(scale1);
@@ -80,12 +80,18 @@ void TitleScene::Initialize()
     drone_ = new Object3d();
     drone_->Initialize(Object3dManager::GetInstance());
     drone_->SetModel("Drone/dolone.obj");
+
+    bgmTitle_ = SoundManager::GetInstance()->SoundLoadFile("resources/titleSceneBGM.mp3");
+
+    SoundManager::GetInstance()->PlayBGM(bgmTitle_, 0.5f);
 }
 
 void TitleScene::Update()
 {
     if (Input::GetInstance()->IsKeyPressed(DIK_SPACE)) {
         SceneManager::GetInstance()->SetNextScene(new StageSelectScene());
+        SoundManager::GetInstance()->StopBGM(bgmTitle_);
+       
     }
 
     // titleModel->Update();
@@ -167,7 +173,7 @@ void TitleScene::DrawImGui()
     ImGui::DragFloat3("Rotate", &droneRot.x, 0.01f);
     ImGui::DragFloat3("Scale", &droneScale.x, 0.1f, 0.01f, 10.0f);
 
- 
+
 
     ImGui::End();
 
@@ -250,14 +256,14 @@ void TitleScene::DrawImGui()
     // float cosAngle = std::cos(spotAngleDeg * std::numbers::pi_v<float> / 180.0f);
     // float sI = spotEnabled ? spotIntensity : 0.0f;
 
-     //auto* lm = LightManager::GetInstance();
-     //lm->SetSpotLightColor(spotColor);
-     //lm->SetSpotLightPosition(spotPos);
-     //lm->SetSpotLightDirection(normalizedDir);
-     //lm->SetSpotLightIntensity(sI);
-     //lm->SetSpotLightDistance(spotDistance);
-     //lm->SetSpotLightDecay(spotDecay);
-     //lm->SetSpotLightCosAngle(cosAngle);
+    // auto* lm = LightManager::GetInstance();
+    // lm->SetSpotLightColor(spotColor);
+    // lm->SetSpotLightPosition(spotPos);
+    // lm->SetSpotLightDirection(normalizedDir);
+    // lm->SetSpotLightIntensity(sI);
+    // lm->SetSpotLightDistance(spotDistance);
+    // lm->SetSpotLightDecay(spotDecay);
+    // lm->SetSpotLightCosAngle(cosAngle);
 
     /* ImGui::End();*/
 }
@@ -269,4 +275,5 @@ void TitleScene::Finalize()
     delete homeModel_;
     delete railModel_;
     delete drone_;
+
 }
