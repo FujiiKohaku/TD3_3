@@ -18,6 +18,7 @@ void Game::Initialize()
     // TextureManager::GetInstance()->LoadTexture("resources/circle.png")
     ModelManager::GetInstance()->Initialize(DirectXCommon::GetInstance());
     Object3dManager::GetInstance()->Initialize(DirectXCommon::GetInstance());
+    SoundManager::GetInstance()->Initialize();
     // camera_ = new Camera();
     // camera_->SetTranslate({ 0.0f, 0.0f, 2.0f });
     // Object3dManager::GetInstance()->SetDefaultCamera(camera_);
@@ -128,7 +129,7 @@ void Game::Finalize()
     SrvManager::GetInstance()->Finalize();
     // DirectXCommonはFinalizeしてもデバイス破棄処理だけ。deleteは不要
     DirectXCommon::GetInstance()->Finalize();
-
+    SoundManager::GetInstance()->Finalize();
     winApp_->Finalize();
     delete winApp_;
     delete camera_;

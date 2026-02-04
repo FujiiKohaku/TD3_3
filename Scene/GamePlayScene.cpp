@@ -154,6 +154,7 @@ void GamePlayScene::Initialize()
     sprite_->SetPosition({ 100.0f, 100.0f });
     // サウンド関連
     bgm = SoundManager::GetInstance()->SoundLoadFile("Resources/BGM.wav");
+    SoundManager::GetInstance()->SoundPlayWave(bgm);  
     player2_ = new Object3d();
     player2_->Initialize(Object3dManager::GetInstance());
     player2_->SetModel("cube.obj");
