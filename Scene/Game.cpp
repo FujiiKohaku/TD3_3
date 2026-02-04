@@ -54,6 +54,10 @@ void Game::Update()
 {
     // ======== ImGui begin ========
     ImGuiManager::GetInstance()->Begin();
+    // -------------------------------
+    // サウンド更新
+      
+    SoundManager::GetInstance()->Update();
 
     // --- ゲーム更新 ---
     Input::GetInstance()->Update();

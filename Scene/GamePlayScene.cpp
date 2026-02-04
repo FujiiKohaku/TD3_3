@@ -157,9 +157,8 @@ void GamePlayScene::Initialize()
     sprite_->Initialize(SpriteManager::GetInstance(), "resources/uvChecker.png");
     sprite_->SetPosition({ 100.0f, 100.0f });
     // サウンド関連===============================
-    bgm = SoundManager::GetInstance()->SoundLoadFile("Resources/BGM.wav");
-    SoundManager::GetInstance()->PlaySE(bgm, 0.5f);
 
+   //  SoundManager::GetInstance()->ResetSE(gateSound_);
     // ドローンのプロペラ音
     DronePropellerSound_ = SoundManager::GetInstance()->SoundLoadFile("Resources/DroneBGM.mp3");
     //ゲート通過時キラキラ
@@ -338,6 +337,7 @@ void GamePlayScene::Initialize()
     // spotLight
     LightManager::GetInstance()->SetSpotLightDistance(10.0f);
     LightManager::GetInstance()->SetSpotLightIntensity(0.6f);
+    LightManager::GetInstance()->SetPointRadius(5.0f);
 }
 
 void GamePlayScene::Update()
@@ -478,7 +478,7 @@ void GamePlayScene::Update()
         g.Tick(dt);
 
         if (g.gate.GetIsHitGate() && !g.gate.playedEffect) {
-            particleGate_.Play(drone_.GetPos());
+          
 
            
             g.gate.playedEffect = true;
@@ -492,15 +492,19 @@ void GamePlayScene::Update()
     // 2) 次ゲートだけ判定
     if (nextGate_ < (int)gates_.size()) {
         GateResult res;
-        const Vector3 dronePos = drone_.GetPos(); // ★ここはあなたのドローン取得に合わせる
+        const Vector3 dronePos = drone_.GetPos(); 
 
         if (gates_[nextGate_].TryPass(dronePos, res)) {
             if (res == GateResult::Perfect) {
                 SoundManager::GetInstance()->PlaySE(gateSound_, 1.0f);
+              //  SoundManager::GetInstance()->ResetSE(gateSound_);
+                particleGate_.Play(drone_.GetPos());
                 perfectCount_++;
                 nextGate_++;
             } else if (res == GateResult::Good) {
                 SoundManager::GetInstance()->PlaySE(gateSound_, 1.0f);
+               // SoundManager::GetInstance()->ResetSE(gateSound_);
+                particleGate_.Play(drone_.GetPos());
                 goodCount_++;
                 nextGate_++;
             } else {
@@ -520,10 +524,11 @@ void GamePlayScene::Update()
         if (FadeManager::GetInstance()->GetStatus() == FadeManager::Status::FadeOutFinished) {
             stageCleared_ = false;
 
+            stageCleared_ = true;
+            SoundManager::GetInstance()->PlaySE(gateSound_, 1.0f);
             // ここで「リザルトへ遷移」「SE」「フェード」等を入れる
             // 例：次シーンへ
-            SoundManager::GetInstance()->StopBGM(DronePropellerSound_);
-            SceneManager::GetInstance()->SetNextScene(new ResultScene(perfectCount_, goodCount_));
+           // SceneManager::GetInstance()->SetNextScene(new ResultScene(perfectCount_, goodCount_));
             auto* sm = SceneManager::GetInstance();
             if (sm->IsTestPlay()) {
                 // ★テスト中：リザルトへ行かない
@@ -863,13 +868,13 @@ void GamePlayScene::Draw3D()
 
     landingEffect_.Draw();
  
-    if (drawWallDebug_) {
-        wallSys_.DrawDebug();
-    }
+
     Object3dManager::GetInstance()->SetBlendMode(kBlendModeAdd);
     Object3dManager::GetInstance()->SetGlowPSO();
     goalSys_.Draw();
-
+    if (drawWallDebug_) {
+        wallSys_.DrawDebug();
+    }
   
     particleGate_.Draw();
     // sphere_->Draw(DirectXCommon::GetInstance()->GetCommandList());

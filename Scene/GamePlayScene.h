@@ -52,7 +52,6 @@ private:
     // ------------------------------
     // サウンド
     // ------------------------------
-    SoundData bgm;
     SoundData DronePropellerSound_;
     SoundData gateSound_;
 

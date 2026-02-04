@@ -8,6 +8,7 @@
 #include "TitleScene.h"
 #include "StageEditorScene.h"
 
+#include"../audio/SoundManager.h"
 class StageSelectScene : public BaseScene {
 public:
     void Initialize() override;
@@ -77,5 +78,7 @@ private:
         int fontSizePx = 32
     );
 
+    SoundData selectSeData_;
+    SoundData bgm;
 
 };
