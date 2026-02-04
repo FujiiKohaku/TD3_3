@@ -9,9 +9,10 @@
 #include <fstream>
 #include <string>
 
-#include "TitleScene.h"
 #include "FadeManager.h"
-
+#include "TitleScene.h"
+static SoundData DronePropellerSound_;
+static SoundData gateSound_;
 #pragma region 関数
 using json = nlohmann::json;
 
@@ -158,10 +159,10 @@ void GamePlayScene::Initialize()
     sprite_->SetPosition({ 100.0f, 100.0f });
     // サウンド関連===============================
 
-   //  SoundManager::GetInstance()->ResetSE(gateSound_);
+    //  SoundManager::GetInstance()->ResetSE(gateSound_);
     // ドローンのプロペラ音
     DronePropellerSound_ = SoundManager::GetInstance()->SoundLoadFile("Resources/DroneBGM.mp3");
-    //ゲート通過時キラキラ
+    // ゲート通過時キラキラ
     gateSound_ = SoundManager::GetInstance()->SoundLoadFile("Resources/GateCollision.mp3");
     //==========================================
     player2_ = new Object3d();
@@ -339,8 +340,8 @@ void GamePlayScene::Initialize()
     LightManager::GetInstance()->SetSpotLightIntensity(0.6f);
 
     // ===================
-// Gate/Goal marker (NEW)
-// ===================
+    // Gate/Goal marker (NEW)
+    // ===================
     TextureManager::GetInstance()->LoadTexture(gateMarkerCompassPath_);
     gateMarkerCompass_ = new Sprite();
     gateMarkerCompass_->Initialize(SpriteManager::GetInstance(), gateMarkerCompassPath_);
@@ -354,8 +355,6 @@ void GamePlayScene::Initialize()
     gateMarkerAlt_->SetAnchorPoint({ 0.5f, 0.5f });
     gateMarkerAlt_->SetSize({ 22.0f, 22.0f }); // 好みで
     gateMarkerAlt_->SetRotation(0.0f);
-
-
 }
 
 void GamePlayScene::Update()
@@ -400,8 +399,7 @@ void GamePlayScene::Update()
         // タイトルへ戻る要求が出たらシーン切り替え
         if (requestBackToTitle_) {
             // ここも「まだ始まっていないなら」というガードを入れるのが無難でやんす
-            if (FadeManager::GetInstance()->GetStatus() == FadeManager::Status::FadeInFinished ||
-                FadeManager::GetInstance()->GetStatus() == FadeManager::Status::None) {
+            if (FadeManager::GetInstance()->GetStatus() == FadeManager::Status::FadeInFinished || FadeManager::GetInstance()->GetStatus() == FadeManager::Status::None) {
                 FadeManager::GetInstance()->StartFadeOut(1.0f);
             }
         }
@@ -419,8 +417,8 @@ void GamePlayScene::Update()
     }
 
     // =========================
-// BackSpace : エディターへ戻る
-// =========================
+    // BackSpace : エディターへ戻る
+    // =========================
     auto* sm = SceneManager::GetInstance();
 
     // =========================
@@ -433,8 +431,6 @@ void GamePlayScene::Update()
         sm->SetNextScene(new StageEditorScene());
         return;
     }
-
-
 
     // ドローン更新（※これが無いとカメラも動かない）
     if (isDebug_) {
@@ -496,9 +492,7 @@ void GamePlayScene::Update()
         g.Tick(dt);
 
         if (g.gate.GetIsHitGate() && !g.gate.playedEffect) {
-          
 
-           
             g.gate.playedEffect = true;
         }
 
@@ -510,18 +504,18 @@ void GamePlayScene::Update()
     // 2) 次ゲートだけ判定
     if (nextGate_ < (int)gates_.size()) {
         GateResult res;
-        const Vector3 dronePos = drone_.GetPos(); 
+        const Vector3 dronePos = drone_.GetPos();
 
         if (gates_[nextGate_].TryPass(dronePos, res)) {
             if (res == GateResult::Perfect) {
                 SoundManager::GetInstance()->PlaySE(gateSound_, 1.0f);
-              //  SoundManager::GetInstance()->ResetSE(gateSound_);
+                //  SoundManager::GetInstance()->ResetSE(gateSound_);
                 particleGate_.Play(drone_.GetPos());
                 perfectCount_++;
                 nextGate_++;
             } else if (res == GateResult::Good) {
                 SoundManager::GetInstance()->PlaySE(gateSound_, 1.0f);
-               // SoundManager::GetInstance()->ResetSE(gateSound_);
+                // SoundManager::GetInstance()->ResetSE(gateSound_);
                 particleGate_.Play(drone_.GetPos());
                 goodCount_++;
                 nextGate_++;
@@ -534,8 +528,7 @@ void GamePlayScene::Update()
         goalSys_.Update(gates_, nextGate_, drone_.GetPos());
 
         if (goalSys_.IsCleared()) {
-            if (FadeManager::GetInstance()->GetStatus() == FadeManager::Status::FadeInFinished ||
-                FadeManager::GetInstance()->GetStatus() == FadeManager::Status::None) {
+            if (FadeManager::GetInstance()->GetStatus() == FadeManager::Status::FadeInFinished || FadeManager::GetInstance()->GetStatus() == FadeManager::Status::None) {
                 FadeManager::GetInstance()->StartFadeOut(1.0f);
             }
         }
@@ -543,24 +536,21 @@ void GamePlayScene::Update()
             stageCleared_ = false;
 
             stageCleared_ = true;
-            SoundManager::GetInstance()->PlaySE(gateSound_, 1.0f);
+           // SoundManager::GetInstance()->PlaySE(gateSound_, 1.0f);
             // ここで「リザルトへ遷移」「SE」「フェード」等を入れる
             // 例：次シーンへ
-           // SceneManager::GetInstance()->SetNextScene(new ResultScene(perfectCount_, goodCount_));
+            // SceneManager::GetInstance()->SetNextScene(new ResultScene(perfectCount_, goodCount_));
             auto* sm = SceneManager::GetInstance();
             if (sm->IsTestPlay()) {
                 // ★テスト中：リザルトへ行かない
                 // ここは好きな挙動にできる（例：クリア表示だけ出して止める、BackSpace案内）
                 // 何もしない（このまま stageCleared_ の表示だけ出る）
-            }
-            else {
+            } else {
                 sm->SetNextScene(new ResultScene(perfectCount_, goodCount_));
                 return;
             }
         }
     }
-
-
 
     // ==================================
     // Lighting Panel（ライト操作パネル）
@@ -885,7 +875,6 @@ void GamePlayScene::Draw3D()
     }
 
     landingEffect_.Draw();
- 
 
     Object3dManager::GetInstance()->SetBlendMode(kBlendModeAdd);
     Object3dManager::GetInstance()->SetGlowPSO();
@@ -893,7 +882,7 @@ void GamePlayScene::Draw3D()
     if (drawWallDebug_) {
         wallSys_.DrawDebug();
     }
-  
+
     particleGate_.Draw();
     // sphere_->Draw(DirectXCommon::GetInstance()->GetCommandList());
     Object3dManager::GetInstance()->SetBlendMode(kBlendModeNone);
@@ -923,7 +912,8 @@ void GamePlayScene::Draw2D()
     // Altimeter
 
     DrawGateIndices2D_();
-    if (gateMarkerCompass_) gateMarkerCompass_->Draw();
+    if (gateMarkerCompass_)
+        gateMarkerCompass_->Draw();
 
     // sprite_->SetColor(Vector4{ 0, 1, 0, 1.0f});
 
@@ -941,9 +931,9 @@ void GamePlayScene::DrawImGui()
 
 void GamePlayScene::Finalize()
 {
-    ParticleManager::GetInstance()->Finalize();
 
 
+    SoundManager::GetInstance()->StopBGMAll();
     delete droneObj_;
     droneObj_ = nullptr;
 
@@ -978,10 +968,10 @@ void GamePlayScene::Finalize()
         compassB_ = nullptr;
     }
 
-    delete gateMarkerCompass_; gateMarkerCompass_ = nullptr;
-    delete gateMarkerAlt_;     gateMarkerAlt_ = nullptr;
-    SoundManager::GetInstance()->StopBGMAll();
-
+    delete gateMarkerCompass_;
+    gateMarkerCompass_ = nullptr;
+    delete gateMarkerAlt_;
+    gateMarkerAlt_ = nullptr;
 }
 void GamePlayScene::UpdateDronePointLight()
 {
@@ -1004,7 +994,7 @@ void GamePlayScene::UpdateDronePointLight()
 }
 
 //================================
-//位置表示
+// 位置表示
 //================================
 
 Vector3 GamePlayScene::GetNavTargetPos_() const
@@ -1016,7 +1006,6 @@ Vector3 GamePlayScene::GetNavTargetPos_() const
     return goalSys_.GetGoalPos();
 }
 
-
 static float Wrap01(float t)
 {
     t = std::fmod(t, 1.0f);
@@ -1027,11 +1016,12 @@ static float Wrap01(float t)
 
 static float WrapDeg180(float d)
 {
-    while (d > 180.0f) d -= 360.0f;
-    while (d < -180.0f) d += 360.0f;
+    while (d > 180.0f)
+        d -= 360.0f;
+    while (d < -180.0f)
+        d += 360.0f;
     return d;
 }
-
 
 void GamePlayScene::InitCompass_()
 {
@@ -1121,21 +1111,23 @@ void GamePlayScene::UpdateCompass_()
 
 void GamePlayScene::UpdateGateMarkerOnCompass_()
 {
-    if (!gateMarkerCompass_) return;
+    if (!gateMarkerCompass_)
+        return;
 
     const Vector3 target = GetNavTargetPos_();
     const Vector3 self = drone_.GetPos();
 
     // 目的地方向（XZ）
-    Vector3 to{ target.x - self.x, 0.0f, target.z - self.z };
+    Vector3 to { target.x - self.x, 0.0f, target.z - self.z };
     float toLen = std::sqrt(to.x * to.x + to.z * to.z);
-    if (toLen < 1e-6f) return;
+    if (toLen < 1e-6f)
+        return;
     to.x /= toLen;
     to.z /= toLen;
 
     // ★カメラの向きを基準にする（ここが決定的）
     float camYaw = camera_->GetRotate().y;
-    Vector3 fwd{
+    Vector3 fwd {
         std::sinf(camYaw),
         0.0f,
         std::cosf(camYaw)
@@ -1245,8 +1237,10 @@ void GamePlayScene::DrawAltimeter_()
         // バー内にクランプ
         const float topY = y + 4.0f;
         const float botY = y + h - 4.0f;
-        if (my < topY) my = topY;
-        if (my > botY) my = botY;
+        if (my < topY)
+            my = topY;
+        if (my > botY)
+            my = botY;
 
         const float mx = x + w + altMarkerOffsetX_ - 26.0f; // 現在高度マーカーとズラす
 
@@ -1318,13 +1312,9 @@ void GamePlayScene::DrawAltimeter_()
         font_.DrawString(x, y - 24.0f, buf, 0.7f);
     }
 
-    //次の場所
+    // 次の場所
     {
-
-
-
     }
-
 }
 
 void GamePlayScene::DrawSpeedSimple_()

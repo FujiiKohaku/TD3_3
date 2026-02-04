@@ -44,7 +44,6 @@ private:
     // アニメーション速度（1.0f で 1秒、2.0f で 0.5秒）
     const float kAnimSpeed = 0.25f;
 
-    SoundData bgmData_;
 
     float t_;
 

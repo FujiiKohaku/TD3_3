@@ -7,7 +7,7 @@
 #include <dxgi1_6.h>
 #include <format>
 #include <wrl.h>
-
+#include <cassert>
 #include <filesystem> // create_directories
 #include "DirectXTex/DirectXTex.h"
 
@@ -580,6 +580,7 @@ Microsoft::WRL::ComPtr<IDxcBlob> DirectXCommon::CompileShader(const std::wstring
 // バッファリソース生成関数
 Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::CreateBufferResource(size_t sizeInBytes)
 {
+    assert(device.Get() != nullptr);
     // 頂点リソース用のヒープの設定02_03
     D3D12_HEAP_PROPERTIES uploadHeapProperties {};
     uploadHeapProperties.Type = D3D12_HEAP_TYPE_UPLOAD; // Uploadheapを使う

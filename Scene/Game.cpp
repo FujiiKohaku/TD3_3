@@ -136,9 +136,9 @@ void Game::Finalize()
     SrvManager::GetInstance()->Finalize();
     FadeManager::GetInstance()->Finalize();
     // DirectXCommonはFinalizeしてもデバイス破棄処理だけ。deleteは不要
-    DirectXCommon::GetInstance()->Finalize();
     SoundManager::GetInstance()->Finalize();
     LightManager::GetInstance()->Finalize();
+    DirectXCommon::GetInstance()->Finalize();
     winApp_->Finalize();
     delete winApp_;
     delete camera_;
