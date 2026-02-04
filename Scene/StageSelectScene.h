@@ -80,4 +80,21 @@ private:
     // 天球
     std::unique_ptr<Object3d> skydome_ = nullptr;
 
+    // ===== 円回転カルーセル用 =====
+    float carouselTarget_ = 0.0f;   // 目標角（ラジアン）
+    float carouselAngle_ = 0.0f;   // 現在角（ラジアン）
+    float carouselEase_ = 0.18f;  // 追従の強さ（0.1〜0.25くらい）
+
+    // 見た目パラメータ
+    float carouselCenterX_ = 640.0f; // 画面中央に合わせて調整
+    float carouselCenterY_ = 360.0f;
+    float carouselRadiusX_ = 420.0f; // 横半径
+    float carouselRadiusY_ = 120.0f; // 縦半径（少しつぶすとそれっぽい）
+    float carouselFrontLift_ = -40.0f; // 正面を少し上げたいなら
+    float carouselMinScale_ = 0.55f;
+    float carouselMaxScale_ = 1.05f;
+    float carouselMinBright_ = 0.45f;
+    float carouselMaxBright_ = 1.00f;
+
+
 };
