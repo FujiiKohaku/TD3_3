@@ -174,6 +174,17 @@ void StageSelectScene::Initialize() {
         e.thumbSprite->Update();
     }
 
+	lastSelected_ = selected_;
+	if (selected_ >= 0) UpdateStageNameTexture_();
+
+	ModelManager::GetInstance()->LoadModel("skydome.obj");
+	TextureManager::GetInstance()->LoadTexture("resources/skydome.png");
+	skydome_ = std::make_unique<Object3d>();
+	skydome_->Initialize(Object3dManager::GetInstance());
+	skydome_->SetModel("skydome.obj");
+	skydome_->SetCamera(camera_);
+	skydome_->SetEnableLighting(false);
+
     lastSelected_ = selected_;
     if (selected_ >= 0)
         UpdateStageNameTexture_();
@@ -284,6 +295,15 @@ void StageSelectScene::Update()
         Rescan_();
     }
 
+	skydome_->Update();
+
+	if (entries_.empty()) return;
+
+	if (input.IsKeyTrigger(DIK_LEFT))  selected_ = std::max<int>(0, selected_ - 1);
+	if (input.IsKeyTrigger(DIK_RIGHT)) selected_ = std::min((int)entries_.size() - 1, selected_ + 1);
+
+	if (input.IsKeyTrigger(DIK_UP))    selected_ = std::max<int>(0, selected_ - kThumbCols);
+	if (input.IsKeyTrigger(DIK_DOWN))  selected_ = std::min((int)entries_.size() - 1, selected_ + kThumbCols);
     if (entries_.empty())
         return;
 
@@ -376,6 +396,13 @@ void StageSelectScene::Draw2D()
 
 	FadeManager::GetInstance()->Draw();
 }
+
+
+void StageSelectScene::Draw3D() {
+
+	Object3dManager::GetInstance()->PreDraw();
+
+	skydome_->Draw();
 
 void StageSelectScene::Draw3D()
 {
