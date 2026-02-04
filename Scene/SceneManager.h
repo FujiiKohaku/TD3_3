@@ -55,6 +55,21 @@ public:
     void SetSelectedStageFile(const std::string& file) { selectedStageFile_ = file; }
     const std::string& GetSelectedStageFile() const { return selectedStageFile_; }
 
+    // エディタに入ったとき、このファイルを開け（1回だけ）
+    void RequestOpenEditorFile(const std::string& file) {
+        editorOpenFile_ = file;
+        hasEditorOpenRequest_ = true;
+    }
+
+    // エディタ側が1回だけ消費して使う
+    bool ConsumeOpenEditorFile(std::string& outFile) {
+        if (!hasEditorOpenRequest_) return false;
+        outFile = editorOpenFile_;
+        hasEditorOpenRequest_ = false;
+        editorOpenFile_.clear();
+        return true;
+    }
+
 private:
     // --------- Singleton基本処理 ---------
     SceneManager() = default;
@@ -71,5 +86,8 @@ private:
     bool isTestPlay_ = false;
 
     ThumbnailRequest thumb_;
+
+    bool hasEditorOpenRequest_ = false;
+    std::string editorOpenFile_;
 
 };

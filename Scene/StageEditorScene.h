@@ -100,7 +100,7 @@ private:
     float sizeStep_ = 0.1f;
 
     // 保存/ロード用（最初は固定でもOK）
-    std::string stageFile_ = "testStage.json";
+    std::string stageFile_ = "_test/testStage.json";
 
     float goalAlpha_ = 0.25f;
 
