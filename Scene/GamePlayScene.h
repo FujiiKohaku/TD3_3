@@ -220,6 +220,7 @@ private:
     std::unique_ptr<Sprite> pauseBg_ = nullptr; // 画面全体を覆う半透明白
     std::unique_ptr<Sprite> btnToSelect_ = nullptr; // セレクトへ
     std::unique_ptr<Sprite> btnClose_ = nullptr; // 閉じる
+    std::unique_ptr<Sprite> a_ = nullptr; // 説明
 
     float pauseAnimTimer_ = 0.0f; // アニメーション用タイマー (0.0～1.0)
     bool isPauseClosing_ = false; // 閉じている最中かどうかのフラグ

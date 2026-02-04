@@ -413,9 +413,14 @@ void GamePlayScene::Initialize()
     gateMarkerAlt_->SetSize(gateMarkerAltSize_);
     gateMarkerAlt_->SetRotation(0.0f);
 
+    // テクスチャを念のためロード
+    TextureManager::GetInstance()->LoadTexture("resources/aaaaaa.png");
+
     mojyuro = new Sprite();
-    mojyuro->Initialize(SpriteManager::GetInstance(), "resources/aaaaaa.png"); // 白塗り画像
-    mojyuro->SetPosition({ 0.0f, 0.0f });
+    mojyuro->Initialize(SpriteManager::GetInstance(), "resources/aaaaaa.png");
+    mojyuro->SetAnchorPoint({ 0.5f, 0.5f });
+    mojyuro->SetSize({ 1280.0f, 720.0f }); // ★サイズが0だと見えないので、適切なサイズを入れるでやんす
+    mojyuro->SetColor({ 1.0f, 1.0f, 1.0f, 1.0f }); // ★真っ白ならこれでOK
 }
 
 void GamePlayScene::Update()
@@ -499,12 +504,19 @@ void GamePlayScene::Update()
                 pauseAnimTimer_ = 1.0f;
         }
 
-        // --- 2c. イージング計算 (ラムダ式を使わない版) ---
+        // --- 2c. イージング計算 ---
         float tInv = 1.0f - pauseAnimTimer_;
         float tEase = 1.0f - (tInv * tInv * tInv * tInv * tInv); // OutQuint
 
+        // 背景のオフセット（画面の高さ 720 分を動かす）
+        float offsetY = -720.0f * (1.0f - tEase);
+
         // 背景
-        pauseBg_->SetPosition({ 0.0f, -720.0f * (1.0f - tEase) });
+        pauseBg_->SetPosition({ 0.0f, offsetY });
+
+        // ★ mojyuro の座標修正
+        // 画面中央(640, 360)をゴールにして、背景と同じオフセットを足すでやんす！
+        mojyuro->SetPosition({ 640.0f, 360.0f + offsetY });
 
         // 各ボタンの個別イージング（時間差）
         float t1 = std::clamp((pauseAnimTimer_ - 0.1f) / 0.8f, 0.0f, 1.0f);
@@ -527,6 +539,7 @@ void GamePlayScene::Update()
         pauseBg_->Update();
         btnClose_->Update();
         btnToSelect_->Update();
+        mojyuro->Update();
 
         // ==========================================
         // 【修正箇所】遷移リクエストがないときだけ return するでやんす！
@@ -1040,7 +1053,6 @@ void GamePlayScene::Draw2D()
 
     DrawAltimeter_();
     DrawSpeedSimple_();
-    mojyuro->Draw();
     if (compassA_)
         compassA_->Draw();
     if (compassB_)
@@ -1072,6 +1084,7 @@ void GamePlayScene::Draw2D()
         pauseBg_->Draw();
         btnClose_->Draw();
         btnToSelect_->Draw();
+        mojyuro->Draw();
     }
 
     FadeManager::GetInstance()->Draw();
@@ -1104,6 +1117,9 @@ void GamePlayScene::Finalize()
 
     delete camera_;
     camera_ = nullptr;
+
+    delete mojyuro;
+    mojyuro = nullptr;
 
     delete terraranan_;
     terraranan_ = nullptr;
