@@ -19,6 +19,7 @@ void Game::Initialize()
     ModelManager::GetInstance()->Initialize(DirectXCommon::GetInstance());
     Object3dManager::GetInstance()->Initialize(DirectXCommon::GetInstance());
     SoundManager::GetInstance()->Initialize();
+    FadeManager::GetInstance()->Initialize(SpriteManager::GetInstance(), "resources/white.png");
 
     // camera_ = new Camera();
     // camera_->SetTranslate({ 0.0f, 0.0f, 2.0f });
@@ -128,6 +129,7 @@ void Game::Finalize()
     TextureManager::GetInstance()->Finalize();
     ImGuiManager::GetInstance()->Finalize();
     SrvManager::GetInstance()->Finalize();
+    FadeManager::GetInstance()->Finalize();
     // DirectXCommonはFinalizeしてもデバイス破棄処理だけ。deleteは不要
     DirectXCommon::GetInstance()->Finalize();
     SoundManager::GetInstance()->Finalize();
