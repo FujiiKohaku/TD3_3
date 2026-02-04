@@ -1,0 +1,86 @@
+{
+  "drone": {
+    "spawnPos": { "x": 0.0, "y": 1.0, "z": 0.0 },
+    "spawnYaw": 0.0
+  },
+
+  "gates": [
+    { "gateRadius": 2.5, "perfectRadius": 1.0,
+      "pos": { "x": 0.0, "y": 1.6, "z": 26.0 },
+      "rot": { "x": 0.0, "y": 0.0, "z": 0.0 },
+      "scale": { "x": 2, "y": 2, "z": 2 }, "thickness": 0.8 },
+
+    { "gateRadius": 2.5, "perfectRadius": 1.0,
+      "pos": { "x": 7.0, "y": 2.4, "z": 56.0 },
+      "rot": { "x": 0.0, "y": -0.30, "z": 0.0 },
+      "scale": { "x": 2, "y": 2, "z": 2 }, "thickness": 0.8 },
+
+    { "gateRadius": 2.5, "perfectRadius": 1.0,
+      "pos": { "x": -9.0, "y": 3.4, "z": 86.0 },
+      "rot": { "x": 0.0, "y": 0.30, "z": 0.0 },
+      "scale": { "x": 2, "y": 2, "z": 2 }, "thickness": 0.8 },
+
+    { "gateRadius": 2.5, "perfectRadius": 1.0,
+      "pos": { "x": 10.0, "y": 4.8, "z": 120.0 },
+      "rot": { "x": 0.0, "y": -0.45, "z": 0.0 },
+      "scale": { "x": 2, "y": 2, "z": 2 }, "thickness": 0.8 },
+
+    { "gateRadius": 2.5, "perfectRadius": 1.0,
+      "pos": { "x": 0.0, "y": 7.0, "z": 156.0 },
+      "rot": { "x": 0.12, "y": 0.0, "z": 0.0 },
+      "scale": { "x": 2, "y": 2, "z": 2 }, "thickness": 0.8 },
+
+    { "gateRadius": 2.5, "perfectRadius": 1.0,
+      "pos": { "x": -12.0, "y": 9.5, "z": 192.0 },
+      "rot": { "x": 0.22, "y": 0.65, "z": 0.0 },
+      "scale": { "x": 2, "y": 2, "z": 2 }, "thickness": 0.8 },
+
+    { "gateRadius": 2.5, "perfectRadius": 1.0,
+      "pos": { "x": 12.0, "y": 12.0, "z": 228.0 },
+      "rot": { "x": 0.30, "y": -0.65, "z": 0.0 },
+      "scale": { "x": 2, "y": 2, "z": 2 }, "thickness": 0.8 },
+
+    { "gateRadius": 2.5, "perfectRadius": 1.0,
+      "pos": { "x": 0.0, "y": 11.0, "z": 262.0 },
+      "rot": { "x": -0.10, "y": 0.0, "z": 0.0 },
+      "scale": { "x": 2, "y": 2, "z": 2 }, "thickness": 0.8 },
+
+    { "gateRadius": 2.5, "perfectRadius": 1.0,
+      "pos": { "x": 8.0, "y": 10.0, "z": 296.0 },
+      "rot": { "x": -0.18, "y": -0.40, "z": 0.0 },
+      "scale": { "x": 2, "y": 2, "z": 2 }, "thickness": 0.8 },
+
+    { "gateRadius": 2.5, "perfectRadius": 1.0,
+      "pos": { "x": -6.0, "y": 9.5, "z": 330.0 },
+      "rot": { "x": -0.22, "y": 0.40, "z": 0.0 },
+      "scale": { "x": 2, "y": 2, "z": 2 }, "thickness": 0.8 }
+  ],
+
+  "goal": {
+    "pos": { "x": 0.0, "y": 10.0, "z": 360.0 }
+  },
+
+  "version": 1,
+
+  "walls": [
+    { "center": { "x": -18.0, "y": 6.0, "z": 120.0 },
+      "half":   { "x": 1.5, "y": 10.0, "z": 75.0 },
+      "rot":    { "x": 0, "y": 0, "z": 0 }, "type": "OBB" },
+
+    { "center": { "x": 18.0, "y": 6.0, "z": 120.0 },
+      "half":   { "x": 1.5, "y": 10.0, "z": 75.0 },
+      "rot":    { "x": 0, "y": 0, "z": 0 }, "type": "OBB" },
+
+    { "center": { "x": -18.0, "y": 10.0, "z": 240.0 },
+      "half":   { "x": 1.5, "y": 12.0, "z": 90.0 },
+      "rot":    { "x": 0, "y": 0.1, "z": 0 }, "type": "OBB" },
+
+    { "center": { "x": 18.0, "y": 10.0, "z": 240.0 },
+      "half":   { "x": 1.5, "y": 12.0, "z": 90.0 },
+      "rot":    { "x": 0, "y": 0.1, "z": 0 }, "type": "OBB" },
+
+    { "center": { "x": 0.0, "y": 7.0, "z": 320.0 },
+      "half":   { "x": 14.0, "y": 1.2, "z": 18.0 },
+      "rot":    { "x": 0, "y": 0, "z": 0 }, "type": "OBB" }
+  ]
+}

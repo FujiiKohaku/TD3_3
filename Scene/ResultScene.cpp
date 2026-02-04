@@ -79,7 +79,8 @@ void ResultScene::Finalize()
 void ResultScene::Update()
 {
     Input& input = *Input::GetInstance();
-    if (input.IsKeyTrigger(DIK_SPACE)) {
+    if (input.IsKeyTrigger(DIK_SPACE) && FadeManager::GetInstance()->GetStatus() == FadeManager::Status::FadeInFinished ||
+        FadeManager::GetInstance()->GetStatus() == FadeManager::Status::None) {
         FadeManager::GetInstance()->StartFadeOut(1.0f);
     }
 
@@ -166,8 +167,14 @@ void ResultScene::Draw3D()
     skydome_->Draw();
 }
 
+#ifdef USE_IMGUI
+
+
+
 void ResultScene::DrawImGui()
 {
     ImGui::Text("Perfect : %d", perfectCount_);
     ImGui::Text("Good : %d", goodCount_);
 }
+
+#endif // DEBUG

@@ -92,7 +92,7 @@ void TitleScene::Initialize()
 
 void TitleScene::Update()
 {
-    if (Input::GetInstance()->IsKeyTrigger(DIK_SPACE)) {
+    if (Input::GetInstance()->IsKeyTrigger(DIK_SPACE)){
         // まずはフェードアウト開始！
         FadeManager::GetInstance()->StartFadeOut(1.0f);
 

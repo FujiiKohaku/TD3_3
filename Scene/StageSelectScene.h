@@ -99,6 +99,4 @@ private:
     float carouselMaxScale_ = 1.05f;
     float carouselMinBright_ = 0.45f;
     float carouselMaxBright_ = 1.00f;
-
-
 };
