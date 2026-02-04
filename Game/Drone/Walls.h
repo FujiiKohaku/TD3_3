@@ -290,10 +290,10 @@ public:
     }
 
     // -------------- Debug draw (cube.obj で可視化) --------------
-    void BuildDebug(Object3dManager* mgr, const char* modelName = "Gate.obj")
+    void BuildDebug(Object3dManager* mgr, const char* modelName = "Cube2.obj")
     {
         mgr_ = mgr;
-        modelName_ = modelName ? modelName : "Gate.obj";
+        modelName_ = modelName ? modelName : "Cube2.obj";
         dirtyDebug_ = true;
         RebuildDebugIfNeeded_();
     }
@@ -372,7 +372,7 @@ private:
 
     // debug draw
     Object3dManager* mgr_ = nullptr;
-    std::string modelName_ = "Gate.obj";
+    std::string modelName_ = "Cube2.obj";
     bool dirtyDebug_ = true;
     std::vector<std::unique_ptr<Object3d>> debugObjs_;
     int selected_ = -1;
