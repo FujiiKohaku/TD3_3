@@ -13,10 +13,10 @@ struct GateVisual;
 class GoalSystem {
 public:
     // modelName は "cube.obj" など
-    void Initialize(Object3dManager* objMgr, Camera* camera, const char* modelName = "cube.obj");
+    void Initialize(Object3dManager* objMgr, Camera* camera, const char* modelName = "goal.obj");
     void Finalize();
 
-    void Reset(); // ゲートやステージをやり直す時に呼ぶ
+    void Reset(); //ゲートやステージをやり直す時に呼ぶ
 
     // gates / nextGate を見て、全通過したら出す。出てるなら接触判定。
     void Update(const std::vector<GateVisual>& gates, int nextGate, const Vector3& dronePos);
@@ -98,4 +98,7 @@ private:
     bool hasFixedGoalPos_ = false;
     Vector3 fixedGoalPos_{ 0,0,0 };
 
+
+    //ゴール回転させるよう
+    float rotate_ = 0.0f;
 };

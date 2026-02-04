@@ -272,6 +272,7 @@ void GamePlayScene::Initialize()
         }
     }
 
+    ModelManager::GetInstance()->LoadModel("goal.obj");
     goalSys_.Initialize(Object3dManager::GetInstance(), camera_);
     goalSys_.Reset();
     stageCleared_ = false;
