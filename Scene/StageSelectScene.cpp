@@ -10,6 +10,7 @@
 #include "TextureManager.h"
 #include "Object3dManager.h"
 #include "ParticleManager.h"
+#include "FadeManager.h"
 #include "Camera.h"
 #include "WinApp.h"
 
@@ -129,7 +130,8 @@ void StageSelectScene::Initialize() {
 	camera_->Initialize();
 	camera_->SetTranslate({ 0, 0, 0 });
 	Object3dManager::GetInstance()->SetDefaultCamera(camera_);
-
+	// シーン開始時に、1秒かけて明るくするでやんす！
+	FadeManager::GetInstance()->StartFadeIn(1.0f);
 	ParticleManager::GetInstance()->SetCamera(camera_);
 
 	// ★動的テクスチャを作る（1回だけ）
@@ -243,7 +245,6 @@ void StageSelectScene::Decide_() {
 	if (selected_ < 0 || selected_ >= (int)entries_.size()) return;
 
 	SceneManager::GetInstance()->SetSelectedStageFile(entries_[selected_].fileUtf8);
-	SceneManager::GetInstance()->SetNextScene(new GamePlayScene());
 }
 
 void StageSelectScene::Update() {
@@ -269,11 +270,16 @@ void StageSelectScene::Update() {
 	}
 
 	if (input.IsKeyTrigger(DIK_SPACE)) {
+		FadeManager::GetInstance()->StartFadeOut(1.0f);
 		Decide_();
 	}
 
 	if (input.IsKeyTrigger(DIK_BACKSPACE)) {
 		SceneManager::GetInstance()->SetNextScene(new TitleScene());
+	}
+
+	if (FadeManager::GetInstance()->GetStatus() == FadeManager::Status::FadeOutFinished) {
+		SceneManager::GetInstance()->SetNextScene(new GamePlayScene());
 	}
 
 	if (input.IsKeyTrigger(DIK_T)) {
@@ -282,6 +288,7 @@ void StageSelectScene::Update() {
 		sm->SetNextScene(new StageEditorScene());
 	}
 
+	FadeManager::GetInstance()->Update();
 
 	DrawImGui();
 }
@@ -320,6 +327,8 @@ void StageSelectScene::Draw2D() {
 		e.thumbSprite->Update();
 		e.thumbSprite->Draw();
 	}
+
+	FadeManager::GetInstance()->Draw();
 }
 
 

@@ -49,6 +49,7 @@
 #include "TextureManager.h"
 #include "Utility.h"
 #include "WinApp.h"
+#include "FadeManager.h"
 
 #include "GamePlayScene.h"
 

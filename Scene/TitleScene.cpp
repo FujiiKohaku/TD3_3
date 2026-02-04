@@ -6,6 +6,8 @@
 #include "StageEditorScene.h"
 #include "StageSelectScene.h"
 #include <numbers>
+#include "FadeManager.h"
+
 void TitleScene::Initialize()
 {
     float deltaTime;
@@ -88,10 +90,17 @@ void TitleScene::Initialize()
 
 void TitleScene::Update()
 {
-    if (Input::GetInstance()->IsKeyPressed(DIK_SPACE)) {
+    if (Input::GetInstance()->IsKeyTrigger(DIK_SPACE)) {
+        // まずはフェードアウト開始！
+        FadeManager::GetInstance()->StartFadeOut(1.0f); 
+    }
+
+    FadeManager::GetInstance()->Update();
+
+    // フェードアウトが終わったらシーン切り替え
+    if (FadeManager::GetInstance()->GetStatus() == FadeManager::Status::FadeOutFinished) {
         SceneManager::GetInstance()->SetNextScene(new StageSelectScene());
         SoundManager::GetInstance()->StopBGMAll();
-       
     }
 
     // titleModel->Update();
@@ -118,6 +127,8 @@ void TitleScene::Update()
 
 void TitleScene::Draw2D()
 {
+    SpriteManager::GetInstance()->PreDraw();
+    FadeManager::GetInstance()->Draw();
 }
 
 void TitleScene::Draw3D()

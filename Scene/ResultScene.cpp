@@ -6,6 +6,7 @@
 #include "../Light/LightManager.h"
 #include "SceneManager.h"
 #include "StageSelectScene.h"
+#include "FadeManager.h"
 
 ResultScene::ResultScene(int perfectCount, int goodCount) {
 	perfectCount_ = perfectCount;
@@ -18,6 +19,8 @@ ResultScene::ResultScene(int perfectCount, int goodCount) {
 }
 
 void ResultScene::Initialize() {
+	// シーン開始時に、1秒かけて明るくするでやんす！
+	FadeManager::GetInstance()->StartFadeIn(1.0f);
 	ModelManager::GetInstance()->LoadModel("skydome.obj");
 	TextureManager::GetInstance()->LoadTexture("resources/skydome.png");
 
@@ -56,9 +59,17 @@ void ResultScene::Finalize() {
 void ResultScene::Update() {
 	// 入出力取得
 	Input& input = *Input::GetInstance();
-	if (input.IsKeyTrigger(DIK_F1)) {
+	if (input.IsKeyTrigger(DIK_SPACE)) {
+		// まずはフェードアウト開始！
+		FadeManager::GetInstance()->StartFadeOut(1.0f);
+	}
+
+	// フェードアウトが終わったらシーン切り替え
+	if (FadeManager::GetInstance()->GetStatus() == FadeManager::Status::FadeOutFinished) {
 		SceneManager::GetInstance()->SetNextScene(new StageSelectScene());
 	}
+
+	FadeManager::GetInstance()->Update();
 
 	camera_->Update();
 	skydome_->Update();
@@ -116,6 +127,8 @@ void ResultScene::Draw2D() {
 	// 座標は適宜調整
 	font_->DrawString(xP_Count, 125.0f, perfectStr, 1.0f);
 	font_->DrawString(xG_Count, 325.0f, goodStr, 1.0f);
+
+	FadeManager::GetInstance()->Draw();
 }
 
 void ResultScene::Draw3D() {

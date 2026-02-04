@@ -10,6 +10,7 @@
 #include <string>
 
 #include "TitleScene.h"
+#include "FadeManager.h"
 
 #pragma region 関数
 using json = nlohmann::json;
@@ -137,6 +138,9 @@ void GamePlayScene::Initialize()
     camera_ = new Camera();
     camera_->Initialize();
     camera_->SetTranslate({ 0, 0, 0 });
+
+    // シーン開始時に、1秒かけて明るくするでやんす！
+    FadeManager::GetInstance()->StartFadeIn(1.0f);
 
     Object3dManager::GetInstance()->SetDefaultCamera(camera_);
 
@@ -353,6 +357,8 @@ void GamePlayScene::Update()
         SoundManager::GetInstance()->PlayBGM(DronePropellerSound_, 0.8f);
     }
 
+    FadeManager::GetInstance()->Update();
+
     // ポーズ画面のUI
     if (isPaused_) {
 
@@ -374,6 +380,13 @@ void GamePlayScene::Update()
 
         // タイトルへ戻る要求が出たらシーン切り替え
         if (requestBackToTitle_) {
+            // ここも「まだ始まっていないなら」というガードを入れるのが無難でやんす
+            if (FadeManager::GetInstance()->GetStatus() != FadeManager::Status::FadeOut) {
+                FadeManager::GetInstance()->StartFadeOut(1.0f);
+            }
+        }
+
+        if (FadeManager::GetInstance()->GetStatus() == FadeManager::Status::FadeOutFinished) {
             requestBackToTitle_ = false;
             SceneManager::GetInstance()->SetNextScene(new TitleScene());
             SoundManager::GetInstance()->StopBGM(DronePropellerSound_);
@@ -493,7 +506,13 @@ void GamePlayScene::Update()
         goalSys_.Update(gates_, nextGate_, drone_.GetPos());
 
         if (goalSys_.IsCleared()) {
-            stageCleared_ = true;
+            if (FadeManager::GetInstance()->GetStatus() == FadeManager::Status::FadeInFinished ||
+                FadeManager::GetInstance()->GetStatus() == FadeManager::Status::None) {
+                FadeManager::GetInstance()->StartFadeOut(1.0f);
+            }
+        }
+        if (FadeManager::GetInstance()->GetStatus() == FadeManager::Status::FadeOutFinished) {
+            stageCleared_ = false;
 
             // ここで「リザルトへ遷移」「SE」「フェード」等を入れる
             // 例：次シーンへ
@@ -504,12 +523,12 @@ void GamePlayScene::Update()
                 // ★テスト中：リザルトへ行かない
                 // ここは好きな挙動にできる（例：クリア表示だけ出して止める、BackSpace案内）
                 // 何もしない（このまま stageCleared_ の表示だけ出る）
-            } else {
+            }
+            else {
                 sm->SetNextScene(new ResultScene(perfectCount_, goodCount_));
                 return;
             }
         }
-
     }
 
 
@@ -879,6 +898,8 @@ void GamePlayScene::Draw2D()
     // sprite_->SetColor(Vector4{ 0, 1, 0, 1.0f});
 
     // sprite_->Draw();
+
+    FadeManager::GetInstance()->Draw();
 }
 
 void GamePlayScene::DrawImGui()
