@@ -11,9 +11,7 @@
 #include "Sprite.h"
 #include "SpriteManager.h"
 #include "TextureManager.h"
-#include "Object3dManager.h"
-#include "ParticleManager.h"
-#include "Camera.h"
+#include "../Light/LightManager.h"
 #include "WinApp.h"
 
 #include <Windows.h>
@@ -181,11 +179,13 @@ void StageSelectScene::Initialize() {
 
 	ModelManager::GetInstance()->LoadModel("skydome.obj");
 	TextureManager::GetInstance()->LoadTexture("resources/skydome.png");
-	skydome_ = std::make_unique<Object3d>();
-	skydome_->Initialize(Object3dManager::GetInstance());
-	skydome_->SetModel("skydome.obj");
-	skydome_->SetCamera(camera_);
-	skydome_->SetEnableLighting(false);
+    skydome_ = std::make_unique<Object3d>();
+    skydome_->Initialize(Object3dManager::GetInstance());
+    skydome_->SetModel("skydome.obj");
+    skydome_->SetCamera(camera_);
+    skydome_->SetEnableLighting(false);
+    skydome_->SetTranslate({ 0.0f, 0.01f, 0.0f });
+    skydome_->SetTranslate({ 0.0f, 0.01f, 0.0f });
 
     lastSelected_ = selected_;
     if (selected_ >= 0)
@@ -200,7 +200,7 @@ void StageSelectScene::Initialize() {
 	carouselCenterX_ = WinApp::kClientWidth * 0.5f;
 	carouselCenterY_ = WinApp::kClientHeight * 0.55f; // 少し下寄せ
 
-
+    FadeManager::GetInstance()->StartFadeIn(1.0f);
 }
 
 void StageSelectScene::Finalize()
@@ -351,7 +351,6 @@ void StageSelectScene::Decide_()
         return;
 
 	SceneManager::GetInstance()->SetSelectedStageFile(entries_[selected_].fileUtf8);
-	SceneManager::GetInstance()->SetNextScene(new GamePlayScene());
 }
 
 void StageSelectScene::Update()
@@ -362,6 +361,19 @@ void StageSelectScene::Update()
         Rescan_();
     }
 
+    auto fadeStatus = FadeManager::GetInstance()->GetStatus();
+    if (input.IsKeyTrigger(DIK_SPACE)) {
+        if (fadeStatus == FadeManager::Status::FadeInFinished || fadeStatus == FadeManager::Status::None) {
+            Decide_();
+            SoundManager::GetInstance()->PlaySE(se_, 1.0f);
+            // フェードアウト開始！
+            FadeManager::GetInstance()->StartFadeOut(1.0f);
+        }
+    }
+
+    FadeManager::GetInstance()->Update();
+
+    camera_->Update();
 	skydome_->Update();
 
 	if (entries_.empty()) return;
@@ -430,14 +442,7 @@ void StageSelectScene::Update()
         UpdateStageNameTexture_();
     }
 
-	//if (input.IsKeyTrigger(DIK_UP))    selected_ = std::max<int>(0, selected_ - kThumbCols);
-	//if (input.IsKeyTrigger(DIK_DOWN))  selected_ = std::min((int)entries_.size() - 1, selected_ + kThumbCols);
-
-	if (input.IsKeyTrigger(DIK_SPACE)) {
-		Decide_();
-        SoundManager::GetInstance()->PlaySE(se_, 1.0f);
-		FadeManager::GetInstance()->StartFadeOut(1.0f);
-	}
+    
 
     if (input.IsKeyTrigger(DIK_BACKSPACE)) {
         SceneManager::GetInstance()->SetNextScene(new TitleScene());
@@ -449,6 +454,10 @@ void StageSelectScene::Update()
 		sm->SetNextScene(new StageEditorScene());
 	}
 
+    if (fadeStatus == FadeManager::Status::FadeOutFinished) {
+        // フェードアウト（画面が暗くなる）が終わったので、次のシーンへ
+        SceneManager::GetInstance()->SetNextScene(new GamePlayScene());
+    }
 
 	DrawImGui();
 }
@@ -571,9 +580,10 @@ void StageSelectScene::Draw2D()
 
 
 void StageSelectScene::Draw3D() {
-
     Object3dManager::GetInstance()->PreDraw();
-
+    LightManager::GetInstance()->Bind(DirectXCommon::GetInstance()->GetCommandList());
+    Object3dManager::GetInstance()->SetBlendMode(kBlendModeNone);
+    Object3dManager::GetInstance()->SetNormalPSO();
     skydome_->Draw();
 }
 
