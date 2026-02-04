@@ -56,7 +56,6 @@ public:
     void SetFixedGoalPos(const Vector3& pos) { fixedGoalPos_ = pos; hasFixedGoalPos_ = true; }
     void ClearFixedGoalPos() { hasFixedGoalPos_ = false; }
 
-
 private:
     // --- 内部 ---
     void SpawnAt_(const Vector3& pos);

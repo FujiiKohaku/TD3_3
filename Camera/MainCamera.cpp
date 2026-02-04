@@ -26,10 +26,20 @@ void MainCamera::Update () {
 	camera_.vp = MatrixMath::Multiply (camera_.view, camera_.proj);
 }
 
+
+
+
+
 void MainCamera::ImGui () {
+
+#ifdef USE_IMGUI
+
 	std::string label = "MainCamera";
 
 	ImGui::DragFloat3 (("scale##" + label).c_str (), &camera_.transform.scale.x, 0.01f);
 	ImGui::DragFloat3 (("rotate##" + label).c_str (), &camera_.transform.rotate.x, 0.01f);
 	ImGui::DragFloat3 (("translate##" + label).c_str (), &camera_.transform.translate.x, 0.01f);
+
+#endif // DEBUG
 }
+
