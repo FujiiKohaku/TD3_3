@@ -22,6 +22,9 @@
 
 #include <cctype> // isdigit
 #include <cstdlib> // strtol
+static bool prevAButton_ = false;
+static bool prevDpadLeft_  = false;
+static bool prevDpadRight_ = false;
 
 static SoundData se_;
 // -------------------- wide -> utf8 --------------------
@@ -372,14 +375,34 @@ void StageSelectScene::Update()
     }
     titleSprite_->Update();
     auto fadeStatus = FadeManager::GetInstance()->GetStatus();
-    if (input.IsKeyTrigger(DIK_SPACE)) {
+    bool aButtonTrigger = false;
+
+    // ===== gamepad (Aボタン) =====
+    XINPUT_STATE st {};
+    if (XInputGetState(0, &st) == ERROR_SUCCESS) {
+
+        bool nowAButton = (st.Gamepad.wButtons & XINPUT_GAMEPAD_A) != 0;
+
+        if (nowAButton && !prevAButton_) {
+            aButtonTrigger = true; // 押した瞬間
+        }
+
+        prevAButton_ = nowAButton;
+    } else {
+        prevAButton_ = false;
+    }
+
+    // ===== 決定（A or SPACE） =====
+    if (aButtonTrigger || input.IsKeyTrigger(DIK_SPACE)) {
+
         if (fadeStatus == FadeManager::Status::FadeInFinished || fadeStatus == FadeManager::Status::None) {
+
             Decide_();
             SoundManager::GetInstance()->PlaySE(se_, 1.0f);
-            // フェードアウト開始！
             FadeManager::GetInstance()->StartFadeOut(1.0f);
         }
     }
+
 
     FadeManager::GetInstance()->Update();
 
