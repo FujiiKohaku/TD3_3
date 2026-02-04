@@ -57,6 +57,8 @@
 #include "BaseScene.h"
 
 #include "SceneManager.h"
+
+#include "../Light/LightManager.h"
 class Game {
 public:
     // ------------------------------

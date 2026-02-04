@@ -9,6 +9,38 @@ LightManager* LightManager::GetInstance()
     }
     return instance;
 }
+void LightManager::Reset()
+{
+    // -------- Directional --------
+    if (lightData_) {
+        lightData_->color = { 1, 1, 1, 1 };
+        lightData_->direction = Normalize({ 0, -1, 0 });
+        lightData_->intensity = 1.0f;
+    }
+
+    // -------- Point --------
+    if (pointLightData_) {
+        pointLightData_->color = { 1, 1, 1, 1 };
+        pointLightData_->position = { 0, 2, 0 };
+        pointLightData_->intensity = 0.0f;
+        pointLightData_->radius = 10.0f;
+        pointLightData_->decay = 1.0f;
+    }
+
+    // -------- Spot --------
+    if (spotLightData_) {
+        spotLightData_->color = { 1, 1, 1, 1 };
+        spotLightData_->position = { 2.0f, 1.25f, 0.0f };
+        spotLightData_->direction = Normalize({ -1.0f, -1.0f, 0.0f });
+        spotLightData_->intensity = 0.0f; // ←無効化
+        spotLightData_->distance = 7.0f;
+        spotLightData_->decay = 2.0f;
+        spotLightData_->cosAngle = -1.0f; // ←全開
+    }
+}
+
+
+
 void LightManager::Initialize(DirectXCommon* dxCommon)
 {
     dxCommon_ = dxCommon;

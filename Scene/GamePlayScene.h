@@ -52,6 +52,14 @@ private:
     // サウンド
     // ------------------------------
     SoundData bgm;
+    SoundData DronePropellerSound_;
+
+
+
+
+
+    // ------------------------------
+
     Sprite* sprite_ = nullptr;
     std::vector<Sprite*> sprites_;
     Object3d* player2_;

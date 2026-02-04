@@ -134,22 +134,108 @@ void SoundManager::SoundUnload(SoundData* soundData)
     soundData->buffer.clear();
     soundData->wfex = {};
 }
-void SoundManager::SoundPlayWave(const SoundData& soundData)
+
+void SoundManager::StopSE()
 {
+    if (seVoice_) {
+        seVoice_->Stop();
+        seVoice_->FlushSourceBuffers();
+    }
+}
+
+void SoundManager::StopBGM(const SoundData& soundData)
+{
+    if (!bgmVoice_) {
+        return;
+    }
+
+    // 再生中のBGMと違うなら何もしない
+    if (currentBgm_ != &soundData) {
+        return;
+    }
+
+    bgmVoice_->Stop();
+    bgmVoice_->FlushSourceBuffers();
+    currentBgm_ = nullptr;
+}
+
+
+
+void SoundManager::PlaySE(const SoundData& soundData, float volume)
+{
+    if (soundData.buffer.empty()) {
+        return;
+    }
+
     HRESULT result;
 
-    IXAudio2SourceVoice* pSourceVoice = nullptr;
-    result = xAudio2->CreateSourceVoice(&pSourceVoice, &soundData.wfex);
-    assert(SUCCEEDED(result));
+    if (!seVoice_) {
+        result = xAudio2->CreateSourceVoice(&seVoice_, &soundData.wfex);
+        if (FAILED(result)) {
+            return;
+        }
+    }
+
+    seVoice_->Stop();
+    seVoice_->FlushSourceBuffers();
+    seVoice_->SetVolume(volume);
 
     XAUDIO2_BUFFER buf {};
-    buf.pAudioData = soundData.buffer.data(); 
-    buf.AudioBytes = static_cast<UINT32>(soundData.buffer.size()); 
+    buf.pAudioData = soundData.buffer.data();
+    buf.AudioBytes = static_cast<UINT32>(soundData.buffer.size());
     buf.Flags = XAUDIO2_END_OF_STREAM;
 
-    result = pSourceVoice->SubmitSourceBuffer(&buf);
-    assert(SUCCEEDED(result));
+    result = seVoice_->SubmitSourceBuffer(&buf);
+    if (FAILED(result)) {
+        return;
+    }
 
-    result = pSourceVoice->Start();
-    assert(SUCCEEDED(result));
+    seVoice_->Start();
 }
+
+void SoundManager::PlayBGM(const SoundData& soundData, float volume)
+{
+    if (soundData.buffer.empty()) {
+        return;
+    }
+
+    HRESULT result;
+
+    if (!bgmVoice_) {
+        result = xAudio2->CreateSourceVoice(&bgmVoice_, &soundData.wfex);
+        if (FAILED(result)) {
+            return;
+        }
+    }
+
+    XAUDIO2_VOICE_STATE state {};
+    bgmVoice_->GetState(&state);
+    if (state.BuffersQueued > 0) {
+        bgmVoice_->SetVolume(volume);
+        return;
+    }
+
+    bgmVoice_->SetVolume(volume);
+
+    XAUDIO2_BUFFER buf {};
+    buf.pAudioData = soundData.buffer.data();
+    buf.AudioBytes = static_cast<UINT32>(soundData.buffer.size());
+    buf.Flags = XAUDIO2_END_OF_STREAM;
+    buf.LoopBegin = 0;
+    buf.LoopLength = 0;
+    buf.LoopCount = XAUDIO2_LOOP_INFINITE;
+
+    result = bgmVoice_->SubmitSourceBuffer(&buf);
+    if (FAILED(result)) {
+        return;
+    }
+
+    bgmVoice_->Start();
+
+    // ★ どのBGMを再生しているか記録
+    currentBgm_ = &soundData;
+}
+
+
+
+

@@ -152,9 +152,14 @@ void GamePlayScene::Initialize()
     sprite_ = new Sprite();
     sprite_->Initialize(SpriteManager::GetInstance(), "resources/uvChecker.png");
     sprite_->SetPosition({ 100.0f, 100.0f });
-    // サウンド関連
+    // サウンド関連===============================
     bgm = SoundManager::GetInstance()->SoundLoadFile("Resources/BGM.wav");
-    SoundManager::GetInstance()->SoundPlayWave(bgm);
+    SoundManager::GetInstance()->PlaySE(bgm, 0.5f);
+
+    // ドローンのプロペラ音
+    DronePropellerSound_ = SoundManager::GetInstance()->SoundLoadFile("Resources/DroneBGM.mp3");
+
+    //==========================================
     player2_ = new Object3d();
     player2_->Initialize(Object3dManager::GetInstance());
     player2_->SetModel("cube.obj");
@@ -183,7 +188,6 @@ void GamePlayScene::Initialize()
 
     // Material
     sphere_->SetColor({ 1, 1, 1, 1 });
-    LightManager::GetInstance()->Initialize(DirectXCommon::GetInstance());
     LightManager::GetInstance()->SetDirectional({ 1, 1, 1, 1 }, { 0, -1, 0 }, 1.0f);
     // ---- Drone Object ----
     droneObj_ = new Object3d();
@@ -340,8 +344,14 @@ void GamePlayScene::Update()
 
     // TABキーを押したらポーズ画面になる
     if (input.IsKeyTrigger(DIK_TAB)) {
+        SoundManager::GetInstance()->StopBGM(DronePropellerSound_);
         isPaused_ = !isPaused_;
     }
+
+    if (drone_.isMove()) {
+        SoundManager::GetInstance()->PlayBGM(DronePropellerSound_, 0.8f);
+    }
+
     // ポーズ画面のUI
     if (isPaused_) {
 
@@ -365,6 +375,8 @@ void GamePlayScene::Update()
         if (requestBackToTitle_) {
             requestBackToTitle_ = false;
             SceneManager::GetInstance()->SetNextScene(new TitleScene());
+            SoundManager::GetInstance()->StopBGM(DronePropellerSound_);
+            LightManager::GetInstance()->Reset();
             return;
         }
 
@@ -793,8 +805,8 @@ void GamePlayScene::Draw3D()
     }
 
     landingEffect_.Draw();
-   
-   Object3dManager::GetInstance()->SetBlendMode(kBlendModeAdd);
+
+    Object3dManager::GetInstance()->SetBlendMode(kBlendModeAdd);
     Object3dManager::GetInstance()->SetGlowPSO();
     goalSys_.Draw();
 
@@ -803,6 +815,7 @@ void GamePlayScene::Draw3D()
     }
     particleGate_.Draw();
     // sphere_->Draw(DirectXCommon::GetInstance()->GetCommandList());
+    Object3dManager::GetInstance()->SetBlendMode(kBlendModeNone);
     ParticleManager::GetInstance()->PreDraw();
     ParticleManager::GetInstance()->Draw();
 }
@@ -846,7 +859,6 @@ void GamePlayScene::Finalize()
 {
     ParticleManager::GetInstance()->Finalize();
 
-    LightManager::GetInstance()->Finalize();
 
     delete droneObj_;
     droneObj_ = nullptr;
@@ -882,7 +894,10 @@ void GamePlayScene::Finalize()
         compassB_ = nullptr;
     }
 
+    // テストBGM
     SoundManager::GetInstance()->SoundUnload(&bgm);
+    // ドローンの音声
+    SoundManager::GetInstance()->SoundUnload(&DronePropellerSound_);
 }
 void GamePlayScene::UpdateDronePointLight()
 {
