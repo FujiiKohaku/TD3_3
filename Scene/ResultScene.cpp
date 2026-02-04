@@ -52,6 +52,9 @@ void ResultScene::Initialize()
 
     bgmData_ = SoundManager::GetInstance()->SoundLoadFile("resources/result.mp3");
     SoundManager::GetInstance()->PlaySE(bgmData_, 1.0);
+
+    fanfareCount_ = 1;
+    fanfareTimer_ = 0.0f;
 }
 
 void ResultScene::Finalize()
@@ -64,18 +67,13 @@ void ResultScene::Finalize()
 void ResultScene::Update()
 {
 
-    // タイマー加算
-    t_ += 0.01f;
+    if (fanfareCount_ <= 2) {
+        fanfareTimer_ += 1.0f / 60.0f;
 
-    if (t_ >= 1.0f) {
-        bgmPlayed_ = true;
-    }
-
-    if (bgmPlayed_) {
-        SoundManager::GetInstance()->PlaySE(bgmData_, 1.0);
-        bgmPlayed_ = false;
-        t_ = 0.0f;
-        SoundManager::GetInstance()->StopBGMAll();
+        if (fanfareTimer_ >= 2.0f) { // 1秒後にもう一回
+            SoundManager::GetInstance()->PlaySE(bgmData_, 1.0f);
+            fanfareCount_++;
+        }
     }
 
     // 入出力取得

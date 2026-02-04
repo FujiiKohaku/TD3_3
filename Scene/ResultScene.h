@@ -49,4 +49,6 @@ private:
     float t_;
 
     bool bgmPlayed_ = false;
+    int fanfareCount_ = 0;
+    float fanfareTimer_ = 0.0f;
 };

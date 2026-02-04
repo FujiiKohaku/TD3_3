@@ -154,7 +154,7 @@ void GamePlayScene::Initialize()
     sprite_->SetPosition({ 100.0f, 100.0f });
     // サウンド関連===============================
 
-
+   //  SoundManager::GetInstance()->ResetSE(gateSound_);
     // ドローンのプロペラ音
     DronePropellerSound_ = SoundManager::GetInstance()->SoundLoadFile("Resources/DroneBGM.mp3");
     //ゲート通過時キラキラ
@@ -483,13 +483,13 @@ void GamePlayScene::Update()
         if (gates_[nextGate_].TryPass(dronePos, res)) {
             if (res == GateResult::Perfect) {
                 SoundManager::GetInstance()->PlaySE(gateSound_, 1.0f);
-                SoundManager::GetInstance()->ResetSE(gateSound_);
+              //  SoundManager::GetInstance()->ResetSE(gateSound_);
                 particleGate_.Play(drone_.GetPos());
                 perfectCount_++;
                 nextGate_++;
             } else if (res == GateResult::Good) {
                 SoundManager::GetInstance()->PlaySE(gateSound_, 1.0f);
-                SoundManager::GetInstance()->ResetSE(gateSound_);
+               // SoundManager::GetInstance()->ResetSE(gateSound_);
                 particleGate_.Play(drone_.GetPos());
                 goodCount_++;
                 nextGate_++;
@@ -504,7 +504,6 @@ void GamePlayScene::Update()
         if (goalSys_.IsCleared()) {
             stageCleared_ = true;
             SoundManager::GetInstance()->PlaySE(gateSound_, 1.0f);
-            SoundManager::GetInstance()->ResetSE(gateSound_);
             // ここで「リザルトへ遷移」「SE」「フェード」等を入れる
             // 例：次シーンへ
            // SceneManager::GetInstance()->SetNextScene(new ResultScene(perfectCount_, goodCount_));

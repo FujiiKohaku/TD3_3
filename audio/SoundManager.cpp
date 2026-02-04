@@ -13,20 +13,51 @@ void SoundManager::Initialize()
     result = xAudio2->CreateMasteringVoice(&masterVoice);
     assert(SUCCEEDED(result));
 }
+void SoundManager::Update()
+{
+    for (auto it = activeVoices_.begin(); it != activeVoices_.end();) {
+        IXAudio2SourceVoice* voice = *it;
+        if (!voice) {
+            it = activeVoices_.erase(it);
+            continue;
+        }
+
+        XAUDIO2_VOICE_STATE state {};
+        voice->GetState(&state);
+
+        if (state.BuffersQueued == 0) {
+            voice->DestroyVoice();
+            it = activeVoices_.erase(it);
+        } else {
+            ++it;
+        }
+    }
+}
 
 void SoundManager::Finalize()
 {
+    // SEの一時voice（今は使ってないけど残してるなら）
     if (seVoice_) {
         seVoice_->Stop();
         seVoice_->DestroyVoice();
         seVoice_ = nullptr;
     }
 
+    // BGM
     if (bgmVoice_) {
         bgmVoice_->Stop();
         bgmVoice_->DestroyVoice();
         bgmVoice_ = nullptr;
     }
+
+    // 追加：SEの active voices を全部止めて破棄
+    for (IXAudio2SourceVoice* voice : activeVoices_) {
+        if (voice) {
+            voice->Stop();
+            voice->DestroyVoice();
+        }
+    }
+    activeVoices_.clear();
 
     if (masterVoice) {
         masterVoice->DestroyVoice();
@@ -34,7 +65,10 @@ void SoundManager::Finalize()
     }
 
     xAudio2.Reset();
+
+    MFShutdown();
 }
+
 
 
 
@@ -185,12 +219,6 @@ void SoundManager::PlaySE(const SoundData& soundData, float volume)
         return;
     }
 
-    if (playedSE_.contains(&soundData)) {
-        return;
-    }
-
-    playedSE_.insert(&soundData);
-
     IXAudio2SourceVoice* voice = nullptr;
     HRESULT result = xAudio2->CreateSourceVoice(&voice, &soundData.wfex);
     if (FAILED(result)) {
@@ -205,14 +233,18 @@ void SoundManager::PlaySE(const SoundData& soundData, float volume)
     voice->SetVolume(volume);
     voice->SubmitSourceBuffer(&buffer);
     voice->Start();
+
+    activeVoices_.push_back(voice);
 }
 
 
 
-void SoundManager::ResetSE(const SoundData& soundData)
-{
-    playedSE_.erase(&soundData);
-}
+
+
+//void SoundManager::ResetSE(const SoundData& soundData)
+//{
+//    playedSE_.erase(&soundData);
+//}
 
 
 void SoundManager::PlayBGM(const SoundData& soundData, float volume)
@@ -266,6 +298,7 @@ void SoundManager::StopBGMAll()
     bgmVoice_->Stop();
     bgmVoice_->FlushSourceBuffers();
     currentBgm_ = nullptr;
+    playedSE_.clear();
 }
 
 

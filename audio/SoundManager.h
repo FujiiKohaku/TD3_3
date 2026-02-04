@@ -60,7 +60,8 @@ public:
 
     void StopBGM(const SoundData& soundData);
     void StopBGMAll();
-    void ResetSE(const SoundData& soundData);
+    //void ResetSE(const SoundData& soundData);
+    void Update();
 
 private:
     // シングルトン用
@@ -81,4 +82,6 @@ private:
     IXAudio2MasteringVoice* masterVoice = nullptr;
 
     std::unordered_set<const SoundData*> playedSE_;
+
+     std::vector<IXAudio2SourceVoice*> activeVoices_;
 };
