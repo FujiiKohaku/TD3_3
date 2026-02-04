@@ -11,6 +11,7 @@
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
 #include "Object3DStruct.h"
+
 class Object3dManager;
 class Model;
 class Object3d {
@@ -23,7 +24,7 @@ public:
     void Draw();
 
     static ModelData LoadModeFile(const std::string& directoryPath, const std::string filename);
-    static MaterialData LoadMaterialTemplateFile(const std::string& directoryPath, const std::string& filename);
+   // static MaterialData LoadMaterialTemplateFile(const std::string& directoryPath, const std::string& filename);
 
     // setter
     void SetModel(Model* model) { model_ = model; }
