@@ -284,7 +284,6 @@ void StageSelectScene::Decide_()
         return;
 
 	SceneManager::GetInstance()->SetSelectedStageFile(entries_[selected_].fileUtf8);
-    SceneManager::GetInstance()->SetSelectedStageFile(entries_[selected_].fileUtf8);
     SceneManager::GetInstance()->SetNextScene(new GamePlayScene());
 }
 
@@ -335,10 +334,18 @@ void StageSelectScene::Update()
         UpdateStageNameTexture_();
     }
 
-	if (input.IsKeyTrigger(DIK_SPACE)) {
-        SoundManager::GetInstance()->PlaySE(se_, 1.0f);
-		FadeManager::GetInstance()->StartFadeOut(1.0f);
-	}
+    if (input.IsKeyTrigger(DIK_SPACE)) {
+        auto fadeStatus = FadeManager::GetInstance()->GetStatus();
+        if (fadeStatus == FadeManager::Status::FadeInFinished || fadeStatus == FadeManager::Status::None) {
+
+            // 1. まず決定したステージ情報をSceneManagerにセットするでやんす！
+            Decide_();
+
+            // 2. SEを鳴らしてフェードアウト開始！
+            SoundManager::GetInstance()->PlaySE(se_, 1.0f);
+            FadeManager::GetInstance()->StartFadeOut(1.0f);
+        }
+    }
 
     if (input.IsKeyTrigger(DIK_BACKSPACE)) {
         SceneManager::GetInstance()->SetNextScene(new TitleScene());

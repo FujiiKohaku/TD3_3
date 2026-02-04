@@ -79,7 +79,8 @@ void ResultScene::Finalize()
 void ResultScene::Update()
 {
     Input& input = *Input::GetInstance();
-    if (input.IsKeyTrigger(DIK_SPACE)) {
+    if (input.IsKeyTrigger(DIK_SPACE) && FadeManager::GetInstance()->GetStatus() == FadeManager::Status::FadeInFinished ||
+        FadeManager::GetInstance()->GetStatus() == FadeManager::Status::None) {
         FadeManager::GetInstance()->StartFadeOut(1.0f);
     }
 
