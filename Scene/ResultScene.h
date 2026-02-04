@@ -47,4 +47,6 @@ private:
     SoundData bgmData_;
 
     float t_;
+
+    bool bgmPlayed_ = false;
 };

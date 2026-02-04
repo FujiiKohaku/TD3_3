@@ -67,6 +67,16 @@ void ResultScene::Update()
     // タイマー加算
     t_ += 0.01f;
 
+    if (t_ >= 1.0f) {
+        bgmPlayed_ = true;
+    }
+
+    if (bgmPlayed_) {
+        SoundManager::GetInstance()->PlaySE(bgmData_, 1.0);
+        bgmPlayed_ = false;
+        t_ = 0.0f;
+    }
+
     // 入出力取得
     Input& input = *Input::GetInstance();
     if (input.IsKeyTrigger(DIK_F1)) {
