@@ -653,13 +653,18 @@ void StageEditorScene::Draw2D()
 			"  Q/E      : Down/Up\n"
 			"  LSHIFT   : Fast\n"
 			"  Y        : Reset Camera\n"
+			"  F1       : Mouse Debug Toggle\n"   // ★追加
 			"\n"
 			"Common:\n"
 			"  LMB Click : Select\n"
-			"  Hold P + LMB Click : Place (Y=0)\n"
-			"  F2 : Name Stage or Name Finishn"
+			"  Hold P + LMB : Place on Ground (Y=0)\n"
+			"  F2 : Name Stage (Enter=OK / F2=Cancel)\n" // ★文言ちょい修正（今の文字列は誤字ってる）
 			"  F5 : Save\n"
-			"  F9 : Load\n";
+			"  F9 : Load\n"
+			"  F6 : Capture Thumbnail\n"          // ★追加
+			"  F7 : Test Play\n"                  // ★追加
+			"  BACKSPACE : Back to StageSelect\n"; // ★追加
+
 
 		font_.DrawString(
 			helpPosLeft_.x,
@@ -687,7 +692,13 @@ void StageEditorScene::Draw2D()
 				"\n"
 				"Rotate:\n"
 				"  I/K : RotX\n"
-				"  J/L : RotY\n";
+				"  J/L : RotY\n"
+				"\n"
+				"Params:\n"
+				"  4/5 : PerfectRadius -/+\n"   // ★追加
+				"  6/7 : GateRadius    -/+\n"   // ★追加
+				"  8/9 : Thickness     -/+\n";  // ★追加
+
 		} else if (editMode_ == EditMode::Wall) {
 			right =
 				"[Wall Mode]\n"
@@ -701,19 +712,24 @@ void StageEditorScene::Draw2D()
 				"  PgUp/PgDn : Y\n"
 				"\n"
 				"Size:\n"
-				"  U/O : X\n"
-				"  I/K : Y\n"
-				"  J/L : Z\n"
+				"  U/O : HalfX -/+\n"   // ★追加
+				"  I/K : HalfY -/+\n"   // ★追加
+				"  J/L : HalfZ -/+\n"   // ★追加
 				"\n"
 				"Rotate (OBB):\n"
-				"  R/F : RotY\n";
+				"  R/F : RotY -/+\n";   // ★補足
+
 		} else if (editMode_ == EditMode::Goal) {
 			right =
+				right =
 				"[Goal Mode]\n"
 				"Move:\n"
 				"  Arrow : XZ\n"
 				"  PgUp/PgDn : Y\n"
-				"\n";
+				"\n"
+				"Alpha:\n"
+				"  - / = : Alpha -/+\n"; // ★追加
+
 		}
 
 		font_.DrawString(
