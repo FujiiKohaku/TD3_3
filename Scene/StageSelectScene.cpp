@@ -111,18 +111,41 @@ void StageSelectScene::RenderTextToRGBA_GDI_(
 }
 
 // -------------------- 選択中ファイル名を動的テクスチャへ --------------------
+
+int StageSelectScene::GetFrontIndex_() const {
+	if (entries_.empty()) return -1;
+
+	const int n = (int)entries_.size();
+	const float step = 6.283185307f / (float)n; // ← kTAU を使わない
+
+	int best = 0;
+	float bestDepth = -1e9f;
+
+	for (int i = 0; i < n; ++i) {
+		int rel = i - selected_;
+		float a = rel * step + carouselAngle_;
+		float depth = std::cos(a);
+		if (depth > bestDepth) {
+			bestDepth = depth;
+			best = i;
+		}
+	}
+	return best;
+}
+
+
+
 void StageSelectScene::UpdateStageNameTexture_() {
-	if (selected_ < 0 || selected_ >= (int)entries_.size()) return;
+	int front = GetFrontIndex_();
+	if (front < 0 || front >= (int)entries_.size()) return;
 
-	// ★Explorerに出てるそのままのファイル名（例: "シーンテスト.json"）
-	//const std::wstring w = entries_[selected_].fileW;
-	const std::wstring w = entries_[selected_].path.stem().wstring();
-
+	const std::wstring w = entries_[front].path.stem().wstring();
 	RenderTextToRGBA_GDI_(w, kStageNameTexW, kStageNameTexH, stageNameRgba_, 32);
 
 	TextureManager::GetInstance()->UpdateDynamicTextureRGBA8(
 		kStageNameTexKey, stageNameRgba_.data(), kStageNameTexW, kStageNameTexH);
 }
+
 
 static float Clamp01(float x) { return std::clamp(x, 0.0f, 1.0f); }
 static float EaseOutCubic(float t) {
@@ -275,9 +298,10 @@ void StageSelectScene::Rescan_() {
 
 // -------------------- Decide/Update --------------------
 void StageSelectScene::Decide_() {
-	if (selected_ < 0 || selected_ >= (int)entries_.size()) return;
+	int front = GetFrontIndex_();
+	if (front < 0 || front >= (int)entries_.size()) return;
 
-	SceneManager::GetInstance()->SetSelectedStageFile(entries_[selected_].fileUtf8);
+	SceneManager::GetInstance()->SetSelectedStageFile(entries_[front].fileUtf8);
 }
 
 void StageSelectScene::Update() {
@@ -299,7 +323,6 @@ void StageSelectScene::Update() {
 
 	// ★選択が変わったら日本語表示更新（ここが重要）
 	if (selected_ != lastSelected_) {
-
 		int prev = lastSelected_;
 		lastSelected_ = selected_;
 		UpdateStageNameTexture_();
@@ -309,14 +332,12 @@ void StageSelectScene::Update() {
 			float step = kTAU / (float)n;
 			int delta = lastSelected_ - prev;
 
-			// delta分回す（符号込み）
+			carouselStartAngle_ = carouselAngle_;              // ★ここで開始角固定
 			carouselTargetAngle_ -= step * (float)delta;
 
-			// アニメ開始
 			carouselAnimFrame_ = 0;
 		}
 	}
-
 
 	if (input.IsKeyTrigger(DIK_SPACE)) {
 		FadeManager::GetInstance()->StartFadeOut(1.0f);
@@ -342,7 +363,7 @@ void StageSelectScene::Update() {
 		carouselAnimFrame_++;
 		float t = (float)carouselAnimFrame_ / (float)kCarouselAnimFrames;
 		float e = EaseOutCubic(t);
-		carouselAngle_ = Lerp(carouselAngle_, carouselTargetAngle_, e);
+		carouselAngle_ = Lerp(carouselStartAngle_, carouselTargetAngle_, e); // ★ここ
 	} else {
 		carouselAngle_ = carouselTargetAngle_;
 	}

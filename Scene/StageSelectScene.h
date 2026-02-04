@@ -17,7 +17,7 @@ public:
     void Draw3D() override;
     void DrawImGui() override;
 
-
+    int GetFrontIndex_() const;
 
 private:
     struct StageEntry {
@@ -97,5 +97,6 @@ private:
 
     float frontAlpha_ = 1.00f;
     float backAlpha_ = 0.35f;
+    float carouselStartAngle_ = 0.0f;
 
 };
