@@ -501,27 +501,16 @@ void StageSelectScene::Update()
         carouselTarget_ -= step;
         SoundManager::GetInstance()->PlaySE(selectSeData_, 1.0f);
     }
-    if (input.IsKeyTrigger(DIK_LEFT)) {
+    if (input.IsKeyTrigger(DIK_LEFT)||input.IsKeyTrigger(DIK_A)) {
+        carouselTarget_ += step; // 左回し
+        SoundManager::GetInstance()->PlaySE(selectSeData_, 1.0f);
+    }
 
+    if (input.IsKeyTrigger(DIK_RIGHT)||input.IsKeyTrigger(DIK_D)) {
+        carouselTarget_ -= step; // 右回し
         SoundManager::GetInstance()->PlaySE(selectSeData_, 1.0f);
-        // SoundManager::GetInstance()->ResetSE(selectSeData_);
-        selected_ = std::max<int>(0, selected_ - 1);
     }
-    if (input.IsKeyTrigger(DIK_RIGHT)) {
-        SoundManager::GetInstance()->PlaySE(selectSeData_, 1.0f);
-        // SoundManager::GetInstance()->ResetSE(selectSeData_);
-        selected_ = std::min((int)entries_.size() - 1, selected_ + 1);
-    }
-    if (input.IsKeyTrigger(DIK_UP)) {
-        SoundManager::GetInstance()->PlaySE(selectSeData_, 1.0f);
-        // SoundManager::GetInstance()->ResetSE(selectSeData_);
-        selected_ = std::max<int>(0, selected_ - kThumbCols);
-    }
-    if (input.IsKeyTrigger(DIK_DOWN)) {
-        SoundManager::GetInstance()->PlaySE(selectSeData_, 1.0f);
-        // SoundManager::GetInstance()->ResetSE(selectSeData_);
-        selected_ = std::min((int)entries_.size() - 1, selected_ + kThumbCols);
-    }
+
     // ★選択が変わったら日本語表示更新（ここが重要）
     if (selected_ != lastSelected_) {
         lastSelected_ = selected_;
