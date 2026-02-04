@@ -925,7 +925,7 @@ void GamePlayScene::Finalize()
         delete compassB_;
         compassB_ = nullptr;
     }
-
+    SoundManager::GetInstance()->StopBGMAll();
 
 }
 void GamePlayScene::UpdateDronePointLight()
