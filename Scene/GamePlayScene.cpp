@@ -267,7 +267,7 @@ void GamePlayScene::Initialize()
 
     // ---- walls build ----
     wallSys_.Clear(); // ★無いなら追加（後述）
-    wallSys_.BuildDebug(Object3dManager::GetInstance(), "cube.obj");
+    wallSys_.BuildDebug(Object3dManager::GetInstance(), "cube2.obj");
 
     for (const auto& w : stage.walls) {
         if (w.type == WallSystem::Type::AABB) {
