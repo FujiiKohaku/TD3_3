@@ -334,6 +334,7 @@ void GamePlayScene::Initialize()
     // spotLight
     LightManager::GetInstance()->SetSpotLightDistance(10.0f);
     LightManager::GetInstance()->SetSpotLightIntensity(0.6f);
+    LightManager::GetInstance()->SetPointRadius(5.0f);
 }
 
 void GamePlayScene::Update()
@@ -464,7 +465,7 @@ void GamePlayScene::Update()
         g.Tick(dt);
 
         if (g.gate.GetIsHitGate() && !g.gate.playedEffect) {
-            particleGate_.Play(drone_.GetPos());
+          
 
            
             g.gate.playedEffect = true;
@@ -483,10 +484,12 @@ void GamePlayScene::Update()
         if (gates_[nextGate_].TryPass(dronePos, res)) {
             if (res == GateResult::Perfect) {
                 SoundManager::GetInstance()->PlaySE(gateSound_, 1.0f);
+                particleGate_.Play(drone_.GetPos());
                 perfectCount_++;
                 nextGate_++;
             } else if (res == GateResult::Good) {
                 SoundManager::GetInstance()->PlaySE(gateSound_, 1.0f);
+                particleGate_.Play(drone_.GetPos());
                 goodCount_++;
                 nextGate_++;
             } else {
@@ -843,13 +846,13 @@ void GamePlayScene::Draw3D()
 
     landingEffect_.Draw();
  
-    if (drawWallDebug_) {
-        wallSys_.DrawDebug();
-    }
+
     Object3dManager::GetInstance()->SetBlendMode(kBlendModeAdd);
     Object3dManager::GetInstance()->SetGlowPSO();
     goalSys_.Draw();
-
+    if (drawWallDebug_) {
+        wallSys_.DrawDebug();
+    }
   
     particleGate_.Draw();
     // sphere_->Draw(DirectXCommon::GetInstance()->GetCommandList());
