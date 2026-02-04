@@ -388,8 +388,6 @@ void StageEditorScene::Initialize()
     stageNameSprite_->Initialize(SpriteManager::GetInstance(), kNameTexKey);
     stageNameSprite_->SetPosition({ 16.0f, 16.0f });
     stageNameSprite_->SetSize({1280, 720.0f }); // 必要なら調整
-
-
 }
 
 void StageEditorScene::Finalize()

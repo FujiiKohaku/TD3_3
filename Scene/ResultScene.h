@@ -4,6 +4,7 @@
 #include "Camera.h"
 #include "Object3d.h"
 #include "Sprite.h"
+#include "BitmapFont.h"
 
 class ResultScene : public BaseScene {
 public:
@@ -30,7 +31,15 @@ private:
 	std::unique_ptr<Sprite> perfect_ = nullptr;
 	std::unique_ptr<Sprite> good_ = nullptr;
 
+	//ビットマップフォント
+	std::unique_ptr<BitmapFont> font_ = nullptr;
+
 	//ステージの成績
 	int perfectCount_ = 0;
 	int goodCount_ = 0;
+
+	// アニメーション用タイマー（0.0f ～ 1.0f）
+	float animationTimer_ = 0.0f;
+	// アニメーション速度（1.0f で 1秒、2.0f で 0.5秒）
+	const float kAnimSpeed = 0.25f;
 };
