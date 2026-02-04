@@ -399,13 +399,13 @@ void GamePlayScene::Initialize()
 	requestBackToTitle_ = false;
 	stageCleared_ = false;
 
-	// 3) Altimeter: now altitude (fixed)
-	TextureManager::GetInstance()->LoadTexture(altMarkerNowPath_);
-	altMarkerNow_ = new Sprite();
-	altMarkerNow_->Initialize(SpriteManager::GetInstance(), altMarkerNowPath_);
-	altMarkerNow_->SetAnchorPoint({ 0.5f, 0.5f });
-	altMarkerNow_->SetSize(altMarkerNowSize_);
-	altMarkerNow_->SetRotation(0.0f);
+	//// 3) Altimeter: now altitude (fixed)
+	//TextureManager::GetInstance()->LoadTexture(altMarkerNowPath_);
+	//altMarkerNow_ = new Sprite();
+	//altMarkerNow_->Initialize(SpriteManager::GetInstance(), altMarkerNowPath_);
+	//altMarkerNow_->SetAnchorPoint({ 0.5f, 0.5f });
+	//altMarkerNow_->SetSize(altMarkerNowSize_);
+	//altMarkerNow_->SetRotation(0.0f);
 
 	// 4) Altimeter: gate altitude diff (moves)
 	TextureManager::GetInstance()->LoadTexture(gateMarkerAltPath_);
