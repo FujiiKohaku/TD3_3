@@ -595,7 +595,12 @@ void GamePlayScene::Update()
 
 
     // これを毎フレーム呼ぶ
-    camera_->FollowDroneRigid(drone_, 7.5f, 1.8f, -0.18f, droneYawOffset);
+    camera_->FollowDroneRigid(drone_,
+        20.0f,   // ← 少し遠く
+        5.0f,    // ← 少し高く
+        -0.5f,  // ← 見下ろし強め
+        droneYawOffset
+    );
     if (setumei_) {
         setumei_->Update();
     }
