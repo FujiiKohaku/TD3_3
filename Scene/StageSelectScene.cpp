@@ -202,6 +202,9 @@ void StageSelectScene::Rescan_() {
 		const auto& p = e.path();
 		if (p.extension() != L".json") continue;
 
+		const std::wstring stem = p.stem().wstring(); // 拡張子抜き
+		if (stem.rfind(L"__", 0) == 0) continue;
+
 		StageEntry se{};
 		se.path = p;
 		se.fileW = p.filename().wstring();
@@ -273,10 +276,12 @@ void StageSelectScene::Update() {
 		SceneManager::GetInstance()->SetNextScene(new TitleScene());
 	}
 
-
-	if (Input::GetInstance()->IsKeyPressed(DIK_E)) {
-		SceneManager::GetInstance()->SetNextScene(new StageEditorScene());
+	if (input.IsKeyTrigger(DIK_T)) {
+		auto* sm = SceneManager::GetInstance();
+		sm->RequestOpenEditorFile("_test/testStage.json");   // ★ここ
+		sm->SetNextScene(new StageEditorScene());
 	}
+
 
 	DrawImGui();
 }

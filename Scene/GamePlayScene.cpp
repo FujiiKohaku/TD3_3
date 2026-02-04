@@ -393,10 +393,13 @@ void GamePlayScene::Update()
     // BackSpace : エディターへ戻る（テスト時のみ）
     // =========================
     if (sm->IsTestPlay() && input.IsKeyTrigger(DIK_BACKSPACE)) {
-        sm->SetTestPlay(false);                // ★戻るので解除
+        sm->SetTestPlay(false);
+
+        sm->RequestOpenEditorFile("_test/__test_play.json"); // ★戻ったらテストファイルを開く
         sm->SetNextScene(new StageEditorScene());
         return;
     }
+
 
 
     // ドローン更新（※これが無いとカメラも動かない）
@@ -1172,6 +1175,14 @@ void GamePlayScene::DrawAltimeter_()
         std::snprintf(buf, sizeof(buf), "HEIGHT%.1f", alt);
         font_.DrawString(x, y - 24.0f, buf, 0.7f);
     }
+
+    //次の場所
+    {
+
+
+
+    }
+
 }
 
 void GamePlayScene::DrawSpeedSimple_()
