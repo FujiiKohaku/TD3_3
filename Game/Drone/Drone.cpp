@@ -22,6 +22,9 @@ void Drone::UpdateMode1(const Input& input, float dt) {
 	float inStrafe = 0.0f; // 左右移動（右スティックX / ←→）
 	float inUpDown = 0.0f; // 上下（右スティックY / ↑↓）
 
+
+
+
 	// keyboard
 	if (input.IsKeyPressed(DIK_W)) inForward += 1.0f;
 	if (input.IsKeyPressed(DIK_S)) inForward -= 1.0f;
@@ -46,6 +49,22 @@ void Drone::UpdateMode1(const Input& input, float dt) {
 		inUpDown += ry;
 	}
 
+	// 動いたらisMove_をtrueにする
+        const float moveThreshold = 0.01f;
+    
+
+        if (fabsf(inForward) > moveThreshold) {
+            isMove_ = true;
+        }
+        if (fabsf(inYaw) > moveThreshold) {
+            isMove_ = true;
+        }
+        if (fabsf(inStrafe) > moveThreshold) {
+            isMove_ = true;
+        }
+        if (fabsf(inUpDown) > moveThreshold) {
+            isMove_ = true;
+        }
 	inForward = std::clamp(inForward, -1.0f, 1.0f);
 	inYaw = std::clamp(inYaw, -1.0f, 1.0f);
 	inStrafe = std::clamp(inStrafe, -1.0f, 1.0f);

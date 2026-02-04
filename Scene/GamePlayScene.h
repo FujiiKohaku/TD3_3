@@ -13,6 +13,7 @@
 #include "SpriteManager.h"
 #include "StageSelectScene.h"
 #include "TextureManager.h"
+#include "StageEditorScene.h"
 
 // ゲームプレイ用
 #include "../Game/Drone/Drone.h"
@@ -52,6 +53,14 @@ private:
     // サウンド
     // ------------------------------
     SoundData bgm;
+    SoundData DronePropellerSound_;
+
+
+
+
+
+    // ------------------------------
+
     Sprite* sprite_ = nullptr;
     std::vector<Sprite*> sprites_;
     Object3d* player2_;

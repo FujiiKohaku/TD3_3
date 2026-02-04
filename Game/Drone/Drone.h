@@ -47,7 +47,8 @@ public:
     void SetYaw(float y) { yaw_ = y; }
 
     bool HasJustLanded() const;
-  
+
+    bool isMove() const { return isMove_; }
 
 private:
     Vector3 pos_ { 0, 0, 0 };
@@ -94,4 +95,6 @@ private:
     bool justLanded_ = false;
 
     bool wasOnGround_ = false;
+
+    bool isMove_ = false;
 };

@@ -10,6 +10,7 @@ public:
     void Initialize(DirectXCommon* dxCommon);
     void Update();
     void Bind(ID3D12GraphicsCommandList* cmd);
+    void Reset();
 
     // 平行光の設定
     void SetDirectional(const Vector4& color, const Vector3& dir, float intensity);

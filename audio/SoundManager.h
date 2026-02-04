@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Windows.h> 
+#include <Windows.h>
 #include <cassert>
 #include <string>
 #include <vector>
@@ -11,7 +11,7 @@
 
 // ===== Media Foundation =====
 #include <mfapi.h>
-#include <mfidl.h> 
+#include <mfidl.h>
 #include <mfobjects.h>
 #include <mfreadwrite.h>
 
@@ -52,18 +52,28 @@ public:
 
     SoundData SoundLoadFile(const std::string& filename);
     void SoundUnload(SoundData* soundData);
+    void StopSE();
+    // SE再生用
+    void PlaySE(const SoundData& soundData, float volume);
+    void PlayBGM(const SoundData& soundData, float volume);
 
-    void SoundPlayWave(const SoundData& soundData);
+    void StopBGM(const SoundData& soundData);
 
 private:
     // シングルトン用
-    SoundManager() = default;
+    SoundManager()
+        = default;
     ~SoundManager() = default;
 
     SoundManager(const SoundManager&) = delete;
     SoundManager& operator=(const SoundManager&) = delete;
 
 private:
+    IXAudio2SourceVoice* seVoice_ = nullptr;
+    bool isSEPlaying_ = false;
+    IXAudio2SourceVoice* bgmVoice_ = nullptr;
+    const SoundData* currentBgm_ = nullptr;
+
     Microsoft::WRL::ComPtr<IXAudio2> xAudio2;
     IXAudio2MasteringVoice* masterVoice = nullptr;
 };

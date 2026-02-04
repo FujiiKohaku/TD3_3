@@ -18,10 +18,14 @@ void Game::Initialize()
     // TextureManager::GetInstance()->LoadTexture("resources/circle.png")
     ModelManager::GetInstance()->Initialize(DirectXCommon::GetInstance());
     Object3dManager::GetInstance()->Initialize(DirectXCommon::GetInstance());
+    SoundManager::GetInstance()->Initialize();
+
     // camera_ = new Camera();
     // camera_->SetTranslate({ 0.0f, 0.0f, 2.0f });
     // Object3dManager::GetInstance()->SetDefaultCamera(camera_);
     modelCommon_.Initialize(DirectXCommon::GetInstance());
+
+    LightManager::GetInstance()->Initialize(DirectXCommon::GetInstance());
     // 入力関連
     Input::GetInstance()->Initialize(winApp_);
     // パーティクル関連
@@ -39,7 +43,6 @@ void Game::Initialize()
     TextureManager::GetInstance()->LoadTexture("resources/white.png");
     TextureManager::GetInstance()->LoadTexture("resources/ui/ascii_font_16x6_cell32_first32.png");
     TextureManager::GetInstance()->LoadTexture("resources/ui/no_thumb.png");
-
 
     BaseScene* scene = new TitleScene();
     // シーンマネージャーに最初のシーンをセット
@@ -70,7 +73,6 @@ void Game::Update()
         }
     }
 
-
     // エスケープで離脱
     if (Input::GetInstance()->IsKeyPressed(DIK_ESCAPE)) {
         endRequest_ = true;
@@ -84,7 +86,8 @@ void Game::Update()
     ImGuiManager::GetInstance()->End();
 }
 
-void Game::Draw() {
+void Game::Draw()
+{
     SrvManager::GetInstance()->PreDraw();
     DirectXCommon::GetInstance()->PreDraw();
 
@@ -94,9 +97,7 @@ void Game::Draw() {
 
     // ★ここで「保存したい」ことだけ予約する
     SceneManager::ThumbnailRequest req;
-    if (scene &&
-        scene->AllowThumbnailCapture() &&
-        SceneManager::GetInstance()->ConsumeThumbnailRequest(req)) {
+    if (scene && scene->AllowThumbnailCapture() && SceneManager::GetInstance()->ConsumeThumbnailRequest(req)) {
 
         DirectXCommon::GetInstance()->RequestBackBufferCapture(req.path, req.w, req.h);
 
@@ -106,14 +107,15 @@ void Game::Draw() {
         }
     }
 
-    if (scene) scene->Draw3D();
-    if (scene && !skipUI) scene->Draw2D();
-    if (!skipUI) ImGuiManager::GetInstance()->Draw();
+    if (scene)
+        scene->Draw3D();
+    if (scene && !skipUI)
+        scene->Draw2D();
+    if (!skipUI)
+        ImGuiManager::GetInstance()->Draw();
 
     DirectXCommon::GetInstance()->PostDraw(); // ★ここで実際の保存をやる
 }
-
-
 
 void Game::Finalize()
 {
@@ -128,7 +130,8 @@ void Game::Finalize()
     SrvManager::GetInstance()->Finalize();
     // DirectXCommonはFinalizeしてもデバイス破棄処理だけ。deleteは不要
     DirectXCommon::GetInstance()->Finalize();
-
+    SoundManager::GetInstance()->Finalize();
+    LightManager::GetInstance()->Finalize();
     winApp_->Finalize();
     delete winApp_;
     delete camera_;

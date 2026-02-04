@@ -15,7 +15,8 @@
 #include "Input.h"
 #include "SceneManager.h"
 #include "../Game/Stage/StageIO.h"
-
+#include "GamePlayScene.h"
+#include "StageSelectScene.h"
 
 #include "../Game/Drone/Drone.h"
 #include "../Game/Gate/GateVisual.h"
@@ -99,7 +100,7 @@ private:
     float sizeStep_ = 0.1f;
 
     // 保存/ロード用（最初は固定でもOK）
-    std::string stageFile_ = "stage01.json";
+    std::string stageFile_ = "testStage.json";
 
     float goalAlpha_ = 0.25f;
 

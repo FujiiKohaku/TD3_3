@@ -20,10 +20,11 @@ void TitleScene::Initialize()
 
     // モデル読み込み
     ModelManager::GetInstance()->LoadModel("terrain.obj");
-    LightManager::GetInstance()->Initialize(DirectXCommon::GetInstance());
+   
     // Object3d 生成 & 初期化
 
     // Light
+    LightManager::GetInstance()->Reset();
     LightManager::GetInstance()->SetIntensity(0.1f);
     // pointLight
     LightManager::GetInstance()->SetPointPosition({ -22.40f, 3.100f, 11.400f });
@@ -85,10 +86,6 @@ void TitleScene::Update()
 {
     if (Input::GetInstance()->IsKeyPressed(DIK_SPACE)) {
         SceneManager::GetInstance()->SetNextScene(new StageSelectScene());
-    }
-
-    if (Input::GetInstance()->IsKeyPressed(DIK_E)) {
-        SceneManager::GetInstance()->SetNextScene(new StageEditorScene());
     }
 
     // titleModel->Update();
@@ -272,5 +269,4 @@ void TitleScene::Finalize()
     delete homeModel_;
     delete railModel_;
     delete drone_;
-    LightManager::GetInstance()->Finalize();
 }
