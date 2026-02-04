@@ -4,7 +4,7 @@
 #include "SceneManager.h"
 #include "StageEditorScene.h"
 #include "TitleScene.h"
-
+#include "../Game/Drone/Drone.h"
 #include "../Light/LightManager.h"
 #include "Camera.h"
 #include "Object3dManager.h"
@@ -19,7 +19,8 @@
 #include <cstring> // std::max initializer_list で要る環境もあるので保険
 #include <filesystem>
 #include <vector>
-
+#include <Xinput.h>
+#pragma comment(lib, "Xinput.lib")
 #include <cctype> // isdigit
 #include <cstdlib> // strtol
 static bool prevAButton_ = false;
@@ -38,6 +39,26 @@ std::string StageSelectScene::WideToUtf8_(const std::wstring& ws)
     WideCharToMultiByte(CP_UTF8, 0, ws.data(), (int)ws.size(),
         out.data(), size, nullptr, nullptr);
     return out;
+}
+static float NormalizeStick(short v, short deadZone)
+{
+    int absValue = (v >= 0) ? v : -v;
+
+    if (absValue <= deadZone) {
+        return 0.0f;
+    }
+
+    float sign = (v >= 0) ? 1.0f : -1.0f;
+    float normalized = (absValue - deadZone) / float(32767 - deadZone);
+
+    if (normalized < 0.0f) {
+        normalized = 0.0f;
+    }
+    if (normalized > 1.0f) {
+        normalized = 1.0f;
+    }
+
+    return sign * normalized;
 }
 
 // -------------------- GDIで日本語をRGBAへ --------------------
@@ -368,6 +389,8 @@ void StageSelectScene::Decide_()
 
 void StageSelectScene::Update()
 {
+    bool leftTrigger = false;
+    bool rightTrigger = false;
     Input& input = *Input::GetInstance();
 
     if (input.IsKeyTrigger(DIK_F5)) {
@@ -421,10 +444,25 @@ void StageSelectScene::Update()
 
     const float step = (2.0f * 3.14159265f) / (float)n;
 
-    if (input.IsKeyTrigger(DIK_LEFT))
-        carouselTarget_ += step;
-    if (input.IsKeyTrigger(DIK_RIGHT))
-        carouselTarget_ -= step;
+// ===== gamepad : Dパッドのみ =====
+    if (XInputGetState(0, &st) == ERROR_SUCCESS) {
+
+        bool nowLeft = (st.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_LEFT) != 0;
+        bool nowRight = (st.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_RIGHT) != 0;
+
+        if (nowLeft && !prevDpadLeft_) {
+            leftTrigger = true;
+        }
+        if (nowRight && !prevDpadRight_) {
+            rightTrigger = true;
+        }
+
+        prevDpadLeft_ = nowLeft;
+        prevDpadRight_ = nowRight;
+    } else {
+        prevDpadLeft_ = false;
+        prevDpadRight_ = false;
+    }
 
     // 追従
     carouselAngle_ += (carouselTarget_ - carouselAngle_) * carouselEase_;
@@ -454,7 +492,15 @@ void StageSelectScene::Update()
         lastSelected_ = selected_;
         UpdateStageNameTexture_();
     }
+    if (leftTrigger) {
+        carouselTarget_ += step;
+        SoundManager::GetInstance()->PlaySE(selectSeData_, 1.0f);
+    }
 
+    if (rightTrigger) {
+        carouselTarget_ -= step;
+        SoundManager::GetInstance()->PlaySE(selectSeData_, 1.0f);
+    }
     if (input.IsKeyTrigger(DIK_LEFT)) {
 
         SoundManager::GetInstance()->PlaySE(selectSeData_, 1.0f);
