@@ -836,14 +836,15 @@ void GamePlayScene::Draw3D()
     }
 
     landingEffect_.Draw();
-
+ 
+    if (drawWallDebug_) {
+        wallSys_.DrawDebug();
+    }
     Object3dManager::GetInstance()->SetBlendMode(kBlendModeAdd);
     Object3dManager::GetInstance()->SetGlowPSO();
     goalSys_.Draw();
 
-    if (drawWallDebug_) {
-        wallSys_.DrawDebug();
-    }
+  
     particleGate_.Draw();
     // sphere_->Draw(DirectXCommon::GetInstance()->GetCommandList());
     Object3dManager::GetInstance()->SetBlendMode(kBlendModeNone);
