@@ -142,7 +142,9 @@ private:
 
     void InitCompass_();
     void UpdateCompass_();
-    //	void DrawCompass_();
+    Vector3 GetNavTargetPos_() const;
+
+    void UpdateGateMarkerOnCompass_();
 
     // 高さ表示
 
@@ -179,4 +181,13 @@ private:
     std::string altMarkerPath_ = "resources/ui/marker.png"; // 既にあるなら同じでOK
     Vector2 altMarkerSize_ = { 16.0f, 16.0f }; // 調整
     float altMarkerOffsetX_ = 6.0f; // バーからの距離
+
+    // いま向いてる方位マーカー（既存）: compassMarker_ などはそのまま
+    Sprite* gateMarkerCompass_ = nullptr; // ★追加：次ゲート/ゴール 方位用
+    Sprite* gateMarkerAlt_ = nullptr; // ★追加：次ゲート/ゴール 高度用
+
+    const char* gateMarkerCompassPath_ = "resources/ui/gate_marker_alt.png";
+    //const char* gateMarkerCompassPath_ = "resources/ui/gate_marker_compass.png";
+    const char* gateMarkerAltPath_ = "resources/ui/gate_marker_alt.png";
+
 };

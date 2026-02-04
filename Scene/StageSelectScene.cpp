@@ -165,6 +165,15 @@ void StageSelectScene::Initialize() {
 
 	lastSelected_ = selected_;
 	if (selected_ >= 0) UpdateStageNameTexture_();
+
+	ModelManager::GetInstance()->LoadModel("skydome.obj");
+	TextureManager::GetInstance()->LoadTexture("resources/skydome.png");
+	skydome_ = std::make_unique<Object3d>();
+	skydome_->Initialize(Object3dManager::GetInstance());
+	skydome_->SetModel("skydome.obj");
+	skydome_->SetCamera(camera_);
+	skydome_->SetEnableLighting(false);
+
 }
 
 void StageSelectScene::Finalize() {
@@ -254,6 +263,8 @@ void StageSelectScene::Update() {
 		Rescan_();
 	}
 
+	skydome_->Update();
+
 	if (entries_.empty()) return;
 
 	if (input.IsKeyTrigger(DIK_LEFT))  selected_ = std::max<int>(0, selected_ - 1);
@@ -333,6 +344,11 @@ void StageSelectScene::Draw2D() {
 
 
 void StageSelectScene::Draw3D() {
+
+	Object3dManager::GetInstance()->PreDraw();
+
+	skydome_->Draw();
+
 }
 
 void StageSelectScene::DrawImGui() {
