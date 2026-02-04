@@ -943,7 +943,7 @@ void GamePlayScene::Finalize()
 {
     ParticleManager::GetInstance()->Finalize();
 
-
+     SoundManager::GetInstance()->StopBGMAll();
     delete droneObj_;
     droneObj_ = nullptr;
 
@@ -980,7 +980,7 @@ void GamePlayScene::Finalize()
 
     delete gateMarkerCompass_; gateMarkerCompass_ = nullptr;
     delete gateMarkerAlt_;     gateMarkerAlt_ = nullptr;
-    SoundManager::GetInstance()->StopBGMAll();
+   
 
 }
 void GamePlayScene::UpdateDronePointLight()
