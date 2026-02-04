@@ -398,14 +398,12 @@ void StageSelectScene::Draw2D()
 }
 
 
-void StageSelectScene::Draw3D() {
-
-	Object3dManager::GetInstance()->PreDraw();
-
-	skydome_->Draw();
-
 void StageSelectScene::Draw3D()
 {
+
+    Object3dManager::GetInstance()->PreDraw();
+
+    skydome_->Draw();
 }
 
 void StageSelectScene::DrawImGui()
