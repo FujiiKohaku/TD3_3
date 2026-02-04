@@ -79,5 +79,6 @@ private:
     );
 
     SoundData selectSeData_;
+    SoundData bgm;
 
 };

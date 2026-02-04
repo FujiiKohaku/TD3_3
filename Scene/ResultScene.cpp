@@ -75,6 +75,7 @@ void ResultScene::Update()
         SoundManager::GetInstance()->PlaySE(bgmData_, 1.0);
         bgmPlayed_ = false;
         t_ = 0.0f;
+        SoundManager::GetInstance()->StopBGMAll();
     }
 
     // 入出力取得

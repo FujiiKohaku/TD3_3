@@ -185,8 +185,13 @@ void SoundManager::PlaySE(const SoundData& soundData, float volume)
         return;
     }
 
-    IXAudio2SourceVoice* voice = nullptr;
+    if (playedSE_.contains(&soundData)) {
+        return;
+    }
 
+    playedSE_.insert(&soundData);
+
+    IXAudio2SourceVoice* voice = nullptr;
     HRESULT result = xAudio2->CreateSourceVoice(&voice, &soundData.wfex);
     if (FAILED(result)) {
         return;
@@ -202,6 +207,12 @@ void SoundManager::PlaySE(const SoundData& soundData, float volume)
     voice->Start();
 }
 
+
+
+void SoundManager::ResetSE(const SoundData& soundData)
+{
+    playedSE_.erase(&soundData);
+}
 
 
 void SoundManager::PlayBGM(const SoundData& soundData, float volume)
