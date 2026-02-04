@@ -77,5 +77,7 @@ private:
         int fontSizePx = 32
     );
 
+    // 天球
+    std::unique_ptr<Object3d> skydome_ = nullptr;
 
 };
