@@ -11,6 +11,7 @@
 #include "Sprite.h"
 #include "SpriteManager.h"
 #include "TextureManager.h"
+#include "../Light/LightManager.h"
 #include "WinApp.h"
 
 #include <Windows.h>
@@ -178,11 +179,13 @@ void StageSelectScene::Initialize() {
 
 	ModelManager::GetInstance()->LoadModel("skydome.obj");
 	TextureManager::GetInstance()->LoadTexture("resources/skydome.png");
-	skydome_ = std::make_unique<Object3d>();
-	skydome_->Initialize(Object3dManager::GetInstance());
-	skydome_->SetModel("skydome.obj");
-	skydome_->SetCamera(camera_);
-	skydome_->SetEnableLighting(false);
+    skydome_ = std::make_unique<Object3d>();
+    skydome_->Initialize(Object3dManager::GetInstance());
+    skydome_->SetModel("skydome.obj");
+    skydome_->SetCamera(camera_);
+    skydome_->SetEnableLighting(false);
+    skydome_->SetTranslate({ 0.0f, 0.01f, 0.0f });
+    skydome_->SetTranslate({ 0.0f, 0.01f, 0.0f });
 
     lastSelected_ = selected_;
     if (selected_ >= 0)
@@ -370,6 +373,7 @@ void StageSelectScene::Update()
 
     FadeManager::GetInstance()->Update();
 
+    camera_->Update();
 	skydome_->Update();
 
 	if (entries_.empty()) return;
@@ -576,9 +580,10 @@ void StageSelectScene::Draw2D()
 
 
 void StageSelectScene::Draw3D() {
-
     Object3dManager::GetInstance()->PreDraw();
-
+    LightManager::GetInstance()->Bind(DirectXCommon::GetInstance()->GetCommandList());
+    Object3dManager::GetInstance()->SetBlendMode(kBlendModeNone);
+    Object3dManager::GetInstance()->SetNormalPSO();
     skydome_->Draw();
 }
 

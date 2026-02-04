@@ -288,6 +288,8 @@ void GamePlayScene::Initialize() {
 	skydome_->SetModel("skydome.obj");
 	skydome_->SetCamera(camera_);
 	skydome_->SetEnableLighting(false);
+	skydome_->SetTranslate({ 0.0f, 0.01f, 0.0f });
+	skydome_->SetTranslate({ 0.0f, 0.01f, 0.0f });
 
 	ModelManager::GetInstance()->LoadModel("ground.obj");
 	ground_ = std::make_unique<Object3d>();
@@ -298,10 +300,6 @@ void GamePlayScene::Initialize() {
 	ground_->SetTranslate({ 0.0f, -5.5f, 0.0f });
 
 	landingEffect_.Initialize(Object3dManager::GetInstance(), camera_);
-
-	skydome_->SetTranslate({ 0.0f, 0.01f, 0.0f });
-
-	skydome_->SetTranslate({ 0.0f, 0.01f, 0.0f });
 
 	particleGate_.Initialize(Object3dManager::GetInstance(), camera_);
 
