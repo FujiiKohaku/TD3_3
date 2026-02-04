@@ -13,6 +13,7 @@
 #include "SpriteManager.h"
 #include "StageSelectScene.h"
 #include "TextureManager.h"
+#include "StageEditorScene.h"
 
 // ゲームプレイ用
 #include "../Game/Drone/Drone.h"

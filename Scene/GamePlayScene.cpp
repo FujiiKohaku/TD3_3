@@ -371,6 +371,21 @@ void GamePlayScene::Update()
         return;
     }
 
+    // =========================
+// BackSpace : エディターへ戻る
+// =========================
+    auto* sm = SceneManager::GetInstance();
+
+    // =========================
+    // BackSpace : エディターへ戻る（テスト時のみ）
+    // =========================
+    if (sm->IsTestPlay() && input.IsKeyTrigger(DIK_BACKSPACE)) {
+        sm->SetTestPlay(false);                // ★戻るので解除
+        sm->SetNextScene(new StageEditorScene());
+        return;
+    }
+
+
     // ドローン更新（※これが無いとカメラも動かない）
     if (isDebug_) {
         drone_.UpdateDebugNoInertia(input, dt);
@@ -463,10 +478,17 @@ void GamePlayScene::Update()
         if (goalSys_.IsCleared()) {
             stageCleared_ = true;
 
-            // ここで「リザルトへ遷移」「SE」「フェード」等を入れる
-            // 例：次シーンへ
-            SceneManager::GetInstance()->SetNextScene(new ResultScene(perfectCount_, goodCount_));
+            auto* sm = SceneManager::GetInstance();
+            if (sm->IsTestPlay()) {
+                // ★テスト中：リザルトへ行かない
+                // ここは好きな挙動にできる（例：クリア表示だけ出して止める、BackSpace案内）
+                // 何もしない（このまま stageCleared_ の表示だけ出る）
+            } else {
+                sm->SetNextScene(new ResultScene(perfectCount_, goodCount_));
+                return;
+            }
         }
+
     }
 
     // ==================================
