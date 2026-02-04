@@ -11,10 +11,6 @@
 #include "Sprite.h"
 #include "SpriteManager.h"
 #include "TextureManager.h"
-#include "Object3dManager.h"
-#include "ParticleManager.h"
-#include "FadeManager.h"
-#include "Camera.h"
 #include "WinApp.h"
 
 #include <Windows.h>
@@ -22,6 +18,9 @@
 #include <cstring> // std::max initializer_list で要る環境もあるので保険
 #include <filesystem>
 #include <vector>
+
+#include <cctype>   // isdigit
+#include <cstdlib>  // strtol
 
 static SoundData se_;
 // -------------------- wide -> utf8 --------------------
@@ -142,8 +141,7 @@ void StageSelectScene::Initialize() {
 	camera_->Initialize();
 	camera_->SetTranslate({ 0, 0, 0 });
 	Object3dManager::GetInstance()->SetDefaultCamera(camera_);
-	// シーン開始時に、1秒かけて明るくするでやんす！
-	FadeManager::GetInstance()->StartFadeIn(1.0f);
+
 	ParticleManager::GetInstance()->SetCamera(camera_);
 
     // ★動的テクスチャを作る（1回だけ）
@@ -196,6 +194,10 @@ void StageSelectScene::Initialize() {
 
     bgm = SoundManager::GetInstance()->SoundLoadFile("Resources/BGM.wav");
     se_ = SoundManager::GetInstance()->SoundLoadFile("resources/maou_se_system49.mp3");
+	carouselCenterX_ = WinApp::kClientWidth * 0.5f;
+	carouselCenterY_ = WinApp::kClientHeight * 0.55f; // 少し下寄せ
+
+    FadeManager::GetInstance()->StartFadeIn(1.0f);
 }
 
 void StageSelectScene::Finalize()
@@ -254,27 +256,89 @@ void StageSelectScene::Rescan_()
         // ★サムネパス：resources/stage/thumbs/<stem>.png
         se.thumbPath = thumbsDir / (p.stem().wstring() + L".png");
 
-        // 存在しないならダミー（no_thumb）
-        if (!std::filesystem::exists(se.thumbPath)) {
-            se.thumbKeyUtf8 = kNoThumbPath;
-        } else {
-            // TextureManagerに渡すためutf8化（パスは「resources/...」でOK想定）
-            // Windowsのwstring path → UTF8に
-            se.thumbKeyUtf8 = WideToUtf8_(se.thumbPath.wstring());
-        }
+		// 存在しないならダミー（no_thumb）
+		if (!std::filesystem::exists(se.thumbPath)) {
+			se.thumbKeyUtf8 = kNoThumbPath;
+		} else {
+			// ★キーを必ず / 区切り・相対パスで統一（TextureManagerの衝突回避）
+			se.thumbKeyUtf8 = "resources/stage/thumbs/" + se.titleUtf8 + ".png";
+		}
 
-        entries_.push_back(std::move(se));
-    }
 
-    std::sort(entries_.begin(), entries_.end(),
-        [](const StageEntry& a, const StageEntry& b) { return a.fileW < b.fileW; });
+		entries_.push_back(std::move(se));
+	}
 
-    selected_ = entries_.empty() ? -1 : 0;
+	std::sort(entries_.begin(), entries_.end(),
+		[](const StageEntry& a, const StageEntry& b) {
 
-    lastSelected_ = selected_;
-    if (selected_ >= 0) {
-        UpdateStageNameTexture_();
-    }
+			auto isTutorial = [](const StageEntry& e) {
+				const std::string& t = e.titleUtf8;
+				return (t == "チュートリアル" || t == "tutorial" || t == "Tutorial");
+				};
+
+			// titleUtf8 から "stage12" / "stage_12" / "Stage 12" みたいなのを拾って番号を返す
+			// 見つからなければ -1
+			auto parseStageNumber = [](const std::string& t) -> int {
+				// 小文字化せずにざっくり対応（必要なら増やせる）
+				// "stage" を探す
+				size_t pos = t.find("stage");
+				if (pos == std::string::npos) pos = t.find("Stage");
+				if (pos == std::string::npos) return -1;
+
+				pos += 5; // "stage" の後ろ
+
+				// 区切り（' ', '_', '-' など）を飛ばす
+				while (pos < t.size() && (t[pos] == ' ' || t[pos] == '_' || t[pos] == '-')) pos++;
+
+				// 数字が無ければ失敗
+				if (pos >= t.size() || !std::isdigit((unsigned char)t[pos])) return -1;
+
+				// 数字を読む
+				int num = 0;
+				while (pos < t.size() && std::isdigit((unsigned char)t[pos])) {
+					num = num * 10 + (t[pos] - '0');
+					pos++;
+				}
+				return num; // 1,2,3...
+				};
+
+			const bool at = isTutorial(a);
+			const bool bt = isTutorial(b);
+			if (at != bt) return at; // チュートリアル最優先
+
+			const int an = parseStageNumber(a.titleUtf8);
+			const int bn = parseStageNumber(b.titleUtf8);
+
+			// どっちも stage番号を持つ → 数字順
+			if (an >= 0 && bn >= 0) {
+				if (an != bn) return an < bn;
+				return a.fileW < b.fileW;
+			}
+
+			// 片方だけ番号を持つ → 番号持ちを先に
+			if ((an >= 0) != (bn >= 0)) return an >= 0;
+
+			// どっちも番号なし → 普通にファイル名順
+			return a.fileW < b.fileW;
+		});
+
+
+
+	selected_ = entries_.empty() ? -1 : 0;
+
+	lastSelected_ = selected_;
+
+	if (selected_ >= 0) {
+		const float step = (2.0f * 3.14159265f) / (float)entries_.size();
+		// selected_ が正面（角度0）に来るように回転角を合わせる
+		carouselAngle_ = -selected_ * step;
+		carouselTarget_ = carouselAngle_;
+	}
+
+
+	if (selected_ >= 0) {
+		UpdateStageNameTexture_();
+	}
 }
 
 // -------------------- Decide/Update --------------------
@@ -284,7 +348,6 @@ void StageSelectScene::Decide_()
         return;
 
 	SceneManager::GetInstance()->SetSelectedStageFile(entries_[selected_].fileUtf8);
-    SceneManager::GetInstance()->SetNextScene(new GamePlayScene());
 }
 
 void StageSelectScene::Update()
@@ -295,17 +358,58 @@ void StageSelectScene::Update()
         Rescan_();
     }
 
+    auto fadeStatus = FadeManager::GetInstance()->GetStatus();
+    if (input.IsKeyTrigger(DIK_SPACE)) {
+        if (fadeStatus == FadeManager::Status::FadeInFinished || fadeStatus == FadeManager::Status::None) {
+            Decide_();
+            SoundManager::GetInstance()->PlaySE(se_, 1.0f);
+            // フェードアウト開始！
+            FadeManager::GetInstance()->StartFadeOut(1.0f);
+        }
+    }
+
+    FadeManager::GetInstance()->Update();
+
 	skydome_->Update();
 
 	if (entries_.empty()) return;
 
-	if (input.IsKeyTrigger(DIK_LEFT))  selected_ = std::max<int>(0, selected_ - 1);
-	if (input.IsKeyTrigger(DIK_RIGHT)) selected_ = std::min((int)entries_.size() - 1, selected_ + 1);
+	if (entries_.empty()) return;
 
-	if (input.IsKeyTrigger(DIK_UP))    selected_ = std::max<int>(0, selected_ - kThumbCols);
-	if (input.IsKeyTrigger(DIK_DOWN))  selected_ = std::min((int)entries_.size() - 1, selected_ + kThumbCols);
-    if (entries_.empty())
-        return;
+	const int n = (int)entries_.size();
+	if (n <= 0) return;
+
+	const float step = (2.0f * 3.14159265f) / (float)n;
+
+	if (input.IsKeyTrigger(DIK_LEFT))  carouselTarget_ += step;
+	if (input.IsKeyTrigger(DIK_RIGHT)) carouselTarget_ -= step;
+
+	// 追従
+	carouselAngle_ += (carouselTarget_ - carouselAngle_) * carouselEase_;
+
+
+	{
+		const int n = (int)entries_.size();
+		if (n > 0) {
+			const float step = (2.0f * 3.14159265f) / (float)n;
+
+			int bestIdx = 0;
+			float bestFront = -999.0f;
+
+			for (int i = 0; i < n; ++i) {
+				float a = carouselAngle_ + i * step;
+				float front = std::cos(a);
+				if (front > bestFront) { bestFront = front; bestIdx = i; }
+			}
+
+			selected_ = bestIdx;
+		}
+	}
+
+	if (selected_ != lastSelected_) {
+		lastSelected_ = selected_;
+		UpdateStageNameTexture_();
+	}
 
     if (input.IsKeyTrigger(DIK_LEFT)) {
 
@@ -334,26 +438,11 @@ void StageSelectScene::Update()
         UpdateStageNameTexture_();
     }
 
-    if (input.IsKeyTrigger(DIK_SPACE)) {
-        auto fadeStatus = FadeManager::GetInstance()->GetStatus();
-        if (fadeStatus == FadeManager::Status::FadeInFinished || fadeStatus == FadeManager::Status::None) {
-
-            // 1. まず決定したステージ情報をSceneManagerにセットするでやんす！
-            Decide_();
-
-            // 2. SEを鳴らしてフェードアウト開始！
-            SoundManager::GetInstance()->PlaySE(se_, 1.0f);
-            FadeManager::GetInstance()->StartFadeOut(1.0f);
-        }
-    }
+    
 
     if (input.IsKeyTrigger(DIK_BACKSPACE)) {
         SceneManager::GetInstance()->SetNextScene(new TitleScene());
     }
-
-	if (FadeManager::GetInstance()->GetStatus() == FadeManager::Status::FadeOutFinished) {
-		SceneManager::GetInstance()->SetNextScene(new GamePlayScene());
-	}
 
 	if (input.IsKeyTrigger(DIK_T)) {
 		auto* sm = SceneManager::GetInstance();
@@ -361,7 +450,10 @@ void StageSelectScene::Update()
 		sm->SetNextScene(new StageEditorScene());
 	}
 
-	FadeManager::GetInstance()->Update();
+    if (fadeStatus == FadeManager::Status::FadeOutFinished) {
+        // フェードアウト（画面が暗くなる）が終わったので、次のシーンへ
+        SceneManager::GetInstance()->SetNextScene(new GamePlayScene());
+    }
 
 	DrawImGui();
 }
@@ -377,37 +469,113 @@ void StageSelectScene::Draw2D()
         stageNameSprite_->Draw();
     }
 
-    // サムネ一覧
-    for (int i = 0; i < (int)entries_.size(); ++i) {
-        auto& e = entries_[i];
-        if (!e.thumbSprite)
-            continue;
+	const int n = (int)entries_.size();
+	if (n <= 0) return;
 
-        const int col = i % kThumbCols;
-        const int row = i / kThumbCols;
+	// 奥行き順に描くため、描画順リストを作る
+	struct DrawItem {
+		int idx;
+		float depth; // 小さいほど奥（後ろ）にしたい
+		float x, y;
+		float scale;
+		float bright;
+	};
+	std::vector<DrawItem> items;
+	items.reserve(n);
 
-        const float x = kThumbStartX + col * (kThumbW + kThumbPadX);
-        const float y = kThumbStartY + row * (kThumbH + kThumbPadY);
+	const float step = (2.0f * 3.14159265f) / (float)n;
 
-        e.thumbSprite->SetPosition({ x, y });
+	int bestIdx = -1;
+	float bestFront = -999.0f;
 
-        // 選択中だけ少し明るく／色変え
-        if (i == selected_) {
-            e.thumbSprite->SetColor({ 1.0f, 1.0f, 1.0f, 1.0f });
-        } else {
-            e.thumbSprite->SetColor({ 0.75f, 0.75f, 0.75f, 1.0f });
-        }
+	for (int i = 0; i < n; ++i) {
+		auto& e = entries_[i];
+		if (!e.thumbSprite) continue;
 
-		e.thumbSprite->Update();
-		e.thumbSprite->Draw();
+		const float a = carouselAngle_ + i * step;
+
+		const float front = std::cos(a);
+		const float side = std::sin(a);
+
+		// 正面判定（front最大）
+		if (front > bestFront) { bestFront = front; bestIdx = i; }
+
+		float x = carouselCenterX_ + side * carouselRadiusX_;
+		float y = carouselCenterY_ + front * carouselRadiusY_ + (front * carouselFrontLift_);
+
+		float t = (front + 1.0f) * 0.5f; // 0..1
+		float scale = carouselMinScale_ + (carouselMaxScale_ - carouselMinScale_) * t;
+		float bright = carouselMinBright_ + (carouselMaxBright_ - carouselMinBright_) * t;
+
+		items.push_back({ i, front, x, y, scale, bright });
 	}
 
-	FadeManager::GetInstance()->Draw();
+	// 奥（frontが小さい）→手前（frontが大きい）の順に描画
+	std::sort(items.begin(), items.end(),
+		[](const DrawItem& a, const DrawItem& b) { return a.depth < b.depth; });
+
+	for (auto& it : items) {
+		auto& e = entries_[it.idx];
+		Sprite* s = e.thumbSprite;
+
+		// サイズ
+		const float w = kThumbW * it.scale;
+		const float h = kThumbH * it.scale;
+
+		// 位置：中心に置きたいので左上に補正（Spriteが左上基準なら）
+		s->SetPosition({ it.x - w * 0.5f, it.y - h * 0.5f });
+		s->SetSize({ w, h });
+
+		// 色：選択中は強調
+		if (it.idx == selected_) {
+			s->SetColor({ 1.0f, 1.0f, 1.0f, 1.0f });
+		} else {
+			s->SetColor({ it.bright, it.bright, it.bright, 1.0f });
+		}
+
+		s->Update();
+		s->Draw();
+	}
 }
 
 
-void StageSelectScene::Draw3D()
-{
+//// -------------------- Draw --------------------
+//void StageSelectScene::Draw2D() {
+//	SpriteManager::GetInstance()->PreDraw();
+//
+//	// ステージ名（日本語）
+//	if (stageNameSprite_ && selected_ >= 0) {
+//		stageNameSprite_->Update();
+//		stageNameSprite_->Draw();
+//	}
+//
+//	// サムネ一覧
+//	for (int i = 0; i < (int)entries_.size(); ++i) {
+//		auto& e = entries_[i];
+//		if (!e.thumbSprite) continue;
+//
+//		const int col = i % kThumbCols;
+//		const int row = i / kThumbCols;
+//
+//		const float x = kThumbStartX + col * (kThumbW + kThumbPadX);
+//		const float y = kThumbStartY + row * (kThumbH + kThumbPadY);
+//
+//		e.thumbSprite->SetPosition({ x, y });
+//
+//		// 選択中だけ少し明るく／色変え
+//		if (i == selected_) {
+//			e.thumbSprite->SetColor({ 1.0f, 1.0f, 1.0f, 1.0f });
+//		} else {
+//			e.thumbSprite->SetColor({ 0.75f, 0.75f, 0.75f, 1.0f });
+//		}
+//
+//		e.thumbSprite->Update();
+//		e.thumbSprite->Draw();
+//	}
+//}
+
+
+void StageSelectScene::Draw3D() {
 
     Object3dManager::GetInstance()->PreDraw();
 

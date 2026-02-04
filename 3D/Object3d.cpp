@@ -49,6 +49,9 @@ void Object3d::Initialize(Object3dManager* object3DManager)
 
 void Object3d::Update()
 {
+
+    if (!model_) { return; } // ★これ追加（落下防止）
+
     // ================================
     // 各種行列を作成
     // ================================
