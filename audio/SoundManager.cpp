@@ -185,31 +185,24 @@ void SoundManager::PlaySE(const SoundData& soundData, float volume)
         return;
     }
 
-    HRESULT result;
+    IXAudio2SourceVoice* voice = nullptr;
 
-    if (!seVoice_) {
-        result = xAudio2->CreateSourceVoice(&seVoice_, &soundData.wfex);
-        if (FAILED(result)) {
-            return;
-        }
-    }
-
-    seVoice_->Stop();
-    seVoice_->FlushSourceBuffers();
-    seVoice_->SetVolume(volume);
-
-    XAUDIO2_BUFFER buf {};
-    buf.pAudioData = soundData.buffer.data();
-    buf.AudioBytes = static_cast<UINT32>(soundData.buffer.size());
-    buf.Flags = XAUDIO2_END_OF_STREAM;
-
-    result = seVoice_->SubmitSourceBuffer(&buf);
+    HRESULT result = xAudio2->CreateSourceVoice(&voice, &soundData.wfex);
     if (FAILED(result)) {
         return;
     }
 
-    seVoice_->Start();
+    XAUDIO2_BUFFER buffer {};
+    buffer.pAudioData = soundData.buffer.data();
+    buffer.AudioBytes = static_cast<UINT32>(soundData.buffer.size());
+    buffer.Flags = XAUDIO2_END_OF_STREAM;
+
+    voice->SetVolume(volume);
+    voice->SubmitSourceBuffer(&buffer);
+    voice->Start();
 }
+
+
 
 void SoundManager::PlayBGM(const SoundData& soundData, float volume)
 {

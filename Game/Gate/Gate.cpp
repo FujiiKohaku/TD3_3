@@ -10,14 +10,17 @@ static Vector3 TransformCoord_RowVector(const Vector3& v, const Matrix4x4& m)
 
     const float w = v.x * m.m[0][3] + v.y * m.m[1][3] + v.z * m.m[2][3] + 1.0f * m.m[3][3];
     if (std::abs(w) > 1e-6f) {
-        out.x /= w; out.y /= w; out.z /= w;
+        out.x /= w;
+        out.y /= w;
+        out.z /= w;
     }
     return out;
 }
 
+
 void Gate::UpdateMatrices()
 {
-    world = MatrixMath::MakeAffineMatrix({ 1,1,1 }, rot, pos);
+    world = MatrixMath::MakeAffineMatrix({ 1, 1, 1 }, rot, pos);
     invWorld = MatrixMath::Inverse(world);
 }
 
@@ -36,10 +39,14 @@ Color4 Gate::GetDrawColor() const
 {
     if (feedbackTimer > 0.0f) {
         switch (lastResult) {
-        case GateResult::Perfect: return colorPerfect;
-        case GateResult::Good:    return colorGood;
-        case GateResult::Miss:    return colorMiss;
-        default: break;
+        case GateResult::Perfect:
+            return colorPerfect;
+        case GateResult::Good:
+            return colorGood;
+        case GateResult::Miss:
+            return colorMiss;
+        default:
+            break;
         }
     }
     return baseColor;
@@ -73,9 +80,7 @@ bool Gate::TryPass(const Vector3& droneWorldPos, GateResult& outResult)
     }
 
     // 1) 面を横切った瞬間だけ判定（両方向）
-    const bool crossed =
-        (prevLocalZ > 0.0f && pLocal.z <= 0.0f) ||
-        (prevLocalZ < 0.0f && pLocal.z >= 0.0f);
+    const bool crossed = (prevLocalZ > 0.0f && pLocal.z <= 0.0f) || (prevLocalZ < 0.0f && pLocal.z >= 0.0f);
 
     dbgCrossed = crossed;
 
