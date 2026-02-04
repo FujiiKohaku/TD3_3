@@ -124,6 +124,16 @@ void StageSelectScene::UpdateStageNameTexture_() {
 		kStageNameTexKey, stageNameRgba_.data(), kStageNameTexW, kStageNameTexH);
 }
 
+static float Clamp01(float x) { return std::clamp(x, 0.0f, 1.0f); }
+static float EaseOutCubic(float t) {
+	t = Clamp01(t);
+	float a = 1.0f - t;
+	return 1.0f - a * a * a;
+}
+static float Lerp(float a, float b, float t) { return a + (b - a) * t; }
+static constexpr float kTAU = 6.283185307f;
+
+
 // -------------------- Initialize/Finalize --------------------
 void StageSelectScene::Initialize() {
 	camera_ = new Camera();
@@ -147,6 +157,14 @@ void StageSelectScene::Initialize() {
 	stageNameSprite_->Update();
 
 	Rescan_();
+
+	// 例：entries_ のデバッグ出力
+	for (auto& e : entries_) {
+		OutputDebugStringW((L"json=" + e.fileW + L"\n").c_str());
+		OutputDebugStringW((L"thumb=" + e.thumbPath.wstring() + L"\n\n").c_str());
+	}
+
+
 
 	// ★ここ追加：サムネSpriteを作る
 	for (auto& e : entries_) {
@@ -173,6 +191,12 @@ void StageSelectScene::Initialize() {
 	skydome_->SetModel("skydome.obj");
 	skydome_->SetCamera(camera_);
 	skydome_->SetEnableLighting(false);
+
+	carouselCenterX_ = WinApp::kClientWidth * 0.5f;
+	carouselCenterY_ = 260.0f; // タイトル文字の下あたり。好みで調整
+	carouselAngle_ = carouselTargetAngle_ = 0.0f;
+	carouselAnimFrame_ = kCarouselAnimFrames;
+
 
 }
 
@@ -273,12 +297,26 @@ void StageSelectScene::Update() {
 	if (input.IsKeyTrigger(DIK_UP))    selected_ = std::max<int>(0, selected_ - kThumbCols);
 	if (input.IsKeyTrigger(DIK_DOWN))  selected_ = std::min((int)entries_.size() - 1, selected_ + kThumbCols);
 
-
 	// ★選択が変わったら日本語表示更新（ここが重要）
 	if (selected_ != lastSelected_) {
+
+		int prev = lastSelected_;
 		lastSelected_ = selected_;
 		UpdateStageNameTexture_();
+
+		const int n = (int)entries_.size();
+		if (n > 0) {
+			float step = kTAU / (float)n;
+			int delta = lastSelected_ - prev;
+
+			// delta分回す（符号込み）
+			carouselTargetAngle_ -= step * (float)delta;
+
+			// アニメ開始
+			carouselAnimFrame_ = 0;
+		}
 	}
+
 
 	if (input.IsKeyTrigger(DIK_SPACE)) {
 		FadeManager::GetInstance()->StartFadeOut(1.0f);
@@ -299,6 +337,17 @@ void StageSelectScene::Update() {
 		sm->SetNextScene(new StageEditorScene());
 	}
 
+	// --- カルーセル角度の補間 ---
+	if (carouselAnimFrame_ < kCarouselAnimFrames) {
+		carouselAnimFrame_++;
+		float t = (float)carouselAnimFrame_ / (float)kCarouselAnimFrames;
+		float e = EaseOutCubic(t);
+		carouselAngle_ = Lerp(carouselAngle_, carouselTargetAngle_, e);
+	} else {
+		carouselAngle_ = carouselTargetAngle_;
+	}
+
+
 	FadeManager::GetInstance()->Update();
 
 	DrawImGui();
@@ -314,30 +363,74 @@ void StageSelectScene::Draw2D() {
 		stageNameSprite_->Draw();
 	}
 
-	// サムネ一覧
-	for (int i = 0; i < (int)entries_.size(); ++i) {
-		auto& e = entries_[i];
-		if (!e.thumbSprite) continue;
+	// サムネ一覧（円運動カルーセル）
+	if (!entries_.empty()) {
 
-		const int col = i % kThumbCols;
-		const int row = i / kThumbCols;
+		// 描画順を「奥→手前」にして重なりを自然にする
+		struct DrawItem { int idx; float depth; };
+		std::vector<DrawItem> order;
+		order.reserve(entries_.size());
 
-		const float x = kThumbStartX + col * (kThumbW + kThumbPadX);
-		const float y = kThumbStartY + row * (kThumbH + kThumbPadY);
+		const int n = (int)entries_.size();
+		float step = kTAU / (float)n;
 
-		e.thumbSprite->SetPosition({ x, y });
+		for (int i = 0; i < n; ++i) {
+			// 選択中が“手前（角度0）”に来るよう相対角
+			int rel = i - selected_;
+			float a = rel * step + carouselAngle_;
 
-		// 選択中だけ少し明るく／色変え
-		if (i == selected_) {
-			e.thumbSprite->SetColor({ 1.0f, 1.0f, 1.0f, 1.0f });
+			// depth: cos(a) が 1で手前、-1で奥
+			float depth = std::cos(a);
+			order.push_back({ i, depth });
 		}
-		else {
-			e.thumbSprite->SetColor({ 0.75f, 0.75f, 0.75f, 1.0f });
-		}
 
-		e.thumbSprite->Update();
-		e.thumbSprite->Draw();
+		std::sort(order.begin(), order.end(),
+			[](const DrawItem& A, const DrawItem& B) { return A.depth < B.depth; }); // 奥→手前
+
+		for (auto& it : order) {
+			int i = it.idx;
+			auto& e = entries_[i];
+			if (!e.thumbSprite) continue;
+
+			int rel = i - selected_;
+			float a = rel * step + carouselAngle_;
+
+			float sx = std::sin(a);
+			float cz = std::cos(a); // depth
+
+			// 位置（円運動）
+			float x = carouselCenterX_ + sx * carouselRadius_;
+			float y = carouselCenterY_ + (-cz) * (carouselRadius_ * carouselYScale_);
+
+			// 奥行き0..1（奥=0、手前=1）
+			float near01 = (cz + 1.0f) * 0.5f;
+
+			// スケール＆α
+			float scale = Lerp(backScale_, frontScale_, near01);
+			float alpha = Lerp(backAlpha_, frontAlpha_, near01);
+
+			// 選択中を少し強調
+			if (i == selected_) {
+				scale *= 1.08f;
+				alpha = 1.0f;
+			}
+
+			float w = kThumbW * scale;
+			float h = kThumbH * scale;
+
+			// 左上基準→中心に合わせる
+			float drawX = x - w * 0.5f;
+			float drawY = y - h * 0.5f;
+
+			e.thumbSprite->SetPosition({ drawX, drawY });
+			e.thumbSprite->SetSize({ w, h });
+			e.thumbSprite->SetColor({ 1.0f, 1.0f, 1.0f, alpha });
+
+			e.thumbSprite->Update();
+			e.thumbSprite->Draw();
+		}
 	}
+
 
 	FadeManager::GetInstance()->Draw();
 }
