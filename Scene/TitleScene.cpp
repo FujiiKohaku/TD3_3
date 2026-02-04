@@ -8,6 +8,7 @@
 #include "StageSelectScene.h"
 #include <numbers>
 static SoundData bgmTitle_;
+static bool prevAButton_ = false;
 
 static SoundData se_;
 void TitleScene::Initialize()
@@ -88,14 +89,36 @@ void TitleScene::Initialize()
     bgmTitle_ = SoundManager::GetInstance()->SoundLoadFile("resources/titleSceneBGM.mp3");
     se_ = SoundManager::GetInstance()->SoundLoadFile("resources/maou_se_system49.mp3");
     SoundManager::GetInstance()->PlayBGM(bgmTitle_, 0.5f);
+
+    AAA = new Sprite();
+    AAA->Initialize(SpriteManager::GetInstance(), "resources/SAPCEOSE.png");
+    AAA->SetPosition({ 0.0f, 0.0f });
 }
 
 void TitleScene::Update()
 {
-    if (Input::GetInstance()->IsKeyTrigger(DIK_SPACE)){
-        // まずはフェードアウト開始！
-        FadeManager::GetInstance()->StartFadeOut(1.0f);
+    AAA->Update();
 
+    bool aButtonTrigger = false;
+
+    // ===== gamepad (Aボタン) =====
+    XINPUT_STATE st {};
+    if (XInputGetState(0, &st) == ERROR_SUCCESS) {
+
+        bool nowAButton = (st.Gamepad.wButtons & XINPUT_GAMEPAD_A) != 0;
+
+        if (nowAButton && !prevAButton_) {
+            aButtonTrigger = true; // 押した瞬間
+        }
+
+        prevAButton_ = nowAButton;
+    } else {
+        prevAButton_ = false;
+    }
+    // ===== 決定（Aボタン or SPACE） =====
+    if (aButtonTrigger || Input::GetInstance()->IsKeyTrigger(DIK_SPACE)) {
+
+        FadeManager::GetInstance()->StartFadeOut(1.0f);
         SoundManager::GetInstance()->PlaySE(se_, 1.0f);
     }
 
@@ -107,25 +130,18 @@ void TitleScene::Update()
         SoundManager::GetInstance()->StopBGMAll();
     }
 
-    // titleModel->Update();
     camera_->Update();
 
-    // 外殻
     outShellModel_->Update();
     homeModel_->Update();
     railModel_->Update();
     doroso_->Update();
-    // 外殻
-    outShellModel_->Update();
-    homeModel_->Update();
-    railModel_->Update();
 
-    // drone
-    drone_->Update();
     if (drone_) {
         drone_->SetTranslate(dronePos);
         drone_->SetRotate(droneRot);
         drone_->SetScale(droneScale);
+        drone_->Update();
     }
 }
 
@@ -133,6 +149,7 @@ void TitleScene::Draw2D()
 {
     SpriteManager::GetInstance()->PreDraw();
     FadeManager::GetInstance()->Draw();
+    AAA->Draw();
 }
 
 void TitleScene::Draw3D()
@@ -290,5 +307,6 @@ void TitleScene::Finalize()
     delete homeModel_;
     delete railModel_;
     delete drone_;
+    delete AAA;
     SoundManager::GetInstance()->StopBGMAll();
 }

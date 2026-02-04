@@ -11,9 +11,9 @@
 #include "SoundManager.h"
 #include "Sprite.h"
 #include "SpriteManager.h"
+#include "StageEditorScene.h"
 #include "StageSelectScene.h"
 #include "TextureManager.h"
-#include "StageEditorScene.h"
 
 // ゲームプレイ用
 #include "../Game/Drone/Drone.h"
@@ -52,18 +52,28 @@ private:
     // ------------------------------
     // サウンド
     // ------------------------------
- 
-
-
-
 
     // ------------------------------
-
+    Sprite* mojyuro = nullptr;
     Sprite* sprite_ = nullptr;
     std::vector<Sprite*> sprites_;
     Object3d* player2_;
     Object3d* terraranan_;
     ParticleEmitter emitter_;
+
+    Sprite* setumei_ = nullptr;
+
+   
+    Vector2 setumeiPos_ = { 0.0f, 0.0f };
+
+    Sprite* EnterSetumei_ = nullptr;
+    Vector2 EnterSetumeiPos_ = { 1050.0f, 300.0f };
+    bool showSetumei_ = false;
+    float setumeiAnimT_ = 0.0f;
+    bool setumeiVisible_ = false; // 今どっち向きに動かすか
+
+    Vector2 setumeiStartPos_;
+    Vector2 setumeiEndPos_;
 
     // ------------------------------
     // メッシュ
@@ -200,19 +210,19 @@ private:
 
     // --- Pause UI ---
     enum class PauseMenuIndex {
-        Close,      // 閉じる (0)
-        ToSelect,   // セレクトへ (1)
+        Close, // 閉じる (0)
+        ToSelect, // セレクトへ (1)
         COUNT
     };
 
     PauseMenuIndex pauseIndex_ = PauseMenuIndex::Close; // 初期値は「閉じる」
 
-    std::unique_ptr<Sprite> pauseBg_ = nullptr;      // 画面全体を覆う半透明白
-    std::unique_ptr<Sprite> btnToSelect_ = nullptr;  // セレクトへ
-    std::unique_ptr<Sprite> btnClose_ = nullptr;     // 閉じる
+    std::unique_ptr<Sprite> pauseBg_ = nullptr; // 画面全体を覆う半透明白
+    std::unique_ptr<Sprite> btnToSelect_ = nullptr; // セレクトへ
+    std::unique_ptr<Sprite> btnClose_ = nullptr; // 閉じる
 
-    float pauseAnimTimer_ = 0.0f;    // アニメーション用タイマー (0.0～1.0)
-    bool isPauseClosing_ = false;    // 閉じている最中かどうかのフラグ
+    float pauseAnimTimer_ = 0.0f; // アニメーション用タイマー (0.0～1.0)
+    bool isPauseClosing_ = false; // 閉じている最中かどうかのフラグ
 
     // 座標の定数（画面サイズに合わせて調整してやんす！）
     const Vector2 kPauseCenter = { 640.0f, 360.0f };

@@ -8,8 +8,10 @@
 #include "TitleScene.h"
 #include "StageEditorScene.h"
 #include "FadeManager.h"
-
+#include "../Game/Drone/Drone.h"
 #include"../audio/SoundManager.h"
+#include <Xinput.h>
+#pragma comment(lib, "Xinput.lib")
 class StageSelectScene : public BaseScene {
 public:
     void Initialize() override;
@@ -36,6 +38,9 @@ private:
 
     std::vector<StageEntry> entries_;
     int selected_ = -1;
+
+    Sprite* titleSprite_ = nullptr;
+    Drone* drone_;
 
 private:
 

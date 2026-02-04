@@ -4,8 +4,9 @@
 #include "Camera.h"
 #include "Object3d.h"
 #include "Sprite.h"
+#include <Xinput.h>
 #include <memory>
-
+#pragma comment(lib, "Xinput.lib")
 #include "../audio/SoundManager.h"
 class ResultScene : public BaseScene {
 public:
@@ -43,7 +44,8 @@ private:
     float animationTimer_ = 0.0f;
     // アニメーション速度（1.0f で 1秒、2.0f で 0.5秒）
     const float kAnimSpeed = 0.25f;
-
+    Sprite* titleSprite_ = nullptr;
+    bool prevAButton_ = false;
 
     float t_;
 

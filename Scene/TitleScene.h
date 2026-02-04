@@ -4,7 +4,7 @@
 #include "Camera.h"
 #include "SceneManager.h"
 #include <memory>
-
+#include"../2D/Sprite.h"
 #include "../audio/SoundManager.h"  
 class TitleScene : public BaseScene {
 public:
@@ -35,5 +35,5 @@ private:
     Vector3 scale1 = {};
 
    
-
+    Sprite* AAA = nullptr;
 };
