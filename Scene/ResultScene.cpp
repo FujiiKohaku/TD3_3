@@ -4,6 +4,8 @@
 #include "Object3dManager.h"
 #include "ImGuiManager.h"
 #include "../Light/LightManager.h"
+#include "SceneManager.h"
+#include "StageSelectScene.h"
 
 ResultScene::ResultScene(int perfectCount, int goodCount) {
 	perfectCount_ = perfectCount;
@@ -45,6 +47,12 @@ void ResultScene::Finalize() {
 }
 
 void ResultScene::Update() {
+	// 入出力取得
+	Input& input = *Input::GetInstance();
+	if (input.IsKeyTrigger(DIK_F1)) {
+		SceneManager::GetInstance()->SetNextScene(new StageSelectScene());
+	}
+
 	camera_->Update();
 	skydome_->Update();
 
