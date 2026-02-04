@@ -478,9 +478,12 @@ void GamePlayScene::Update()
 
             // ここで「リザルトへ遷移」「SE」「フェード」等を入れる
             // 例：次シーンへ
+            SoundManager::GetInstance()->StopBGM(DronePropellerSound_);
             SceneManager::GetInstance()->SetNextScene(new ResultScene(perfectCount_, goodCount_));
         }
     }
+
+
 
     // ==================================
     // Lighting Panel（ライト操作パネル）
