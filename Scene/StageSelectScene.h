@@ -37,6 +37,9 @@ private:
     std::vector<StageEntry> entries_;
     int selected_ = -1;
 
+    Sprite* titleSprite_ = nullptr;
+
+
 private:
 
 
