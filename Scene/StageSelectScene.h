@@ -17,7 +17,7 @@ public:
     void Draw3D() override;
     void DrawImGui() override;
 
-    int GetFrontIndex_() const;
+
 
 private:
     struct StageEntry {
@@ -36,7 +36,7 @@ private:
     int selected_ = -1;
 
 private:
-  
+
 
     // サムネ表示設定
     static constexpr int kThumbCols = 4;
@@ -79,24 +79,5 @@ private:
 
     // 天球
     std::unique_ptr<Object3d> skydome_ = nullptr;
-
-    // ===== Carousel（円運動） =====
-    float carouselAngle_ = 0.0f;        // 現在角度
-    float carouselTargetAngle_ = 0.0f;  // 目標角度
-    int   carouselAnimFrame_ = 0;
-    static constexpr int kCarouselAnimFrames = 12; // 12〜20くらいが気持ちいい
-
-    float carouselCenterX_ = 0.0f;
-    float carouselCenterY_ = 0.0f;
-
-    float carouselRadius_ = 360.0f;    // 横方向の半径
-    float carouselYScale_ = 0.35f;     // 縦の潰し（奥行き感）
-
-    float frontScale_ = 1.25f;          // 手前の大きさ
-    float backScale_ = 0.70f;          // 奥の大きさ
-
-    float frontAlpha_ = 1.00f;
-    float backAlpha_ = 0.35f;
-    float carouselStartAngle_ = 0.0f;
 
 };
