@@ -270,8 +270,8 @@ void StageSelectScene::Update() {
 	}
 
 	if (input.IsKeyTrigger(DIK_SPACE)) {
-		FadeManager::GetInstance()->StartFadeOut(1.0f);
 		Decide_();
+		FadeManager::GetInstance()->StartFadeOut(1.0f);
 	}
 
 	if (input.IsKeyTrigger(DIK_BACKSPACE)) {

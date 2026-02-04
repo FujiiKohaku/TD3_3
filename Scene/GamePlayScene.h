@@ -179,4 +179,23 @@ private:
     std::string altMarkerPath_ = "resources/ui/marker.png"; // 既にあるなら同じでOK
     Vector2 altMarkerSize_ = { 16.0f, 16.0f }; // 調整
     float altMarkerOffsetX_ = 6.0f; // バーからの距離
+
+    // --- Pause UI ---
+    enum class PauseMenuIndex {
+        Close,      // 閉じる (0)
+        ToSelect,   // セレクトへ (1)
+        COUNT
+    };
+
+    PauseMenuIndex pauseIndex_ = PauseMenuIndex::Close; // 初期値は「閉じる」
+
+    std::unique_ptr<Sprite> pauseBg_ = nullptr;      // 画面全体を覆う半透明白
+    std::unique_ptr<Sprite> btnToSelect_ = nullptr;  // セレクトへ
+    std::unique_ptr<Sprite> btnClose_ = nullptr;     // 閉じる
+
+    float pauseAnimTimer_ = 0.0f;    // アニメーション用タイマー (0.0～1.0)
+    bool isPauseClosing_ = false;    // 閉じている最中かどうかのフラグ
+
+    // 座標の定数（画面サイズに合わせて調整してやんす！）
+    const Vector2 kPauseCenter = { 640.0f, 360.0f };
 };

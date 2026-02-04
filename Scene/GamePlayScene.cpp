@@ -338,20 +338,139 @@ void GamePlayScene::Initialize()
     // spotLight
     LightManager::GetInstance()->SetSpotLightDistance(10.0f);
     LightManager::GetInstance()->SetSpotLightIntensity(0.6f);
+
+    // Initializeの末尾付近に追加
+    pauseBg_ = std::make_unique<Sprite>();
+    pauseBg_->Initialize(SpriteManager::GetInstance(), "resources/white.png"); // 白塗り画像
+    pauseBg_->SetSize({ 1280.0f, 720.0f });
+    pauseBg_->SetColor({ 0.7f, 0.7f, 0.7f, 0.5f }); // 半透明
+
+    btnToSelect_ = std::make_unique<Sprite>();
+    btnToSelect_->Initialize(SpriteManager::GetInstance(), "resources/select.png");
+    btnClose_ = std::make_unique<Sprite>();
+    btnClose_->Initialize(SpriteManager::GetInstance(), "resources/tojiru.png");
+
+    // ボタンは中心基準にしておくと計算が楽でやんす
+    btnToSelect_->SetAnchorPoint({ 0.5f, 0.5f });
+    btnClose_->SetAnchorPoint({ 0.5f, 0.5f });
+
+    requestBackToSelect_ = false;
+    requestBackToTitle_ = false;
+    stageCleared_ = false;
 }
 
-void GamePlayScene::Update()
-{
-
+void GamePlayScene::Update() {
     float dt = 1.0f / 60.0f;
-
-    // 入出力取得
     Input& input = *Input::GetInstance();
 
-    // TABキーを押したらポーズ画面になる
+    // ==========================================
+    // 【重要】フェード更新を一番最初に持ってくる
+    // これでポーズ中もフェードが止まらなくなるでやんす！
+    // ==========================================
+    FadeManager::GetInstance()->Update();
+
+    // ==========================================
+    // 1. ポーズの開始・解除トリガー
+    // ==========================================
     if (input.IsKeyTrigger(DIK_TAB)) {
-        SoundManager::GetInstance()->StopBGM(DronePropellerSound_);
-        isPaused_ = !isPaused_;
+        if (!isPaused_) {
+            SoundManager::GetInstance()->StopBGM(DronePropellerSound_);
+            isPaused_ = true;
+            isPauseClosing_ = false;
+            pauseIndex_ = PauseMenuIndex::Close; // 開いたときは「閉じる」にリセット
+        }
+        else if (!requestBackToSelect_ && !requestBackToTitle_) {
+            // すでに遷移が始まっていないときだけ閉じる
+            isPauseClosing_ = true;
+        }
+    }
+
+    // ==========================================
+    // 2. ポーズ中の処理
+    // ==========================================
+    if (isPaused_) {
+        // --- 2a. 入力判定（遷移中や閉じている最中は無視） ---
+        if (!isPauseClosing_ && !requestBackToSelect_ && !requestBackToTitle_) {
+            if (input.IsKeyTrigger(DIK_W)) {
+                int idx = static_cast<int>(pauseIndex_);
+                idx = (idx - 1 + static_cast<int>(PauseMenuIndex::COUNT)) % static_cast<int>(PauseMenuIndex::COUNT);
+                pauseIndex_ = static_cast<PauseMenuIndex>(idx);
+            }
+            if (input.IsKeyTrigger(DIK_S)) {
+                int idx = static_cast<int>(pauseIndex_);
+                idx = (idx + 1) % static_cast<int>(PauseMenuIndex::COUNT);
+                pauseIndex_ = static_cast<PauseMenuIndex>(idx);
+            }
+
+            // EnterまたはSpaceで決定
+            if (input.IsKeyTrigger(DIK_RETURN) || input.IsKeyTrigger(DIK_SPACE)) {
+                switch (pauseIndex_) {
+                    case PauseMenuIndex::Close:    isPauseClosing_ = true; break;
+                    case PauseMenuIndex::ToSelect: requestBackToSelect_ = true; break;
+                }
+            }
+        }
+
+        // --- 2b. アニメーション・遷移ロジック ---
+        if (requestBackToSelect_ || requestBackToTitle_) {
+            pauseAnimTimer_ = 1.0f; // 遷移中は出しっぱなし
+
+            if (FadeManager::GetInstance()->GetStatus() == FadeManager::Status::None ||
+                FadeManager::GetInstance()->GetStatus() == FadeManager::Status::FadeInFinished) {
+                FadeManager::GetInstance()->StartFadeOut(1.0f);
+            }
+        }
+        else if (isPauseClosing_) {
+            // 【重要】閉じるアニメーション：タイマーを減らす
+            pauseAnimTimer_ -= dt * 4.0f;
+            if (pauseAnimTimer_ <= 0.0f) {
+                pauseAnimTimer_ = 0.0f;
+                isPaused_ = false;
+                isPauseClosing_ = false;
+            }
+        }
+        else {
+            // 【重要】開くアニメーション：タイマーを増やす
+            // これがないと画面外で止まったままになっちゃうでやんす！
+            pauseAnimTimer_ += dt * 3.0f;
+            if (pauseAnimTimer_ >= 1.0f) pauseAnimTimer_ = 1.0f;
+        }
+
+        // --- 2c. イージング計算 (ラムダ式を使わない版) ---
+        float tInv = 1.0f - pauseAnimTimer_;
+        float tEase = 1.0f - (tInv * tInv * tInv * tInv * tInv); // OutQuint
+
+        // 背景
+        pauseBg_->SetPosition({ 0.0f, -720.0f * (1.0f - tEase) });
+
+        // 各ボタンの個別イージング（時間差）
+        float t1 = std::clamp((pauseAnimTimer_ - 0.1f) / 0.8f, 0.0f, 1.0f);
+        float t2 = std::clamp((pauseAnimTimer_ - 0.2f) / 0.8f, 0.0f, 1.0f);
+        float t3 = std::clamp((pauseAnimTimer_ - 0.3f) / 0.8f, 0.0f, 1.0f);
+
+        t1 = 1.0f - std::pow(1.0f - t1, 5.0f);
+        t2 = 1.0f - std::pow(1.0f - t2, 5.0f);
+        t3 = 1.0f - std::pow(1.0f - t3, 5.0f);
+
+        btnClose_->SetPosition({ kPauseCenter.x, -100.0f + (kPauseCenter.y - 100.0f + 100.0f) * t1 });
+        btnToSelect_->SetPosition({ kPauseCenter.x, -100.0f + (kPauseCenter.y + 100.0f) * t2 });
+
+        // --- 2d. 色と透明度の更新 ---
+        float bA = 1.0f; // 選択中
+        float dA = 0.4f; // 非選択
+        btnClose_->SetColor({ 1,1,1, (pauseIndex_ == PauseMenuIndex::Close ? bA : dA) });
+        btnToSelect_->SetColor({ 1,1,1, (pauseIndex_ == PauseMenuIndex::ToSelect ? bA : dA) });
+
+        pauseBg_->Update();
+        btnClose_->Update();
+        btnToSelect_->Update();
+
+        // ==========================================
+        // 【修正箇所】遷移リクエストがないときだけ return するでやんす！
+        // ==========================================
+        if (!requestBackToSelect_ && !requestBackToTitle_) {
+            return; // ポーズ中はゲーム本体の更新を止める
+        }
     }
 
     if (drone_.isMove()) {
@@ -359,46 +478,6 @@ void GamePlayScene::Update()
     }
 
     FadeManager::GetInstance()->Update();
-
-    // ポーズ画面のUI
-    if (isPaused_) {
-
-        ImGui::Begin("Pause Menu");
-
-        ImGui::Text("PAUSE");
-
-        ImGui::Separator();
-
-        if (ImGui::Button("Continue")) {
-            isPaused_ = false;
-        }
-
-        if (ImGui::Button("Back to Title")) {
-            requestBackToTitle_ = true;
-        }
-
-        ImGui::End();
-
-        // タイトルへ戻る要求が出たらシーン切り替え
-        if (requestBackToTitle_) {
-            // ここも「まだ始まっていないなら」というガードを入れるのが無難でやんす
-            if (FadeManager::GetInstance()->GetStatus() == FadeManager::Status::FadeInFinished ||
-                FadeManager::GetInstance()->GetStatus() == FadeManager::Status::None) {
-                FadeManager::GetInstance()->StartFadeOut(1.0f);
-            }
-        }
-
-        if (FadeManager::GetInstance()->GetStatus() == FadeManager::Status::FadeOutFinished) {
-            requestBackToTitle_ = false;
-            SceneManager::GetInstance()->SetNextScene(new TitleScene());
-            SoundManager::GetInstance()->StopBGM(DronePropellerSound_);
-            LightManager::GetInstance()->Reset();
-            return;
-        }
-
-        // ゲーム本体はここで完全停止
-        return;
-    }
 
     // =========================
 // BackSpace : エディターへ戻る
@@ -489,55 +568,64 @@ void GamePlayScene::Update()
         }
     }
 
-    // 2) 次ゲートだけ判定
+    // 1. ゲート通過判定 (ゲートが残っている時だけ実行)
     if (nextGate_ < (int)gates_.size()) {
         GateResult res;
-        const Vector3 dronePos = drone_.GetPos(); // ★ここはあなたのドローン取得に合わせる
-
+        const Vector3 dronePos = drone_.GetPos();
         if (gates_[nextGate_].TryPass(dronePos, res)) {
             if (res == GateResult::Perfect) {
                 SoundManager::GetInstance()->PlaySE(gateSound_, 1.0f);
                 perfectCount_++;
                 nextGate_++;
-            } else if (res == GateResult::Good) {
+            }
+            else if (res == GateResult::Good) {
                 SoundManager::GetInstance()->PlaySE(gateSound_, 1.0f);
                 goodCount_++;
                 nextGate_++;
-            } else {
-                // Miss：進まない（色は赤になる）
             }
         }
-    } else {
-        // ---- GoalSystem update ----
+    }
+    // 2. ゴール出現判定 (全ゲート通過後のみ実行)
+    else {
         goalSys_.Update(gates_, nextGate_, drone_.GetPos());
-
         if (goalSys_.IsCleared()) {
             if (FadeManager::GetInstance()->GetStatus() == FadeManager::Status::FadeInFinished ||
                 FadeManager::GetInstance()->GetStatus() == FadeManager::Status::None) {
                 FadeManager::GetInstance()->StartFadeOut(1.0f);
+                stageCleared_ = true; // ゴールによるクリア
             }
         }
-        if (FadeManager::GetInstance()->GetStatus() == FadeManager::Status::FadeOutFinished) {
-            stageCleared_ = false;
+    }
 
-            // ここで「リザルトへ遷移」「SE」「フェード」等を入れる
-            // 例：次シーンへ
+    if (FadeManager::GetInstance()->GetStatus() == FadeManager::Status::FadeOutFinished) {
+        if (isPaused_) {
             SoundManager::GetInstance()->StopBGM(DronePropellerSound_);
-            SceneManager::GetInstance()->SetNextScene(new ResultScene(perfectCount_, goodCount_));
-            auto* sm = SceneManager::GetInstance();
-            if (sm->IsTestPlay()) {
-                // ★テスト中：リザルトへ行かない
-                // ここは好きな挙動にできる（例：クリア表示だけ出して止める、BackSpace案内）
-                // 何もしない（このまま stageCleared_ の表示だけ出る）
+            LightManager::GetInstance()->Reset();
+
+            if (requestBackToTitle_) {
+                SceneManager::GetInstance()->SetNextScene(new TitleScene());
+                requestBackToTitle_ = false; // 個別にリセット
+                return;
             }
-            else {
+
+            if (requestBackToSelect_) { // else if にせず独立させる
+                SceneManager::GetInstance()->SetNextScene(new StageSelectScene());
+                requestBackToSelect_ = false; // 個別にリセット
+                return;
+            }
+        }
+
+        // ステージクリア（ゴール）による遷移
+        if (stageCleared_) {
+            stageCleared_ = false;
+            SoundManager::GetInstance()->StopBGM(DronePropellerSound_);
+            auto* sm = SceneManager::GetInstance();
+            if (!sm->IsTestPlay()) {
                 sm->SetNextScene(new ResultScene(perfectCount_, goodCount_));
                 return;
             }
         }
     }
-
-
 
     // ==================================
     // Lighting Panel（ライト操作パネル）
@@ -755,8 +843,8 @@ void GamePlayScene::Update()
     // ================================
     if (stageCleared_) {
 
-        // Enterで戻る（トリガー）
-        if (stageCleared_ && input.IsKeyTrigger(DIK_RETURN)) {
+        // 【重要】ポーズ中じゃない時だけ、Enterでのセレクト戻りを受け付ける
+        if (!isPaused_ && input.IsKeyTrigger(DIK_RETURN)) {
             requestBackToSelect_ = true;
         }
 
@@ -828,13 +916,6 @@ void GamePlayScene::Update()
         wallSys_.UpdateDebug();
     }
 
-    if (requestBackToSelect_) {
-        requestBackToSelect_ = false;
-        SceneManager::GetInstance()->SetNextScene(new StageSelectScene());
-        // ★ここでは return してOK（もうImGuiは全部閉じた後だから）
-        return;
-    }
-
     // マーカー
     //  例：コンパス中心 = compassCenter_ を持ってるならそれに合わせる
     compassMarker_->SetPosition(Vector2 { compassPos_.x, compassPos_.y + 35.0f });
@@ -904,6 +985,12 @@ void GamePlayScene::Draw2D()
     // sprite_->SetColor(Vector4{ 0, 1, 0, 1.0f});
 
     // sprite_->Draw();
+
+    if (isPaused_ || pauseAnimTimer_ > 0.0f) {
+        pauseBg_->Draw();
+        btnClose_->Draw();
+        btnToSelect_->Draw();
+    }
 
     FadeManager::GetInstance()->Draw();
 }
