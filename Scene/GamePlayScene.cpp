@@ -325,23 +325,6 @@ void GamePlayScene::Initialize() {
 	altMarker_->SetAnchorPoint({ 0.5f, 0.5f });
 	altMarker_->SetSize({ 22.0f, 22.0f }); // 好みで
 	altMarker_->SetRotation(0.0f);
-
-    // ===================
-    // Gate/Goal marker (NEW)
-    // ===================
-    TextureManager::GetInstance()->LoadTexture(gateMarkerCompassPath_);
-    gateMarkerCompass_ = new Sprite();
-    gateMarkerCompass_->Initialize(SpriteManager::GetInstance(), gateMarkerCompassPath_);
-    gateMarkerCompass_->SetAnchorPoint({ 0.5f, 0.5f });
-    gateMarkerCompass_->SetSize({ 24.0f, 24.0f }); // 好みで
-    gateMarkerCompass_->SetRotation(0.0f);
-
-	TextureManager::GetInstance()->LoadTexture(gateMarkerAltPath_);
-	gateMarkerAlt_ = new Sprite();
-	gateMarkerAlt_->Initialize(SpriteManager::GetInstance(), gateMarkerAltPath_);
-	gateMarkerAlt_->SetAnchorPoint({ 0.5f, 0.5f });
-	gateMarkerAlt_->SetSize({ 22.0f, 22.0f }); // 好みで
-	gateMarkerAlt_->SetRotation(0.0f);
 	// ボタンは中心基準にしておくと計算が楽でやんす
 
 	// Initializeの末尾付近に追加
