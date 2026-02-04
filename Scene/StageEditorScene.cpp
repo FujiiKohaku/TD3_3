@@ -756,42 +756,8 @@ void StageEditorScene::Draw3D()
 	if (drawWallDebug_) wallSys_.DrawDebug();
 }
 
-void DrawMouseCursorDebug()
-{
-	ImDrawList* dl = ImGui::GetForegroundDrawList();
-	ImGuiIO& io = ImGui::GetIO();
-
-	ImVec2 p = io.MousePos;
-
-	// 十字
-	dl->AddLine(ImVec2(p.x - 10, p.y), ImVec2(p.x + 10, p.y), IM_COL32(255, 0, 0, 255), 2.0f);
-	dl->AddLine(ImVec2(p.x, p.y - 10), ImVec2(p.x, p.y + 10), IM_COL32(255, 0, 0, 255), 2.0f);
-
-	// 当たり判定半径（スクリーン判定用）
-	dl->AddCircle(p, 80.0f, IM_COL32(255, 255, 0, 200), 32, 2.0f);
-}
 
 
-void DrawGatePickDebug(const std::vector<GateVisual>& gates,
-	const Matrix4x4& vp)
-{
-	ImDrawList* dl = ImGui::GetForegroundDrawList();
-	const float W = (float)WinApp::kClientWidth;
-	const float H = (float)WinApp::kClientHeight;
-
-	for (const auto& g : gates) {
-		Vector2 s{};
-		if (!WorldToScreen_RowVector(g.gate.pos, vp, W, H, s)) continue;
-
-		dl->AddCircle(
-			ImVec2(s.x, s.y),
-			80.0f, // ← 判定半径(px)
-			IM_COL32(0, 255, 0, 180),
-			32,
-			2.0f
-		);
-	}
-}
 
 void StageEditorScene::DrawImGui() {
 
@@ -835,6 +801,7 @@ void StageEditorScene::DrawImGui() {
 // --- editor functions (GamePlaySceneから移植) ---
 
 
+#ifdef DEBUG
 
 void StageEditorScene::AddGate()
 {
@@ -1156,6 +1123,7 @@ void StageEditorScene::EditWallsImGui()
 
 	wallSys_.SetSelectedIndex(editWall);
 }
+#endif // DEBUG
 
 //ステージセーブ
 bool StageEditorScene::SaveStageJson(const std::string& fileName) {
@@ -1209,6 +1177,10 @@ bool StageEditorScene::LoadStageJson(const std::string& fileName) {
 	return true;
 }
 
+#ifdef USE_IMGUI
+
+
+
 void StageEditorScene::StageIOImGui()
 {
 	ImGui::Begin("Stage IO");
@@ -1238,6 +1210,9 @@ void StageEditorScene::StageIOImGui()
 	ImGui::End();
 }
 
+
+#endif // USE_IMGUI
+
 void StageEditorScene::UpdateFreeCamera(float dt)
 {
 	Input& input = *Input::GetInstance();
@@ -1259,16 +1234,6 @@ void StageEditorScene::UpdateFreeCamera(float dt)
 	if (Input::GetInstance()->IsKeyTrigger(DIK_F1)) {
 		showMouseDbg = !showMouseDbg;
 	}
-
-	if (showMouseDbg) {
-		ImGui::Begin("Mouse Debug");
-		ImGui::Text("RButton=%d", input.IsMousePressed(1));
-		ImGui::Text("WantCaptureMouse=%d", ImGui::GetIO().WantCaptureMouse ? 1 : 0);
-		ImGui::Text("dx=%ld dy=%ld", d.x, d.y);
-		ImGui::Text("camYaw=%.3f camPitch=%.3f", camYaw_, camPitch_);
-		ImGui::End();
-	}
-
 
 
 	// =========================
@@ -1322,6 +1287,9 @@ void StageEditorScene::UpdateFreeCamera(float dt)
 
 }
 
+#ifdef USE_IMGUI
+
+
 void StageEditorScene::GoalEditorImGui()
 {
 	ImGui::Begin("Goal Editor");
@@ -1351,6 +1319,9 @@ void StageEditorScene::GoalEditorImGui()
 
 	ImGui::End();
 }
+
+#endif // USE_IMGUI
+
 
 void StageEditorScene::UpdateEditorInput(float dt)
 {

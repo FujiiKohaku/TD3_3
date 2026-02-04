@@ -36,6 +36,6 @@ private:
     bool active_ = false;
 
     Vector3 pos_{ 0,0,0 };
-    Vector3 scale_{ 0.6f, 0.6f, 0.6f };
-    float radius_ = 0.8f; // ゴール判定半径
+    Vector3 scale_{ 2.0f, 2.0f, 2.0f };
+    float radius_ = 1.2f*2; // ゴール判定半径
 };

@@ -142,8 +142,6 @@ private:
     void UpdateCompass_();
     Vector3 GetNavTargetPos_() const;
 
-    void UpdateGateMarkerOnCompass_();
-
     // 高さ表示
 
     bool altInit_ = false;
@@ -169,16 +167,36 @@ private:
     void DrawSpeedSimple_();
 
     // マーカー描画
-    //  --- Compass marker ---
+   // --- Compass marker (現在方位/固定) ---
     Sprite* compassMarker_ = nullptr;
-    std::string compassMarkerPath_ = "resources/ui/marker.png"; // 作ったPNG
-    Vector2 compassMarkerPos_ = { 100.0f, 32.0f }; // コンパス中心と同じあたり
-    Vector2 compassMarkerSize_ = { 18.0f, 18.0f }; // 好きに調整
+    std::string compassMarkerPath_ = "resources/ui/marker.png";
+    Vector2 compassMarkerSize_ = { 18.0f, 18.0f };
 
-    Sprite* altMarker_ = nullptr;
-    std::string altMarkerPath_ = "resources/ui/marker.png"; // 既にあるなら同じでOK
-    Vector2 altMarkerSize_ = { 16.0f, 16.0f }; // 調整
-    float altMarkerOffsetX_ = 6.0f; // バーからの距離
+    // --- Gate marker on compass (次ゲート方向) ---
+    Sprite* gateMarkerCompass_ = nullptr;
+    std::string gateMarkerCompassPath_ = "resources/ui/gate_marker_alt.png";
+    Vector2 gateMarkerCompassSize_ = { 18.0f, 18.0f };
+
+    // --- Altimeter marker (現在高度/固定) ---
+    Sprite* altMarkerNow_ = nullptr;
+    std::string altMarkerNowPath_ = "resources/ui/marker.png";
+    Vector2 altMarkerNowSize_ = { 16.0f, 16.0f };
+    float altMarkerOffsetX_ = 6.0f;
+
+    // --- Gate marker on altimeter (次ゲート高度差) ---
+    Sprite* gateMarkerAlt_ = nullptr;
+    std::string gateMarkerAltPath_ = "resources/ui/gate_marker_alt.png";
+    Vector2 gateMarkerAltSize_ = { 16.0f, 16.0f };
+
+    // 画面端で止める位置（自分で調整できる）
+    float gateMarkerClampLeftX_ = 400.0f;   // 左端（px）
+    float gateMarkerClampRightX_ = 900.0f; // 右端（px）
+
+    // マーカーのY（固定）
+    float gateMarkerScreenY_ = 20.0f; // 例：コンパス付近の高さ
+
+
+    void UpdateGateMarkerScreenX_();
 
     // --- Pause UI ---
     enum class PauseMenuIndex {

@@ -167,8 +167,14 @@ void ResultScene::Draw3D()
     skydome_->Draw();
 }
 
+#ifdef USE_IMGUI
+
+
+
 void ResultScene::DrawImGui()
 {
     ImGui::Text("Perfect : %d", perfectCount_);
     ImGui::Text("Good : %d", goodCount_);
 }
+
+#endif // DEBUG
