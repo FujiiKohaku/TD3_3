@@ -7,7 +7,8 @@
 #include "SceneManager.h"
 #include "SpriteManager.h"
 #include "StageSelectScene.h"
-
+#include <Xinput.h>
+#pragma comment(lib, "Xinput.lib")
 static SoundData bgmData_;
 ResultScene::ResultScene(int perfectCount, int goodCount)
 {
@@ -27,8 +28,6 @@ void ResultScene::Initialize()
     fanfareTimer_ = 0.0f;
 
     bgmData_ = SoundManager::GetInstance()->SoundLoadFile("resources/result.mp3");
-
- 
 
     SoundManager::GetInstance()->PlaySE(bgmData_, 1.0f);
     fanfareCount_ = 1;
@@ -65,25 +64,42 @@ void ResultScene::Initialize()
     font_->SetColor({ 1, 1, 1, 1 }); // 見やすい色（好きに）
 
     bgmData_ = SoundManager::GetInstance()->SoundLoadFile("resources/result.mp3");
-   
 
+    titleSprite_ = new Sprite();
+    titleSprite_->Initialize(SpriteManager::GetInstance(), "resources/space11.png");
 }
 
 void ResultScene::Finalize()
 {
 
     SoundManager::GetInstance()->StopBGMAll();
-  
 }
 
 void ResultScene::Update()
 {
+    titleSprite_->Update();
     Input& input = *Input::GetInstance();
-    if (input.IsKeyTrigger(DIK_SPACE) && FadeManager::GetInstance()->GetStatus() == FadeManager::Status::FadeInFinished ||
-        FadeManager::GetInstance()->GetStatus() == FadeManager::Status::None) {
+   
+    bool aButtonTrigger = false;
+
+    // ===== gamepad (Aボタン) =====
+    XINPUT_STATE st {};
+    if (XInputGetState(0, &st) == ERROR_SUCCESS) {
+
+        bool nowAButton = (st.Gamepad.wButtons & XINPUT_GAMEPAD_A) != 0;
+
+        if (nowAButton && !prevAButton_) {
+            aButtonTrigger = true; // 押した瞬間
+        }
+
+        prevAButton_ = nowAButton;
+    } else {
+        prevAButton_ = false;
+    }
+    if ((input.IsKeyTrigger(DIK_SPACE) || aButtonTrigger) && (FadeManager::GetInstance()->GetStatus() == FadeManager::Status::FadeInFinished || FadeManager::GetInstance()->GetStatus() == FadeManager::Status::None)) {
+
         FadeManager::GetInstance()->StartFadeOut(1.0f);
     }
-
     // ★ここを修正
     if (fanfareCount_ == 1) {
         fanfareTimer_ += 1.0f / 60.0f;
@@ -116,7 +132,7 @@ void ResultScene::Draw2D()
 {
     // 描画準備
     SpriteManager::GetInstance()->PreDraw();
-
+    titleSprite_->Draw();
     // 1. Perfectロゴ (0.00 - 0.25)
     float tP_Logo = std::clamp((animationTimer_ - 0.00f) * 4.0f, 0.0f, 1.0f);
     // 2. Perfect数字 (0.25 - 0.50)
@@ -167,9 +183,6 @@ void ResultScene::Draw3D()
     skydome_->Draw();
 }
 
-
-
-
 void ResultScene::DrawImGui()
 {
 #ifdef USE_IMGUI
@@ -177,4 +190,3 @@ void ResultScene::DrawImGui()
     ImGui::Text("Good : %d", goodCount_);
 #endif // DEBUG
 }
-

@@ -89,7 +89,6 @@ static bool ScreenRayToPlaneY0_RowVector(
 
 #ifdef USE_IMGUI
 
-
 static bool WorldToScreen_RowVector(
     const Vector3& worldPos,
     const Matrix4x4& viewProj,
@@ -115,7 +114,6 @@ static bool WorldToScreen_RowVector(
 #pragma endregion
 
 #endif // USE_IMGUI
-
 
 static bool WorldToScreen_RowVector(
     const Vector3& worldPos,
@@ -319,18 +317,18 @@ void GamePlayScene::Initialize()
     skydome_->SetCamera(camera_);
     skydome_->SetEnableLighting(false);
 
-	skydome_->SetScale(Vector3{2,2,2});
+    skydome_->SetScale(Vector3 { 2, 2, 2 });
 
-	skydome_->SetTranslate({ 0.0f, 0.01f, 0.0f });
+    skydome_->SetTranslate({ 0.0f, 0.01f, 0.0f });
 
-	ModelManager::GetInstance()->LoadModel("ground.obj");
-	ground_ = std::make_unique<Object3d>();
-	ground_->Initialize(Object3dManager::GetInstance());
-	ground_->SetModel("ground.obj");
-	ground_->SetCamera(camera_);
-	ground_->SetEnableLighting(false);
-	ground_->SetTranslate({ 0.0f, -5.5f, 0.0f });
-	ground_->SetScale(Vector3{ 2,1,2 });
+    ModelManager::GetInstance()->LoadModel("ground.obj");
+    ground_ = std::make_unique<Object3d>();
+    ground_->Initialize(Object3dManager::GetInstance());
+    ground_->SetModel("ground.obj");
+    ground_->SetCamera(camera_);
+    ground_->SetEnableLighting(false);
+    ground_->SetTranslate({ 0.0f, -5.5f, 0.0f });
+    ground_->SetScale(Vector3 { 2, 1, 2 });
 
     landingEffect_.Initialize(Object3dManager::GetInstance(), camera_);
 
@@ -344,43 +342,43 @@ void GamePlayScene::Initialize()
     LightManager::GetInstance()->SetSpotLightDistance(10.0f);
     LightManager::GetInstance()->SetSpotLightIntensity(0.6f);
 
-	// ===================
-// Markers (split)
-// ===================
+    // ===================
+    // Markers (split)
+    // ===================
 
-// 1) Compass: now heading (fixed)
-	TextureManager::GetInstance()->LoadTexture(compassMarkerPath_);
-	compassMarker_ = new Sprite();
-	compassMarker_->Initialize(SpriteManager::GetInstance(), compassMarkerPath_);
-	compassMarker_->SetAnchorPoint({ 0.5f, 0.5f });
-	compassMarker_->SetSize(compassMarkerSize_);
-	compassMarker_->SetRotation(0.0f);
+    // 1) Compass: now heading (fixed)
+    TextureManager::GetInstance()->LoadTexture(compassMarkerPath_);
+    compassMarker_ = new Sprite();
+    compassMarker_->Initialize(SpriteManager::GetInstance(), compassMarkerPath_);
+    compassMarker_->SetAnchorPoint({ 0.5f, 0.5f });
+    compassMarker_->SetSize(compassMarkerSize_);
+    compassMarker_->SetRotation(0.0f);
 
-	// 2) Compass: gate direction (moves)
-	TextureManager::GetInstance()->LoadTexture(gateMarkerCompassPath_);
-	gateMarkerCompass_ = new Sprite();
-	gateMarkerCompass_->Initialize(SpriteManager::GetInstance(), gateMarkerCompassPath_);
-	gateMarkerCompass_->SetAnchorPoint({ 0.5f, 0.5f });
-	gateMarkerCompass_->SetSize(gateMarkerCompassSize_);
-	gateMarkerCompass_->SetRotation(0.0f);
+    // 2) Compass: gate direction (moves)
+    TextureManager::GetInstance()->LoadTexture(gateMarkerCompassPath_);
+    gateMarkerCompass_ = new Sprite();
+    gateMarkerCompass_->Initialize(SpriteManager::GetInstance(), gateMarkerCompassPath_);
+    gateMarkerCompass_->SetAnchorPoint({ 0.5f, 0.5f });
+    gateMarkerCompass_->SetSize(gateMarkerCompassSize_);
+    gateMarkerCompass_->SetRotation(0.0f);
 
-	// 3) Altimeter: now altitude (fixed)
-	TextureManager::GetInstance()->LoadTexture(altMarkerNowPath_);
-	altMarkerNow_ = new Sprite();
-	altMarkerNow_->Initialize(SpriteManager::GetInstance(), altMarkerNowPath_);
-	altMarkerNow_->SetAnchorPoint({ 0.5f, 0.5f });
-	altMarkerNow_->SetSize(altMarkerNowSize_);
-	altMarkerNow_->SetRotation(0.0f);
+    // 3) Altimeter: now altitude (fixed)
+    TextureManager::GetInstance()->LoadTexture(altMarkerNowPath_);
+    altMarkerNow_ = new Sprite();
+    altMarkerNow_->Initialize(SpriteManager::GetInstance(), altMarkerNowPath_);
+    altMarkerNow_->SetAnchorPoint({ 0.5f, 0.5f });
+    altMarkerNow_->SetSize(altMarkerNowSize_);
+    altMarkerNow_->SetRotation(0.0f);
 
-	// 4) Altimeter: gate altitude diff (moves)
-	TextureManager::GetInstance()->LoadTexture(gateMarkerAltPath_);
-	gateMarkerAlt_ = new Sprite();
-	gateMarkerAlt_->Initialize(SpriteManager::GetInstance(), gateMarkerAltPath_);
-	gateMarkerAlt_->SetAnchorPoint({ 0.5f, 0.5f });
-	gateMarkerAlt_->SetSize(gateMarkerAltSize_);
-	gateMarkerAlt_->SetRotation(0.0f);
+    // 4) Altimeter: gate altitude diff (moves)
+    TextureManager::GetInstance()->LoadTexture(gateMarkerAltPath_);
+    gateMarkerAlt_ = new Sprite();
+    gateMarkerAlt_->Initialize(SpriteManager::GetInstance(), gateMarkerAltPath_);
+    gateMarkerAlt_->SetAnchorPoint({ 0.5f, 0.5f });
+    gateMarkerAlt_->SetSize(gateMarkerAltSize_);
+    gateMarkerAlt_->SetRotation(0.0f);
 
-	// ボタンは中心基準にしておくと計算が楽でやんす
+    // ボタンは中心基準にしておくと計算が楽でやんす
 
     // Initializeの末尾付近に追加
     pauseBg_ = std::make_unique<Sprite>();
@@ -395,31 +393,35 @@ void GamePlayScene::Initialize()
     btnToSelect_->SetAnchorPoint({ 0.5f, 0.5f });
     btnClose_->SetAnchorPoint({ 0.5f, 0.5f });
 
-	requestBackToSelect_ = false;
-	requestBackToTitle_ = false;
-	stageCleared_ = false;
+    requestBackToSelect_ = false;
+    requestBackToTitle_ = false;
+    stageCleared_ = false;
 
-	//// 3) Altimeter: now altitude (fixed)
-	//TextureManager::GetInstance()->LoadTexture(altMarkerNowPath_);
-	//altMarkerNow_ = new Sprite();
-	//altMarkerNow_->Initialize(SpriteManager::GetInstance(), altMarkerNowPath_);
-	//altMarkerNow_->SetAnchorPoint({ 0.5f, 0.5f });
-	//altMarkerNow_->SetSize(altMarkerNowSize_);
-	//altMarkerNow_->SetRotation(0.0f);
+    //// 3) Altimeter: now altitude (fixed)
+    // TextureManager::GetInstance()->LoadTexture(altMarkerNowPath_);
+    // altMarkerNow_ = new Sprite();
+    // altMarkerNow_->Initialize(SpriteManager::GetInstance(), altMarkerNowPath_);
+    // altMarkerNow_->SetAnchorPoint({ 0.5f, 0.5f });
+    // altMarkerNow_->SetSize(altMarkerNowSize_);
+    // altMarkerNow_->SetRotation(0.0f);
 
-	// 4) Altimeter: gate altitude diff (moves)
-	TextureManager::GetInstance()->LoadTexture(gateMarkerAltPath_);
-	gateMarkerAlt_ = new Sprite();
-	gateMarkerAlt_->Initialize(SpriteManager::GetInstance(), gateMarkerAltPath_);
-	gateMarkerAlt_->SetAnchorPoint({ 0.5f, 0.5f });
-	gateMarkerAlt_->SetSize(gateMarkerAltSize_);
-	gateMarkerAlt_->SetRotation(0.0f);
+    // 4) Altimeter: gate altitude diff (moves)
+    TextureManager::GetInstance()->LoadTexture(gateMarkerAltPath_);
+    gateMarkerAlt_ = new Sprite();
+    gateMarkerAlt_->Initialize(SpriteManager::GetInstance(), gateMarkerAltPath_);
+    gateMarkerAlt_->SetAnchorPoint({ 0.5f, 0.5f });
+    gateMarkerAlt_->SetSize(gateMarkerAltSize_);
+    gateMarkerAlt_->SetRotation(0.0f);
 
-
+    mojyuro = new Sprite();
+    mojyuro->Initialize(SpriteManager::GetInstance(), "resources/aaaaaa.png"); // 白塗り画像
+    mojyuro->SetPosition({ 0.0f, 0.0f });
 }
 
 void GamePlayScene::Update()
 {
+
+    mojyuro->Update();
     float dt = 1.0f / 60.0f;
     Input& input = *Input::GetInstance();
 
@@ -736,15 +738,14 @@ void GamePlayScene::Update()
         }
     }
 
-
 #ifdef USE_IMGUI
 
-	// USE_IMGU
+    // USE_IMGU
 
-	// ==================================
-	// Lighting Panel（ライト操作パネル）
-	// ==================================
-	ImGui::Begin("Lighting Control");
+    // ==================================
+    // Lighting Panel（ライト操作パネル）
+    // ==================================
+    ImGui::Begin("Lighting Control");
 
     // ---- ライトの ON / OFF ----
     static bool lightEnabled = true;
@@ -975,12 +976,12 @@ void GamePlayScene::Update()
 
 #endif
 
-	// 反映
-	sphere_->SetEnableLighting(sphereLighting);
-	sphere_->SetTranslate(spherePos);
-	sphere_->SetRotate(sphereRotate);
-	sphere_->SetScale(sphereScale);
-	// here_->SetShininess(shininess);
+    // 反映
+    sphere_->SetEnableLighting(sphereLighting);
+    sphere_->SetTranslate(spherePos);
+    sphere_->SetRotate(sphereRotate);
+    sphere_->SetScale(sphereScale);
+    // here_->SetShininess(shininess);
 
     if (drawWallDebug_) {
         wallSys_.UpdateDebug();
@@ -1014,16 +1015,17 @@ void GamePlayScene::Draw3D()
 
     landingEffect_.Draw();
 
-    Object3dManager::GetInstance()->SetBlendMode(kBlendModeAdd);
-    Object3dManager::GetInstance()->SetGlowPSO();
-    goalSys_.Draw();
     if (drawWallDebug_) {
         wallSys_.DrawDebug();
     }
+    Object3dManager::GetInstance()->SetBlendMode(kBlendModeAdd);
+    Object3dManager::GetInstance()->SetGlowPSO();
+    goalSys_.Draw();
 
     particleGate_.Draw();
     // sphere_->Draw(DirectXCommon::GetInstance()->GetCommandList());
     Object3dManager::GetInstance()->SetBlendMode(kBlendModeNone);
+
     // ParticleManager::GetInstance()->PreDraw();
     // ParticleManager::GetInstance()->Draw();
 }
@@ -1038,15 +1040,19 @@ void GamePlayScene::Draw2D()
 
     DrawAltimeter_();
     DrawSpeedSimple_();
+    mojyuro->Draw();
+    if (compassA_)
+        compassA_->Draw();
+    if (compassB_)
+        compassB_->Draw();
 
-	if (compassA_) compassA_->Draw();
-	if (compassB_) compassB_->Draw();
+    // 固定▲（現在方位）
+    if (compassMarker_)
+        compassMarker_->Draw();
 
-	// 固定▲（現在方位）
-	if (compassMarker_) compassMarker_->Draw();
-
-	// 次ゲート方位マーカー
-	if (gateMarkerCompass_) gateMarkerCompass_->Draw();
+    // 次ゲート方位マーカー
+    if (gateMarkerCompass_)
+        gateMarkerCompass_->Draw();
 
     if (setumei_) {
         setumei_->Draw();
@@ -1056,8 +1062,7 @@ void GamePlayScene::Draw2D()
     }
     // Altimeter
 
-	DrawGateIndices2D_();
-
+    DrawGateIndices2D_();
 
     // sprite_->SetColor(Vector4{ 0, 1, 0, 1.0f});
 
@@ -1083,12 +1088,10 @@ void GamePlayScene::Finalize()
 {
     ParticleManager::GetInstance()->Finalize();
 
-
-
     SoundManager::GetInstance()->StopBGMAll();
 
-	delete droneObj_;
-	droneObj_ = nullptr;
+    delete droneObj_;
+    droneObj_ = nullptr;
 
     delete sprite_;
     sprite_ = nullptr;
@@ -1106,23 +1109,25 @@ void GamePlayScene::Finalize()
     terraranan_ = nullptr;
     goalSys_.Finalize();
 
-	if (compassA_) {
-		delete compassA_;
-		compassA_ = nullptr;
-	}
-	if (compassB_) {
-		delete compassB_;
-		compassB_ = nullptr;
-	}
+    if (compassA_) {
+        delete compassA_;
+        compassA_ = nullptr;
+    }
+    if (compassB_) {
+        delete compassB_;
+        compassB_ = nullptr;
+    }
 
-	delete altMarkerNow_;     altMarkerNow_ = nullptr;
-	delete gateMarkerAlt_;    gateMarkerAlt_ = nullptr;
-	delete compassMarker_;    compassMarker_ = nullptr;
-	delete gateMarkerCompass_; gateMarkerCompass_ = nullptr;
+    delete altMarkerNow_;
+    altMarkerNow_ = nullptr;
+    delete gateMarkerAlt_;
+    gateMarkerAlt_ = nullptr;
+    delete compassMarker_;
+    compassMarker_ = nullptr;
+    delete gateMarkerCompass_;
+    gateMarkerCompass_ = nullptr;
 
-
-	SoundManager::GetInstance()->StopBGMAll();
-
+    SoundManager::GetInstance()->StopBGMAll();
 }
 void GamePlayScene::UpdateDronePointLight()
 {
@@ -1255,59 +1260,61 @@ void GamePlayScene::UpdateCompass_()
 
     compassA_->SetColor({ 1, 1, 1, 1 });
 
-	compassA_->Update();
-	compassB_->Update();
-	UpdateGateMarkerScreenX_();
+    compassA_->Update();
+    compassB_->Update();
+    UpdateGateMarkerScreenX_();
 }
 
 void GamePlayScene::UpdateGateMarkerScreenX_()
 {
-	if (!gateMarkerCompass_) return;
+    if (!gateMarkerCompass_)
+        return;
 
-	// 「追うべきターゲットがあるか？」
-	const bool hasNextGate = (nextGate_ < (int)gates_.size());
-	const bool hasGoal = goalSys_.IsGoalActive();   // ★追加したやつ
-	const bool cleared = goalSys_.IsCleared();
+    // 「追うべきターゲットがあるか？」
+    const bool hasNextGate = (nextGate_ < (int)gates_.size());
+    const bool hasGoal = goalSys_.IsGoalActive(); // ★追加したやつ
+    const bool cleared = goalSys_.IsCleared();
 
-	// 何も追うものがない / クリア済みなら消す（お好み）
-	if (!hasNextGate && (!hasGoal || cleared)) {
-		// 消したいなら透明に
-		gateMarkerCompass_->SetColor({ 1,1,1,0 });
-		gateMarkerCompass_->Update();
-		return;
-	}
+    // 何も追うものがない / クリア済みなら消す（お好み）
+    if (!hasNextGate && (!hasGoal || cleared)) {
+        // 消したいなら透明に
+        gateMarkerCompass_->SetColor({ 1, 1, 1, 0 });
+        gateMarkerCompass_->Update();
+        return;
+    }
 
-	gateMarkerCompass_->SetColor({ 1,1,1,1 }); // 表示
+    gateMarkerCompass_->SetColor({ 1, 1, 1, 1 }); // 表示
 
-	const float W = (float)WinApp::kClientWidth;
-	const Matrix4x4& vp = camera_->GetViewProjectionMatrix();
+    const float W = (float)WinApp::kClientWidth;
+    const Matrix4x4& vp = camera_->GetViewProjectionMatrix();
 
-	// 次ゲートがあればゲート、無ければゴール（GetNavTargetPos_ がそうなってる）
-	const Vector3 target = GetNavTargetPos_();
+    // 次ゲートがあればゲート、無ければゴール（GetNavTargetPos_ がそうなってる）
+    const Vector3 target = GetNavTargetPos_();
 
-	Vector4 clip = MulRowVec4Mat4({ target.x, target.y, target.z, 1.0f }, vp);
+    Vector4 clip = MulRowVec4Mat4({ target.x, target.y, target.z, 1.0f }, vp);
 
-	if (clip.w <= 1e-6f) {
-		float x = (clip.x >= 0.0f) ? gateMarkerClampRightX_ : gateMarkerClampLeftX_;
-		gateMarkerCompass_->SetPosition({ x, gateMarkerScreenY_ });
-		gateMarkerCompass_->SetRotation(0.0f);
-		gateMarkerCompass_->Update();
-		return;
-	}
+    if (clip.w <= 1e-6f) {
+        float x = (clip.x >= 0.0f) ? gateMarkerClampRightX_ : gateMarkerClampLeftX_;
+        gateMarkerCompass_->SetPosition({ x, gateMarkerScreenY_ });
+        gateMarkerCompass_->SetRotation(0.0f);
+        gateMarkerCompass_->Update();
+        return;
+    }
 
-	const float ndcX = clip.x / clip.w;
-	float screenX = (ndcX * 0.5f + 0.5f) * W;
+    const float ndcX = clip.x / clip.w;
+    float screenX = (ndcX * 0.5f + 0.5f) * W;
 
-	if (ndcX < -1.0f) screenX = gateMarkerClampLeftX_;
-	if (ndcX > 1.0f) screenX = gateMarkerClampRightX_;
+    if (ndcX < -1.0f)
+        screenX = gateMarkerClampLeftX_;
+    if (ndcX > 1.0f)
+        screenX = gateMarkerClampRightX_;
 
-	screenX = std::clamp(screenX, gateMarkerClampLeftX_, gateMarkerClampRightX_);
+    screenX = std::clamp(screenX, gateMarkerClampLeftX_, gateMarkerClampRightX_);
 
-	gateMarkerCompass_->SetPosition({ screenX, gateMarkerScreenY_ });
-	gateMarkerCompass_->SetRotation(0.0f);
-	gateMarkerCompass_->Update();
+    gateMarkerCompass_->SetPosition({ screenX, gateMarkerScreenY_ });
+    gateMarkerCompass_->SetRotation(0.0f);
+    gateMarkerCompass_->Update();
 }
-
 
 ///===================================
 /// 高さ表示
@@ -1371,44 +1378,44 @@ void GamePlayScene::DrawAltimeter_()
     altPointer_.Update();
     altPointer_.Draw();
 
-	// マーカー（高度メーターの横）
-	if (altMarkerNow_) {
-		const float mx = x + w + altMarkerOffsetX_;
-		const float my = centerY;
+    // マーカー（高度メーターの横）
+    if (altMarkerNow_) {
+        const float mx = x + w + altMarkerOffsetX_;
+        const float my = centerY;
 
-		altMarkerNow_->SetPosition({ mx + 10.0f, my - 2.0f });
-		altMarkerNow_->SetRotation(-0.5f);
-		altMarkerNow_->SetSize(altMarkerNowSize_);
-		altMarkerNow_->Update();
-		altMarkerNow_->Draw();
-	}
+        altMarkerNow_->SetPosition({ mx + 10.0f, my - 2.0f });
+        altMarkerNow_->SetRotation(-0.5f);
+        altMarkerNow_->SetSize(altMarkerNowSize_);
+        altMarkerNow_->Update();
+        altMarkerNow_->Draw();
+    }
 
+    // 目的地の高度差マーカー（NEW）
+    if (gateMarkerAlt_) {
+        const Vector3 target = GetNavTargetPos_();
+        const float dy = target.y - drone_.GetPos().y;
 
-	// 目的地の高度差マーカー（NEW）
-	if (gateMarkerAlt_) {
-		const Vector3 target = GetNavTargetPos_();
-		const float dy = target.y - drone_.GetPos().y;
+        float my = centerY + (-dy * pxPerUnit);
 
-		float my = centerY + (-dy * pxPerUnit);
+        const float topY = y + 4.0f;
+        const float botY = y + h - 4.0f;
+        if (my < topY)
+            my = topY;
+        if (my > botY)
+            my = botY;
 
-		const float topY = y + 4.0f;
-		const float botY = y + h - 4.0f;
-		if (my < topY) my = topY;
-		if (my > botY) my = botY;
+        const float mx = x + w + altMarkerOffsetX_ - 26.0f;
 
-		const float mx = x + w + altMarkerOffsetX_ - 26.0f;
+        gateMarkerAlt_->SetPosition({ mx, my });
+        gateMarkerAlt_->SetRotation(0.0f);
+        gateMarkerAlt_->SetSize(gateMarkerAltSize_);
+        gateMarkerAlt_->Update();
+        gateMarkerAlt_->Draw();
+    }
 
-		gateMarkerAlt_->SetPosition({ mx, my });
-		gateMarkerAlt_->SetRotation(0.0f);
-		gateMarkerAlt_->SetSize(gateMarkerAltSize_);
-		gateMarkerAlt_->Update();
-		gateMarkerAlt_->Draw();
-	}
-
-
-	// 目盛り描画範囲（表示する高度）
-	const float minAlt = std::max<float>(0.0f, alt - altHalfRange_);
-	const float maxAlt = alt + altHalfRange_;
+    // 目盛り描画範囲（表示する高度）
+    const float minAlt = std::max<float>(0.0f, alt - altHalfRange_);
+    const float maxAlt = alt + altHalfRange_;
 
     // 小目盛り（minor）
     for (float a = std::floor(minAlt / altMinorStep_) * altMinorStep_;

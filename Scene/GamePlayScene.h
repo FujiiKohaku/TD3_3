@@ -54,7 +54,7 @@ private:
     // ------------------------------
 
     // ------------------------------
-
+    Sprite* mojyuro = nullptr;
     Sprite* sprite_ = nullptr;
     std::vector<Sprite*> sprites_;
     Object3d* player2_;
@@ -63,6 +63,7 @@ private:
 
     Sprite* setumei_ = nullptr;
 
+   
     Vector2 setumeiPos_ = { 0.0f, 0.0f };
 
     Sprite* EnterSetumei_ = nullptr;
