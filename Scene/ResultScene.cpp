@@ -1,12 +1,12 @@
 #include "ResultScene.h"
 #include "../Light/LightManager.h"
+#include "FadeManager.h"
 #include "ImGuiManager.h"
 #include "ModelManager.h"
 #include "Object3dManager.h"
 #include "SceneManager.h"
 #include "SpriteManager.h"
 #include "StageSelectScene.h"
-#include "FadeManager.h"
 
 ResultScene::ResultScene(int perfectCount, int goodCount)
 {
@@ -19,11 +19,12 @@ ResultScene::ResultScene(int perfectCount, int goodCount)
     camera_ = std::make_unique<Camera>();
 }
 
-void ResultScene::Initialize() {
-	// シーン開始時に、1秒かけて明るくするでやんす！
-	FadeManager::GetInstance()->StartFadeIn(1.0f);
-	ModelManager::GetInstance()->LoadModel("skydome.obj");
-	TextureManager::GetInstance()->LoadTexture("resources/skydome.png");
+void ResultScene::Initialize()
+{
+    // シーン開始時に、1秒かけて明るくするでやんす！
+    FadeManager::GetInstance()->StartFadeIn(1.0f);
+    ModelManager::GetInstance()->LoadModel("skydome.obj");
+    TextureManager::GetInstance()->LoadTexture("resources/skydome.png");
 
     perfect_->Initialize(SpriteManager::GetInstance(), "resources/perfect.png");
     perfect_->SetPosition({ 400.0f, 200.0f }); // 画面中央など
@@ -66,21 +67,14 @@ void ResultScene::Finalize()
     LightManager::GetInstance()->Finalize();
 }
 
-void ResultScene::Update() {
-	// 入出力取得
-	Input& input = *Input::GetInstance();
-	if (input.IsKeyTrigger(DIK_SPACE)) {
-		// まずはフェードアウト開始！
-		FadeManager::GetInstance()->StartFadeOut(1.0f);
-	}
-
-	// フェードアウトが終わったらシーン切り替え
-	if (FadeManager::GetInstance()->GetStatus() == FadeManager::Status::FadeOutFinished) {
-		SceneManager::GetInstance()->SetNextScene(new StageSelectScene());
-	}
 void ResultScene::Update()
 {
-
+    // 入出力取得
+    Input& input = *Input::GetInstance();
+    if (input.IsKeyTrigger(DIK_SPACE)) {
+        // まずはフェードアウト開始！
+        FadeManager::GetInstance()->StartFadeOut(1.0f);
+    }
     if (fanfareCount_ <= 2) {
         fanfareTimer_ += 1.0f / 60.0f;
 
@@ -89,18 +83,6 @@ void ResultScene::Update()
             fanfareCount_++;
         }
     }
-
-    // 入出力取得
-    Input& input = *Input::GetInstance();
-    if (input.IsKeyTrigger(DIK_F1)) {
-        SceneManager::GetInstance()->SetNextScene(new StageSelectScene());
-    }
-
-	FadeManager::GetInstance()->Update();
-
-	camera_->Update();
-	skydome_->Update();
-
     // タイマーを 0.0 から 1.0 まで進める
     if (animationTimer_ < 1.0f) {
         animationTimer_ += 1.0f / 60.0f * kAnimSpeed;
@@ -108,8 +90,16 @@ void ResultScene::Update()
             animationTimer_ = 1.0f;
     }
 
+    FadeManager::GetInstance()->Update();
+    camera_->Update();
+    skydome_->Update();
+
     perfect_->Update();
     good_->Update();
+    // フェードアウトが終わったらシーン切り替え
+    if (FadeManager::GetInstance()->GetStatus() == FadeManager::Status::FadeOutFinished) {
+        SceneManager::GetInstance()->SetNextScene(new StageSelectScene());
+    }
 }
 
 void ResultScene::Draw2D()
@@ -153,11 +143,11 @@ void ResultScene::Draw2D()
     std::string perfectStr = std::to_string(perfectCount_);
     std::string goodStr = std::to_string(goodCount_);
 
-	// 座標は適宜調整
-	font_->DrawString(xP_Count, 125.0f, perfectStr, 1.0f);
-	font_->DrawString(xG_Count, 325.0f, goodStr, 1.0f);
+    // 座標は適宜調整
+    font_->DrawString(xP_Count, 125.0f, perfectStr, 1.0f);
+    font_->DrawString(xG_Count, 325.0f, goodStr, 1.0f);
 
-	FadeManager::GetInstance()->Draw();
+    FadeManager::GetInstance()->Draw();
 }
 
 void ResultScene::Draw3D()
